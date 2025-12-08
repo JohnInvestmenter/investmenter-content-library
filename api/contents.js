@@ -159,6 +159,55 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, id: page.id });
     }
 
+    // PUT - Update existing content
+    if (req.method === "PUT") {
+      let body = req.body;
+      if (typeof body === "string") {
+        try { body = JSON.parse(body); } catch { body = {}; }
+      }
+
+      const { id, title, content, formattedContent, category, tags, attachments } = body || {};
+
+      if (!id) {
+        return res.status(400).json({ error: "Missing 'id' in request body" });
+      }
+
+      const properties = {};
+
+      if (has("Title") && title !== undefined) {
+        properties.Title = { title: [{ type: "text", text: { content: title } }] };
+      }
+      if (has("Content") && content !== undefined) {
+        properties.Content = { rich_text: [{ type: "text", text: { content } }] };
+      }
+      if (has("Formatted") && formattedContent !== undefined) {
+        properties.Formatted = { rich_text: [{ type: "text", text: { content: formattedContent } }] };
+      }
+      if (has("Category") && category) {
+        properties.Category = { select: { name: category } };
+      }
+      if (has("Tags") && Array.isArray(tags)) {
+        properties.Tags = { multi_select: tags.map((t) => ({ name: t })) };
+      }
+      if (has("Attachments") && Array.isArray(attachments)) {
+        properties.Attachments = {
+          files: attachments
+            .filter((a) => a?.url)
+            .map((a) => ({
+              name: a.name || "attachment",
+              external: { url: a.url }
+            }))
+        };
+      }
+
+      await notion.pages.update({
+        page_id: id,
+        properties
+      });
+
+      return res.status(200).json({ ok: true, id });
+    }
+
     return res.status(405).json({ error: "Method not allowed" });
   } catch (e) {
     console.error("API /api/contents error:", e);
