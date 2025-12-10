@@ -10,6 +10,7 @@ import { Client } from "@notionhq/client";
  *   Content (Rich text)
  *   Formatted (Rich text)
  *   Category (Select)
+ *   Folder (Select)
  *   Tags (Multi-select)
  *   Created (Date)
  *   UseCount (Number)
@@ -77,6 +78,7 @@ export default async function handler(req, res) {
           content: has("Content") ? getRich(props, "Content") : "",
           formattedContent: has("Formatted") ? getRich(props, "Formatted") : "",
           category: has("Category") ? getSelect(props, "Category") : "General",
+          folder: has("Folder") ? getSelect(props, "Folder") : "",
           tags: has("Tags") ? getMulti(props, "Tags") : [],
           dateCreated: has("Created") ? getDate(props, "Created") : "",
           lastUsed: has("LastUsed") ? getDate(props, "LastUsed") : "",
@@ -100,6 +102,7 @@ export default async function handler(req, res) {
         content = "",
         formattedContent = "",
         category = "General",
+        folder = "",
         tags = [],
         dateCreated = new Date().toISOString().slice(0, 10),
         useCount = 0,
@@ -122,6 +125,9 @@ export default async function handler(req, res) {
       }
       if (has("Category") && category) {
         properties.Category = { select: { name: category } };
+      }
+      if (has("Folder") && folder) {
+        properties.Folder = { select: { name: folder } };
       }
       if (has("Tags") && Array.isArray(tags) && tags.length) {
         properties.Tags = { multi_select: tags.map((t) => ({ name: t })) };

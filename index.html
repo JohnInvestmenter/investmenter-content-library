@@ -29,6 +29,7 @@
     [data-theme="dark"] .card:hover{ box-shadow:0 12px 40px rgba(0,0,0,.4); }
     .chip{ border-radius:9999px; padding:2px 8px; font-size:12px; transition:all .2s ease; }
     .chip:hover{ transform:scale(1.05); }
+    .chip-folder{ background:var(--muted); color:var(--fg); border:1px solid var(--border); display:inline-flex; align-items:center; gap:6px; }
     .btn{ display:inline-flex; align-items:center; gap:.5rem; border:1px solid var(--border); padding:.55rem .8rem; border-radius:.75rem; cursor:pointer; position:relative; overflow:hidden; transition:all .2s ease; }
     .btn:hover:not([disabled]){ background:rgba(255,255,255,.06); transform:translateY(-1px); }
     [data-theme="light"] .btn:hover:not([disabled]){ background:rgba(0,0,0,.04) }
@@ -342,6 +343,7 @@
     <div class="p-4 space-y-4 overflow-y-auto scrollbar-thin" style="max-height:60vh">
       <div><label class="block text-sm mb-1">Title</label><input id="wa-editTitle" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/></div>
       <div><label class="block text-sm mb-1">Category</label><select id="wa-editCategory" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
+      <div><label class="block text-sm mb-1">Folder</label><select id="wa-editFolder" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
       <div>
         <label class="block text-sm mb-1">Content</label>
         <div class="formatting-toolbar flex items-center gap-1 p-2 rounded-t-lg border border-b-0 border-[var(--border)] bg-[var(--muted)]">
@@ -384,6 +386,7 @@
     <div class="p-4 space-y-4 overflow-y-auto scrollbar-thin" style="max-height:60vh">
       <div><label class="block text-sm mb-1">Title</label><input id="wa-titleInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="Content title..."/></div>
       <div><label class="block text-sm mb-1">Category</label><select id="wa-categoryInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
+      <div><label class="block text-sm mb-1">Folder</label><select id="wa-folderInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
       <div>
         <label class="block text-sm mb-1">Content</label>
         <div class="formatting-toolbar flex items-center gap-1 p-2 rounded-t-lg border border-b-0 border-[var(--border)] bg-[var(--muted)]">
@@ -584,10 +587,13 @@
 const WA_API = '/api/contents';
 const GPT_API = '/api/prompts';
 const DRIVE_APP_SCRIPT = 'https://script.google.com/macros/s/AKfycbwWgZ3B3vcN4flFQo1-Ul-AVjVGZozfoe8RDcbr8ez2d_d7r9XvQ7tnePY5q8ZC4w7Ziw/exec';
+const UNASSIGNED_FOLDER = 'Unassigned';
+const defaultWAFolders = ['Construction Updates','Investors Reach Out','Resell','Conveyance'];
 
 // Dynamic category data loaded from Notion
 let waCategoriesData = []; // [{name, color, count}]
 let gptCategoriesData = [];
+let waFolderOptions = [...defaultWAFolders];
 
 // Load categories from API
 async function loadWACategories(force = false) {
@@ -1639,6 +1645,36 @@ async function updateWAItem(payload){
   const j = await r.json().catch(()=>({})); if(!r.ok||j.error) throw new Error(j.message||j.error||('HTTP '+r.status)); return j;
 }
 
+function computeWAFolderOptions(){
+  const set = new Set(defaultWAFolders.map(f => (f || '').trim()).filter(Boolean));
+  waContents.forEach(item => {
+    const name = (item.folder || '').trim();
+    if(name) set.add(name);
+  });
+  waFolderOptions = Array.from(set);
+  return waFolderOptions;
+}
+
+function renderWAFolderDropdowns(){
+  const folders = computeWAFolderOptions();
+  const optionHTML = [
+    `<option value="">${UNASSIGNED_FOLDER}</option>`,
+    ...folders.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`)
+  ].join('');
+
+  const selects = [document.getElementById('wa-folderInput'), document.getElementById('wa-editFolder')];
+  selects.forEach(sel => {
+    if(!sel) return;
+    const previous = sel.value;
+    sel.innerHTML = optionHTML;
+    if(previous && folders.some(f => f === previous)){
+      sel.value = previous;
+    } else {
+      sel.value = sel.querySelector('option')?.value || '';
+    }
+  });
+}
+
 function renderWACategories(){
   // Update edit and add modal dropdowns
   const categoryNames = waCategoriesData.map(c => c.name);
@@ -1655,6 +1691,23 @@ function renderWAFolderTabs(){
   const container = document.getElementById('wa-folderTabs');
   if (!container) return;
 
+  const folders = computeWAFolderOptions();
+  const counts = {};
+  waContents.forEach(item => {
+    const name = (item.folder || '').trim() || UNASSIGNED_FOLDER;
+    counts[name] = (counts[name] || 0) + 1;
+  });
+
+  // Add Unassigned tab if there are items without a folder
+  if (counts[UNASSIGNED_FOLDER] && !folders.includes(UNASSIGNED_FOLDER)) {
+    folders.push(UNASSIGNED_FOLDER);
+  }
+
+  // Reset active folder if it no longer exists
+  if (activeWAFolder !== 'all' && !folders.includes(activeWAFolder)) {
+    activeWAFolder = 'all';
+  }
+
   // Add "All" tab first
   const allCount = waContents.length;
   let tabsHTML = `
@@ -1665,14 +1718,14 @@ function renderWAFolderTabs(){
     </div>
   `;
 
-  // Add category folder tabs
-  waCategoriesData.forEach(cat => {
-    const count = waContents.filter(item => item.category === cat.name).length;
-    const isActive = activeWAFolder === cat.name;
+  // Add folder tabs
+  folders.forEach(folderName => {
+    const count = counts[folderName] || 0;
+    const isActive = activeWAFolder === folderName;
     tabsHTML += `
-      <div class="folder-tab ${isActive ? 'active' : ''}" onclick="selectWAFolder('${escapeHtml(cat.name).replace(/'/g, "\\'")}')">
+      <div class="folder-tab ${isActive ? 'active' : ''}" onclick="selectWAFolder('${escapeHtml(folderName).replace(/'/g, "\\'")}')">
         <i data-lucide="folder" class="folder-icon"></i>
-        <span class="folder-name">${escapeHtml(cat.name)}</span>
+        <span class="folder-name">${escapeHtml(folderName)}</span>
         <span class="folder-count">${count}</span>
       </div>
     `;
@@ -1680,6 +1733,9 @@ function renderWAFolderTabs(){
 
   container.innerHTML = tabsHTML;
   lucide.createIcons();
+
+  // Keep folder dropdowns in sync with available folders
+  renderWAFolderDropdowns();
 }
 
 function selectWAFolder(folderName) {
@@ -1695,7 +1751,7 @@ function renderWA(){
 
   const filtered = waContents.filter(c =>
     (!search || (c.title||'').toLowerCase().includes(search) || (c.content||'').toLowerCase().includes(search) || (c.tags||[]).some(t=> (t||'').toLowerCase().includes(search))) &&
-    (activeWAFolder==='all' || c.category===activeWAFolder)
+    (activeWAFolder==='all' || ((c.folder || '').trim() || UNASSIGNED_FOLDER) === activeWAFolder)
   );
 
   const total = filtered.length;
@@ -1721,6 +1777,7 @@ function renderWA(){
     const borderClass = getCardBorderClass(c.category||'general');
     const showNew = isNew(c.dateCreated);
     const showTrending = isTrending(c.useCount);
+    const folderLabel = (c.folder || '').trim() || UNASSIGNED_FOLDER;
 
     return `
     <div class="h-full fade-in" style="animation-delay:${idx*50}ms">
@@ -1729,6 +1786,7 @@ function renderWA(){
           <div class="flex-1">
             <h3 class="text-lg font-semibold cursor-pointer hover:text-[var(--brand)] transition-colors" onclick="openWAPreview('${escapeHtml(c.id||'')}')">${escapeHtml(c.title||'')}</h3>
             <div class="flex items-center gap-2 mt-1 flex-wrap">
+              <span class="chip chip-folder"><i data-lucide="folder"></i>${escapeHtml(folderLabel)}</span>
               <span class="chip ${categoryClass}">${escapeHtml(c.category||'')}</span>
               ${showNew ? '<span class="badge badge-new"><i data-lucide="sparkles"></i>NEW</span>' : ''}
               ${showTrending ? '<span class="badge badge-trending"><i data-lucide="flame"></i>TRENDING</span>' : ''}
@@ -1903,6 +1961,7 @@ async function copyWAToClipboard(id, format = 'whatsapp'){
 const waEditModal = document.getElementById('wa-editModal');
 const waEditTitle = document.getElementById('wa-editTitle');
 const waEditCategory = document.getElementById('wa-editCategory');
+const waEditFolder = document.getElementById('wa-editFolder');
 const waEditContent = document.getElementById('wa-editContent');
 const waEditTags = document.getElementById('wa-editTags');
 const waEditPreview = document.getElementById('wa-editPreview');
@@ -1912,7 +1971,8 @@ function openWAEditModal(id){
   waEditItem = waContents.find(x=> String(x.id) === String(id));
   if(!waEditItem) return showToast('Not Found', 'Item not found', 'error');
   waEditTitle.value = waEditItem.title || '';
-  waEditCategory.value = waEditItem.category || waCategories[0];
+  waEditCategory.value = waEditItem.category || waCategoriesData[0]?.name || 'General';
+  waEditFolder.value = (waEditItem.folder || '').trim() || '';
   waEditContent.value = waEditItem.content || '';
   waEditTags.value = (waEditItem.tags || []).join(', ');
 
@@ -2008,6 +2068,7 @@ document.getElementById('wa-editSave').addEventListener('click', async ()=>{
       id: waEditItem.id,
       title: (waEditTitle.value||'').trim(),
       category: waEditCategory.value || 'General',
+      folder: (waEditFolder.value || '').trim(),
       content: (waEditContent.value||'').trim(),
       formattedContent: toWhatsApp(waEditContent.value||''),
       tags: (waEditTags.value||'').split(',').map(t=>t.trim()).filter(Boolean),
@@ -2017,6 +2078,7 @@ document.getElementById('wa-editSave').addEventListener('click', async ()=>{
     Object.assign(waEditItem,payload);
     waEditNewAttachments = []; // Reset after successful save
     waEditInflightUploads = 0;
+    renderWAFolderTabs();
     closeWAEditModal(); renderWA();
     showToast('Saved!', 'Content updated successfully', 'success');
   }catch(e){
@@ -2031,6 +2093,7 @@ document.getElementById('wa-editSave').addEventListener('click', async ()=>{
 const waAddModal = document.getElementById('wa-addModal');
 const waTitleInput = document.getElementById('wa-titleInput');
 const waCategoryInput = document.getElementById('wa-categoryInput');
+const waFolderInput = document.getElementById('wa-folderInput');
 const waContentInput = document.getElementById('wa-contentInput');
 const waTagsInput = document.getElementById('wa-tagsInput');
 const waWaPreview = document.getElementById('wa-waPreview');
@@ -2044,7 +2107,11 @@ document.getElementById('wa-cancelAdd').addEventListener('click',closeWAAdd);
 document.getElementById('wa-clearAdd').addEventListener('click',resetWAAdd);
 
 function resetWAAdd(){
-  waTitleInput.value=''; waCategoryInput.value=waCategories[0]; waContentInput.value=''; waTagsInput.value='';
+  waTitleInput.value='';
+  waCategoryInput.value = waCategoriesData[0]?.name || 'General';
+  waFolderInput.value = waFolderInput.querySelector('option')?.value || '';
+  waContentInput.value='';
+  waTagsInput.value='';
   document.getElementById('wa-fileUpload').value = '';
   document.getElementById('wa-uploadStatus').textContent = '';
   addAttachments = [];
@@ -2113,6 +2180,7 @@ waSaveAdd.addEventListener('click', async ()=>{
     const payload = {
       title:(waTitleInput.value||'').trim(),
       category: waCategoryInput.value || 'General',
+      folder: (waFolderInput.value || '').trim(),
       content:(waContentInput.value||'').trim(),
       formattedContent: toWhatsApp(waContentInput.value||''),
       tags:(waTagsInput.value||'').split(',').map(t=>t.trim()).filter(Boolean),
