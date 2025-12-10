@@ -177,6 +177,23 @@
     .attachment-type{ font-size:10px; color:var(--muted-ink); font-weight:600; text-transform:uppercase; }
     /* ---------- FADE IN ANIMATION ---------- */
     @keyframes fadeIn{ from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    /* ---------- FOLDER SIDEBAR ---------- */
+    .sidebar-layout{ display:flex; gap:20px; }
+    .folder-sidebar{ width:240px; min-width:240px; }
+    .folder-tabs{ display:flex; flex-direction:column; gap:8px; }
+    .folder-tab{ display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:8px; cursor:pointer; transition:all .2s ease; background:var(--card); border:1px solid var(--border); }
+    .folder-tab:hover{ background:var(--accent-bg); border-color:var(--brand); }
+    .folder-tab.active{ background:var(--brand); color:#fff; border-color:var(--brand); }
+    .folder-icon{ width:20px; height:20px; opacity:.7; }
+    .folder-tab.active .folder-icon{ opacity:1; }
+    .folder-name{ flex:1; font-weight:500; font-size:14px; }
+    .folder-count{ font-size:12px; opacity:.7; background:rgba(0,0,0,.1); padding:2px 8px; border-radius:12px; }
+    .folder-tab.active .folder-count{ background:rgba(255,255,255,.2); }
+    .sidebar-header{ display:flex; align-items:center; justify-content:between; margin-bottom:16px; }
+    .sidebar-title{ font-weight:600; font-size:14px; text-transform:uppercase; opacity:.6; letter-spacing:.5px; }
+    .sidebar-manage-btn{ padding:6px 12px; font-size:12px; }
+    .main-content-area{ flex:1; min-width:0; }
+    @media (max-width:768px){ .sidebar-layout{ flex-direction:column; } .folder-sidebar{ width:100%; min-width:auto; } }
     .fade-in{ animation:fadeIn .4s ease forwards; }
   </style>
 </head>
@@ -209,48 +226,60 @@
 
   <!-- ==================== WHATSAPP SECTION ==================== -->
   <div id="whatsapp-section" class="tab-content">
+    <div class="sidebar-layout">
 
-    <!-- Toolbar -->
-    <section class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-      <div class="flex gap-2 w-full md:w-auto">
-        <div class="search-wrapper flex-1">
-          <i data-lucide="search" class="search-icon"></i>
-          <input id="wa-searchInput" placeholder="Search content..." class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent"/>
-          <i data-lucide="x" class="search-clear hidden" id="wa-searchClear"></i>
+      <!-- Left Folder Sidebar -->
+      <aside class="folder-sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title">Folders</div>
+          <button id="wa-manageCategoriesBtn" class="btn btn-sm sidebar-manage-btn" title="Manage Categories">
+            <i data-lucide="settings"></i>
+          </button>
         </div>
-        <select id="wa-categorySelect" class="p-3 rounded-lg border border-[var(--border)] bg-transparent">
-          <option value="all">All Categories</option>
-        </select>
-        <button id="wa-manageCategoriesBtn" class="btn" title="Manage Categories">
-          <i data-lucide="settings"></i><span class="hidden md:inline">Manage</span>
-        </button>
-      </div>
-      <div class="flex gap-2 items-center">
-        <button id="wa-syncBtn" class="btn"><i data-lucide="refresh-cw"></i><span class="hidden md:inline">Sync</span></button>
-        <button id="wa-addBtn" class="btn btn-brand"><i data-lucide="plus"></i><span class="hidden md:inline">Add Content</span></button>
-      </div>
-    </section>
+        <div id="wa-folderTabs" class="folder-tabs">
+          <!-- Dynamically populated folder tabs -->
+        </div>
+      </aside>
 
-    <!-- Grid -->
-    <section>
-      <div id="wa-contentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch"></div>
-      <div class="flex items-center justify-between mt-4">
-        <button id="wa-prevPage" class="btn" disabled><i data-lucide="chevron-left"></i> Prev</button>
-        <div class="text-sm text-[var(--muted-ink)]">Page <span id="wa-pageNum">1</span> of <span id="wa-pageCount">1</span></div>
-        <button id="wa-nextPage" class="btn">Next <i data-lucide="chevron-right"></i></button>
-      </div>
-    </section>
+      <!-- Main Content Area -->
+      <div class="main-content-area">
+        <!-- Toolbar -->
+        <section class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div class="flex gap-2 w-full md:w-auto">
+            <div class="search-wrapper flex-1">
+              <i data-lucide="search" class="search-icon"></i>
+              <input id="wa-searchInput" placeholder="Search content..." class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent"/>
+              <i data-lucide="x" class="search-clear hidden" id="wa-searchClear"></i>
+            </div>
+          </div>
+          <div class="flex gap-2 items-center">
+            <button id="wa-syncBtn" class="btn"><i data-lucide="refresh-cw"></i><span class="hidden md:inline">Sync</span></button>
+            <button id="wa-addBtn" class="btn btn-brand"><i data-lucide="plus"></i><span class="hidden md:inline">Add Content</span></button>
+          </div>
+        </section>
 
-    <!-- Stats -->
-    <section class="card rounded-xl p-4 shadow-soft">
-      <h2 class="font-semibold mb-2">Content Statistics</h2>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-        <div><div id="wa-statTotal" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Total Content</div></div>
-        <div><div id="wa-statUses" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Total Uses</div></div>
-        <div><div id="wa-statCategories" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Categories</div></div>
-        <div><div id="wa-statRecent" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Recently Used</div></div>
+        <!-- Grid -->
+        <section>
+          <div id="wa-contentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch"></div>
+          <div class="flex items-center justify-between mt-4">
+            <button id="wa-prevPage" class="btn" disabled><i data-lucide="chevron-left"></i> Prev</button>
+            <div class="text-sm text-[var(--muted-ink)]">Page <span id="wa-pageNum">1</span> of <span id="wa-pageCount">1</span></div>
+            <button id="wa-nextPage" class="btn">Next <i data-lucide="chevron-right"></i></button>
+          </div>
+        </section>
+
+        <!-- Stats -->
+        <section class="card rounded-xl p-4 shadow-soft">
+          <h2 class="font-semibold mb-2">Content Statistics</h2>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div><div id="wa-statTotal" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Total Content</div></div>
+            <div><div id="wa-statUses" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Total Uses</div></div>
+            <div><div id="wa-statCategories" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Categories</div></div>
+            <div><div id="wa-statRecent" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Recently Used</div></div>
+          </div>
+        </section>
       </div>
-    </section>
+    </div>
   </div>
 
   <!-- ==================== GPT PROMPTS SECTION ==================== -->
@@ -595,6 +624,7 @@ let gptPrompts = [];
 let waPage = 1, gptPage = 1;
 const pageSize = 24;
 let theme = localStorage.getItem('theme') || 'light';
+let activeWAFolder = 'all'; // Track active folder for WhatsApp section
 document.documentElement.setAttribute('data-theme', theme);
 
 /* ====== UTILS ====== */
@@ -750,7 +780,7 @@ async function addCategory() {
     const newCat = { name: validation.name, color: data.category?.color || 'blue', count: 0 };
     if (currentCategoryModalType === 'whatsapp') {
       waCategoriesData.push(newCat);
-      renderWACategories();
+      renderWACategories(); // Updates folder tabs
     } else {
       gptCategoriesData.push(newCat);
       renderGPTCategories();
@@ -797,7 +827,11 @@ async function renameCategoryPrompt(oldName) {
     if (currentCategoryModalType === 'whatsapp') {
       const cat = waCategoriesData.find(c => c.name === oldName);
       if (cat) cat.name = validation.name;
-      renderWACategories();
+
+      // Update active folder if it was selected
+      if (activeWAFolder === oldName) activeWAFolder = validation.name;
+
+      renderWACategories(); // Updates folder tabs
 
       // Update content items
       waContents.forEach(item => {
@@ -850,7 +884,11 @@ async function deleteCategoryPrompt(name, count) {
     // Update local state
     if (currentCategoryModalType === 'whatsapp') {
       waCategoriesData = waCategoriesData.filter(c => c.name !== name);
-      renderWACategories();
+
+      // Reset active folder if it was the deleted one
+      if (activeWAFolder === name) activeWAFolder = 'all';
+
+      renderWACategories(); // Updates folder tabs
 
       // Update migrated items
       waContents.forEach(item => {
@@ -878,7 +916,7 @@ async function refreshCategoryData() {
   showToast('Refreshing', 'Refreshing categories...', 'info');
   if (currentCategoryModalType === 'whatsapp') {
     await loadWACategories(true);
-    renderWACategories();
+    renderWACategories(); // Updates folder tabs
     renderCategoryList(waCategoriesData);
   } else {
     await loadGPTCategories(true);
@@ -1602,25 +1640,62 @@ async function updateWAItem(payload){
 }
 
 function renderWACategories(){
-  const sel = document.getElementById('wa-categorySelect');
-  const current = sel.value || 'all';
+  // Update edit and add modal dropdowns
   const categoryNames = waCategoriesData.map(c => c.name);
-  sel.innerHTML = '<option value="all">All Categories</option>' + categoryNames.map(c=>`<option value="${c}">${c}</option>`).join('');
-  sel.value = current;
   const editSel = document.getElementById('wa-editCategory');
   editSel.innerHTML = categoryNames.map(c=>`<option value="${c}">${c}</option>`).join('');
   const addSel = document.getElementById('wa-categoryInput');
   addSel.innerHTML = categoryNames.map(c=>`<option value="${c}">${c}</option>`).join('');
+
+  // Render folder tabs in sidebar
+  renderWAFolderTabs();
+}
+
+function renderWAFolderTabs(){
+  const container = document.getElementById('wa-folderTabs');
+  if (!container) return;
+
+  // Add "All" tab first
+  const allCount = waContents.length;
+  let tabsHTML = `
+    <div class="folder-tab ${activeWAFolder === 'all' ? 'active' : ''}" onclick="selectWAFolder('all')">
+      <i data-lucide="folder" class="folder-icon"></i>
+      <span class="folder-name">All Content</span>
+      <span class="folder-count">${allCount}</span>
+    </div>
+  `;
+
+  // Add category folder tabs
+  waCategoriesData.forEach(cat => {
+    const count = waContents.filter(item => item.category === cat.name).length;
+    const isActive = activeWAFolder === cat.name;
+    tabsHTML += `
+      <div class="folder-tab ${isActive ? 'active' : ''}" onclick="selectWAFolder('${escapeHtml(cat.name).replace(/'/g, "\\'")}')">
+        <i data-lucide="folder" class="folder-icon"></i>
+        <span class="folder-name">${escapeHtml(cat.name)}</span>
+        <span class="folder-count">${count}</span>
+      </div>
+    `;
+  });
+
+  container.innerHTML = tabsHTML;
+  lucide.createIcons();
+}
+
+function selectWAFolder(folderName) {
+  activeWAFolder = folderName;
+  waPage = 1;
+  renderWAFolderTabs();
+  renderWA();
 }
 
 function renderWA(){
   const grid = document.getElementById('wa-contentGrid');
   const search = (waSearchInput.value||'').toLowerCase();
-  const cat = document.getElementById('wa-categorySelect').value;
 
   const filtered = waContents.filter(c =>
     (!search || (c.title||'').toLowerCase().includes(search) || (c.content||'').toLowerCase().includes(search) || (c.tags||[]).some(t=> (t||'').toLowerCase().includes(search))) &&
-    (cat==='all' || c.category===cat)
+    (activeWAFolder==='all' || c.category===activeWAFolder)
   );
 
   const total = filtered.length;
@@ -2178,7 +2253,6 @@ document.getElementById('wa-send').addEventListener('click', async ()=>{
 /* WA Controls */
 document.getElementById('wa-syncBtn').addEventListener('click', syncWAContents);
 document.getElementById('wa-searchInput').addEventListener('input',()=>{ waPage=1; renderWA(); });
-document.getElementById('wa-categorySelect').addEventListener('change',()=>{ waPage=1; renderWA(); });
 document.getElementById('wa-prevPage').addEventListener('click',()=>{ if(waPage>1){ waPage--; renderWA(); }});
 document.getElementById('wa-nextPage').addEventListener('click',()=>{ waPage++; renderWA(); });
 document.getElementById('wa-manageCategoriesBtn').addEventListener('click', () => openCategoryManageModal('whatsapp'));
