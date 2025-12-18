@@ -1426,12 +1426,13 @@ function getFileIcon(type){
 function renderAttachmentThumbnail(attachment){
   const type = getFileType(attachment.name);
   const icon = getFileIcon(type);
-  const escapedUrl = escapeHtml(attachment.url).replace(/'/g, "\\'");
-  const escapedName = escapeHtml(attachment.name).replace(/'/g, "\\'");
+  // Only escape single quotes in URLs for JavaScript, don't use escapeHtml which breaks URLs
+  const jsUrl = attachment.url.replace(/'/g, "\\'");
+  const jsName = attachment.name.replace(/'/g, "\\'");
 
   if(type === 'image'){
     return `
-      <div class="attachment-card" onclick="openMediaLightbox('${escapedUrl}', '${escapedName}', 'image')" oncontextmenu="showImageContextMenu(event, '${escapedUrl}', '${escapedName}')">
+      <div class="attachment-card" onclick="openMediaLightbox('${jsUrl}', '${jsName}', 'image')" oncontextmenu="showImageContextMenu(event, '${jsUrl}', '${jsName}')">
         <div class="attachment-thumbnail">
           <img src="${attachment.url}" alt="${escapeHtml(attachment.name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
           <div class="attachment-icon" style="display:none;">
@@ -1448,7 +1449,7 @@ function renderAttachmentThumbnail(attachment){
 
   if(type === 'video'){
     return `
-      <div class="attachment-card" onclick="openMediaLightbox('${escapedUrl}', '${escapedName}', 'video')">
+      <div class="attachment-card" onclick="openMediaLightbox('${jsUrl}', '${jsName}', 'video')">
         <div class="attachment-thumbnail">
           <video src="${attachment.url}" preload="metadata" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"></video>
           <div class="attachment-icon" style="display:none;">
@@ -1468,7 +1469,7 @@ function renderAttachmentThumbnail(attachment){
 
   if(type === 'pdf'){
     return `
-      <div class="attachment-card" onclick="openMediaLightbox('${escapedUrl}', '${escapedName}', 'pdf')">
+      <div class="attachment-card" onclick="openMediaLightbox('${jsUrl}', '${jsName}', 'pdf')">
         <div class="attachment-thumbnail">
           <iframe src="${attachment.url}#page=1&view=FitH" style="width:100%; height:100%; border:none; pointer-events:none;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"></iframe>
           <div class="attachment-icon">
@@ -2934,11 +2935,20 @@ function openMediaLightbox(url, name, type) {
 
   // Render media based on type
   if (type === 'image') {
-    container.innerHTML = `<img src="${url}" alt="${escapeHtml(name)}" class="media-lightbox-media">`;
+    container.innerHTML = `
+      <img src="${url}" alt="${escapeHtml(name)}" class="media-lightbox-media"
+           onerror="this.parentElement.innerHTML='<div style=\\'color:white;text-align:center;padding:40px;\\'><i data-lucide=\\'image-off\\' style=\\'width:64px;height:64px;margin:0 auto 20px;display:block;\\'></i><p>Failed to load image</p><p style=\\'font-size:14px;opacity:0.7;margin-top:10px;\\'>The image may have CORS restrictions or be unavailable.</p></div>'; lucide.createIcons();">
+    `;
   } else if (type === 'video') {
-    container.innerHTML = `<video src="${url}" controls autoplay class="media-lightbox-video"></video>`;
+    container.innerHTML = `
+      <video src="${url}" controls autoplay class="media-lightbox-video"
+             onerror="this.parentElement.innerHTML='<div style=\\'color:white;text-align:center;padding:40px;\\'><i data-lucide=\\'video-off\\' style=\\'width:64px;height:64px;margin:0 auto 20px;display:block;\\'></i><p>Failed to load video</p></div>'; lucide.createIcons();"></video>
+    `;
   } else if (type === 'pdf') {
-    container.innerHTML = `<iframe src="${url}" class="media-lightbox-pdf"></iframe>`;
+    container.innerHTML = `
+      <iframe src="${url}" class="media-lightbox-pdf"
+              onerror="this.parentElement.innerHTML='<div style=\\'color:white;text-align:center;padding:40px;\\'><i data-lucide=\\'file-x\\' style=\\'width:64px;height:64px;margin:0 auto 20px;display:block;\\'></i><p>Failed to load PDF</p></div>'; lucide.createIcons();"></iframe>
+    `;
   }
 
   lightbox.classList.add('active');
