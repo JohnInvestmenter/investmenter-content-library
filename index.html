@@ -1423,18 +1423,46 @@ function getFileIcon(type){
   return icons[type] || 'file';
 }
 
+// Helper to fix Google Drive URLs for embedding
+function fixGoogleDriveUrl(url) {
+  if (!url) return url;
+
+  // Check if it's a Google Drive URL
+  if (url.includes('drive.google.com')) {
+    // Extract file ID from various Google Drive URL formats
+    let fileId = null;
+
+    // Format 1: https://drive.google.com/file/d/FILE_ID/view
+    const match1 = url.match(/\/file\/d\/([^\/]+)/);
+    if (match1) fileId = match1[1];
+
+    // Format 2: https://drive.google.com/open?id=FILE_ID
+    const match2 = url.match(/[?&]id=([^&]+)/);
+    if (match2) fileId = match2[1];
+
+    // Format 3: https://drive.google.com/uc?export=view&id=FILE_ID
+    const match3 = url.match(/uc\?.*id=([^&]+)/);
+    if (match3) fileId = match3[1];
+
+    // If we found a file ID, return the proper embed URL
+    if (fileId) {
+      return `https://drive.google.com/uc?export=view&id=${fileId}`;
+    }
+  }
+
+  return url;
+}
+
 function renderAttachmentThumbnail(attachment){
   const type = getFileType(attachment.name);
   const icon = getFileIcon(type);
-  // Only escape single quotes in URLs for JavaScript, don't use escapeHtml which breaks URLs
-  const jsUrl = attachment.url.replace(/'/g, "\\'");
-  const jsName = attachment.name.replace(/'/g, "\\'");
+  const fixedUrl = fixGoogleDriveUrl(attachment.url);
 
   if(type === 'image'){
     return `
-      <div class="attachment-card" onclick="openMediaLightbox('${jsUrl}', '${jsName}', 'image')" oncontextmenu="showImageContextMenu(event, '${jsUrl}', '${jsName}')">
+      <div class="attachment-card" data-media-url="${escapeHtml(fixedUrl)}" data-media-name="${escapeHtml(attachment.name)}" data-media-type="image">
         <div class="attachment-thumbnail">
-          <img src="${attachment.url}" alt="${escapeHtml(attachment.name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <img src="${fixedUrl}" alt="${escapeHtml(attachment.name)}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
           <div class="attachment-icon" style="display:none;">
             <i data-lucide="${icon}"></i>
           </div>
@@ -1449,9 +1477,9 @@ function renderAttachmentThumbnail(attachment){
 
   if(type === 'video'){
     return `
-      <div class="attachment-card" onclick="openMediaLightbox('${jsUrl}', '${jsName}', 'video')">
+      <div class="attachment-card" data-media-url="${escapeHtml(fixedUrl)}" data-media-name="${escapeHtml(attachment.name)}" data-media-type="video">
         <div class="attachment-thumbnail">
-          <video src="${attachment.url}" preload="metadata" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"></video>
+          <video src="${fixedUrl}" preload="metadata" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"></video>
           <div class="attachment-icon" style="display:none;">
             <i data-lucide="${icon}"></i>
           </div>
@@ -1469,9 +1497,9 @@ function renderAttachmentThumbnail(attachment){
 
   if(type === 'pdf'){
     return `
-      <div class="attachment-card" onclick="openMediaLightbox('${jsUrl}', '${jsName}', 'pdf')">
+      <div class="attachment-card" data-media-url="${escapeHtml(fixedUrl)}" data-media-name="${escapeHtml(attachment.name)}" data-media-type="pdf">
         <div class="attachment-thumbnail">
-          <iframe src="${attachment.url}#page=1&view=FitH" style="width:100%; height:100%; border:none; pointer-events:none;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"></iframe>
+          <iframe src="${fixedUrl}#page=1&view=FitH" style="width:100%; height:100%; border:none; pointer-events:none;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"></iframe>
           <div class="attachment-icon">
             <i data-lucide="${icon}"></i>
           </div>
@@ -1486,7 +1514,7 @@ function renderAttachmentThumbnail(attachment){
 
   // Default for other file types
   return `
-    <a href="${attachment.url}" target="_blank" class="attachment-card">
+    <a href="${fixedUrl}" target="_blank" class="attachment-card">
       <div class="attachment-thumbnail">
         <div class="attachment-icon">
           <i data-lucide="${icon}"></i>
@@ -2937,17 +2965,17 @@ function openMediaLightbox(url, name, type) {
   if (type === 'image') {
     container.innerHTML = `
       <img src="${url}" alt="${escapeHtml(name)}" class="media-lightbox-media"
-           onerror="this.parentElement.innerHTML='<div style=\\'color:white;text-align:center;padding:40px;\\'><i data-lucide=\\'image-off\\' style=\\'width:64px;height:64px;margin:0 auto 20px;display:block;\\'></i><p>Failed to load image</p><p style=\\'font-size:14px;opacity:0.7;margin-top:10px;\\'>The image may have CORS restrictions or be unavailable.</p></div>'; lucide.createIcons();">
+           onerror="this.parentElement.innerHTML='<div style=\\'color:white;text-align:center;padding:40px;\\'><i data-lucide=\\'image-off\\' style=\\'width:64px;height:64px;margin:0 auto 20px;display:block;\\'></i><p style=\\'font-size:18px;margin-bottom:10px;\\'>Failed to load image</p><p style=\\'font-size:14px;opacity:0.7;margin-top:10px;\\'>The image may have CORS restrictions or be unavailable.</p><p style=\\'font-size:12px;opacity:0.5;margin-top:20px;\\'>Try using the \\'Open in New Tab\\' button below.</p></div>'; lucide.createIcons();">
     `;
   } else if (type === 'video') {
     container.innerHTML = `
       <video src="${url}" controls autoplay class="media-lightbox-video"
-             onerror="this.parentElement.innerHTML='<div style=\\'color:white;text-align:center;padding:40px;\\'><i data-lucide=\\'video-off\\' style=\\'width:64px;height:64px;margin:0 auto 20px;display:block;\\'></i><p>Failed to load video</p></div>'; lucide.createIcons();"></video>
+             onerror="this.parentElement.innerHTML='<div style=\\'color:white;text-align:center;padding:40px;\\'><i data-lucide=\\'video-off\\' style=\\'width:64px;height:64px;margin:0 auto 20px;display:block;\\'></i><p style=\\'font-size:18px;\\'>Failed to load video</p><p style=\\'font-size:12px;opacity:0.5;margin-top:20px;\\'>Try using the \\'Open in New Tab\\' button.</p></div>'; lucide.createIcons();"></video>
     `;
   } else if (type === 'pdf') {
     container.innerHTML = `
       <iframe src="${url}" class="media-lightbox-pdf"
-              onerror="this.parentElement.innerHTML='<div style=\\'color:white;text-align:center;padding:40px;\\'><i data-lucide=\\'file-x\\' style=\\'width:64px;height:64px;margin:0 auto 20px;display:block;\\'></i><p>Failed to load PDF</p></div>'; lucide.createIcons();"></iframe>
+              onerror="this.parentElement.innerHTML='<div style=\\'color:white;text-align:center;padding:40px;\\'><i data-lucide=\\'file-x\\' style=\\'width:64px;height:64px;margin:0 auto 20px;display:block;\\'></i><p style=\\'font-size:18px;\\'>Failed to load PDF</p><p style=\\'font-size:12px;opacity:0.5;margin-top:20px;\\'>Try using the \\'Open in New Tab\\' button.</p></div>'; lucide.createIcons();"></iframe>
     `;
   }
 
@@ -3005,13 +3033,39 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// Event delegation for attachment card clicks
+document.addEventListener('click', (e) => {
+  // Don't open lightbox if clicking context menu
+  if (e.target.closest('.custom-context-menu')) return;
+
+  const card = e.target.closest('.attachment-card[data-media-url]');
+  if (card && e.button === 0) { // Only left click
+    const url = card.getAttribute('data-media-url');
+    const name = card.getAttribute('data-media-name');
+    const type = card.getAttribute('data-media-type');
+    if (url && name && type) {
+      openMediaLightbox(url, name, type);
+    }
+  }
+});
+
+// Event delegation for right-click on images
+document.addEventListener('contextmenu', (e) => {
+  const card = e.target.closest('.attachment-card[data-media-type="image"]');
+  if (card) {
+    e.preventDefault();
+    const url = card.getAttribute('data-media-url');
+    const name = card.getAttribute('data-media-name');
+    showImageContextMenu(e, url, name);
+  }
+});
+
 /* ====== CUSTOM CONTEXT MENU FOR IMAGES ====== */
 let contextMenuImageUrl = '';
 let contextMenuImageName = '';
 
 function showImageContextMenu(event, url, name) {
-  event.preventDefault();
-  event.stopPropagation();
+  if (!url || !name) return;
 
   contextMenuImageUrl = url;
   contextMenuImageName = name;
