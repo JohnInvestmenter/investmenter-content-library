@@ -196,6 +196,30 @@
     .main-content-area{ flex:1; min-width:0; }
     @media (max-width:768px){ .sidebar-layout{ flex-direction:column; } .folder-sidebar{ width:100%; min-width:auto; } }
     .fade-in{ animation:fadeIn .4s ease forwards; }
+    /* ---------- MEDIA LIGHTBOX ---------- */
+    .media-lightbox{ position:fixed; inset:0; background:rgba(0,0,0,.95); z-index:99999; display:none; align-items:center; justify-content:center; padding:20px; }
+    .media-lightbox.active{ display:flex; }
+    .media-lightbox-content{ max-width:95vw; max-height:95vh; display:flex; flex-direction:column; align-items:center; position:relative; }
+    .media-lightbox-close{ position:absolute; top:20px; right:20px; width:48px; height:48px; background:rgba(255,255,255,.1); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.2); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:100001; transition:all .2s; }
+    .media-lightbox-close:hover{ background:rgba(255,255,255,.2); transform:scale(1.1); }
+    .media-lightbox-close i{ color:#fff; width:24px; height:24px; }
+    .media-lightbox-media{ max-width:100%; max-height:85vh; object-fit:contain; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+    .media-lightbox-video{ max-width:100%; max-height:85vh; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+    .media-lightbox-pdf{ width:90vw; height:85vh; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.5); background:#fff; }
+    .media-lightbox-title{ color:#fff; margin-top:20px; font-size:18px; font-weight:600; text-align:center; max-width:800px; }
+    .media-lightbox-actions{ margin-top:16px; display:flex; gap:12px; }
+    .media-lightbox-btn{ padding:12px 24px; background:rgba(255,255,255,.1); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.2); border-radius:8px; color:#fff; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all .2s; }
+    .media-lightbox-btn:hover{ background:rgba(255,255,255,.2); transform:translateY(-2px); }
+    .media-lightbox-btn i{ width:20px; height:20px; }
+    /* ---------- CUSTOM CONTEXT MENU ---------- */
+    .custom-context-menu{ position:fixed; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:4px; min-width:180px; box-shadow:0 8px 24px rgba(0,0,0,.2); z-index:100000; display:none; }
+    .custom-context-menu.active{ display:block; }
+    .context-menu-item{ padding:10px 14px; cursor:pointer; border-radius:6px; display:flex; align-items:center; gap:10px; transition:all .2s; font-size:14px; }
+    .context-menu-item:hover{ background:var(--muted); }
+    .context-menu-item i{ width:18px; height:18px; opacity:.7; }
+    .context-menu-divider{ height:1px; background:var(--border); margin:4px 0; }
+    /* Make attachment cards clickable */
+    .attachment-card{ cursor:pointer; }
   </style>
 </head>
 <body class="min-h-screen p-6">
@@ -559,6 +583,48 @@
     <div class="flex justify-end gap-2 mt-4">
       <button id="cat-cancelBtn" class="btn">Close</button>
     </div>
+  </div>
+</div>
+
+<!-- ==================== MEDIA LIGHTBOX ==================== -->
+<div id="mediaLightbox" class="media-lightbox">
+  <button class="media-lightbox-close" id="mediaLightboxClose">
+    <i data-lucide="x"></i>
+  </button>
+  <div class="media-lightbox-content">
+    <div id="mediaLightboxContainer"></div>
+    <div class="media-lightbox-title" id="mediaLightboxTitle"></div>
+    <div class="media-lightbox-actions">
+      <button class="media-lightbox-btn" id="mediaLightboxDownload">
+        <i data-lucide="download"></i>
+        <span>Download</span>
+      </button>
+      <button class="media-lightbox-btn" id="mediaLightboxCopy" style="display:none;">
+        <i data-lucide="copy"></i>
+        <span>Copy Image</span>
+      </button>
+      <button class="media-lightbox-btn" id="mediaLightboxOpen">
+        <i data-lucide="external-link"></i>
+        <span>Open in New Tab</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CUSTOM CONTEXT MENU ==================== -->
+<div id="customContextMenu" class="custom-context-menu">
+  <div class="context-menu-item" id="contextCopyImage">
+    <i data-lucide="copy"></i>
+    <span>Copy Image</span>
+  </div>
+  <div class="context-menu-item" id="contextOpenImage">
+    <i data-lucide="external-link"></i>
+    <span>Open in New Tab</span>
+  </div>
+  <div class="context-menu-divider"></div>
+  <div class="context-menu-item" id="contextDownloadImage">
+    <i data-lucide="download"></i>
+    <span>Download</span>
   </div>
 </div>
 
@@ -1360,10 +1426,12 @@ function getFileIcon(type){
 function renderAttachmentThumbnail(attachment){
   const type = getFileType(attachment.name);
   const icon = getFileIcon(type);
+  const escapedUrl = escapeHtml(attachment.url).replace(/'/g, "\\'");
+  const escapedName = escapeHtml(attachment.name).replace(/'/g, "\\'");
 
   if(type === 'image'){
     return `
-      <a href="${attachment.url}" target="_blank" class="attachment-card">
+      <div class="attachment-card" onclick="openMediaLightbox('${escapedUrl}', '${escapedName}', 'image')" oncontextmenu="showImageContextMenu(event, '${escapedUrl}', '${escapedName}')">
         <div class="attachment-thumbnail">
           <img src="${attachment.url}" alt="${escapeHtml(attachment.name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
           <div class="attachment-icon" style="display:none;">
@@ -1374,13 +1442,13 @@ function renderAttachmentThumbnail(attachment){
           <div class="attachment-name">${escapeHtml(attachment.name)}</div>
           <div class="attachment-type">${type.toUpperCase()}</div>
         </div>
-      </a>
+      </div>
     `;
   }
 
   if(type === 'video'){
     return `
-      <a href="${attachment.url}" target="_blank" class="attachment-card">
+      <div class="attachment-card" onclick="openMediaLightbox('${escapedUrl}', '${escapedName}', 'video')">
         <div class="attachment-thumbnail">
           <video src="${attachment.url}" preload="metadata" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"></video>
           <div class="attachment-icon" style="display:none;">
@@ -1394,13 +1462,13 @@ function renderAttachmentThumbnail(attachment){
           <div class="attachment-name">${escapeHtml(attachment.name)}</div>
           <div class="attachment-type">${type.toUpperCase()}</div>
         </div>
-      </a>
+      </div>
     `;
   }
 
   if(type === 'pdf'){
     return `
-      <a href="${attachment.url}" target="_blank" class="attachment-card">
+      <div class="attachment-card" onclick="openMediaLightbox('${escapedUrl}', '${escapedName}', 'pdf')">
         <div class="attachment-thumbnail">
           <iframe src="${attachment.url}#page=1&view=FitH" style="width:100%; height:100%; border:none; pointer-events:none;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"></iframe>
           <div class="attachment-icon">
@@ -1411,7 +1479,7 @@ function renderAttachmentThumbnail(attachment){
           <div class="attachment-name">${escapeHtml(attachment.name)}</div>
           <div class="attachment-type">PDF</div>
         </div>
-      </a>
+      </div>
     `;
   }
 
@@ -2839,6 +2907,204 @@ window.addEventListener('resize', () => {
     showTutorialStep(currentTutorialStep);
   }
 });
+
+/* ====== MEDIA LIGHTBOX ====== */
+let currentMediaUrl = '';
+let currentMediaName = '';
+let currentMediaType = '';
+
+function openMediaLightbox(url, name, type) {
+  currentMediaUrl = url;
+  currentMediaName = name;
+  currentMediaType = type;
+
+  const lightbox = document.getElementById('mediaLightbox');
+  const container = document.getElementById('mediaLightboxContainer');
+  const title = document.getElementById('mediaLightboxTitle');
+  const copyBtn = document.getElementById('mediaLightboxCopy');
+
+  title.textContent = name;
+
+  // Show copy button only for images
+  if (type === 'image') {
+    copyBtn.style.display = 'inline-flex';
+  } else {
+    copyBtn.style.display = 'none';
+  }
+
+  // Render media based on type
+  if (type === 'image') {
+    container.innerHTML = `<img src="${url}" alt="${escapeHtml(name)}" class="media-lightbox-media">`;
+  } else if (type === 'video') {
+    container.innerHTML = `<video src="${url}" controls autoplay class="media-lightbox-video"></video>`;
+  } else if (type === 'pdf') {
+    container.innerHTML = `<iframe src="${url}" class="media-lightbox-pdf"></iframe>`;
+  }
+
+  lightbox.classList.add('active');
+  lucide.createIcons();
+}
+
+function closeMediaLightbox() {
+  const lightbox = document.getElementById('mediaLightbox');
+  const container = document.getElementById('mediaLightboxContainer');
+
+  lightbox.classList.remove('active');
+
+  // Clean up video/audio to stop playback
+  setTimeout(() => {
+    container.innerHTML = '';
+  }, 300);
+}
+
+// Lightbox event listeners
+document.getElementById('mediaLightboxClose').addEventListener('click', closeMediaLightbox);
+document.getElementById('mediaLightbox').addEventListener('click', (e) => {
+  if (e.target.id === 'mediaLightbox') {
+    closeMediaLightbox();
+  }
+});
+
+document.getElementById('mediaLightboxDownload').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.href = currentMediaUrl;
+  a.download = currentMediaName;
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast('Download Started', `Downloading ${currentMediaName}`, 'success');
+});
+
+document.getElementById('mediaLightboxOpen').addEventListener('click', () => {
+  window.open(currentMediaUrl, '_blank');
+});
+
+document.getElementById('mediaLightboxCopy').addEventListener('click', () => {
+  copyImageToClipboard(currentMediaUrl, currentMediaName);
+});
+
+// ESC key to close lightbox
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const lightbox = document.getElementById('mediaLightbox');
+    if (lightbox.classList.contains('active')) {
+      closeMediaLightbox();
+    }
+    hideContextMenu();
+  }
+});
+
+/* ====== CUSTOM CONTEXT MENU FOR IMAGES ====== */
+let contextMenuImageUrl = '';
+let contextMenuImageName = '';
+
+function showImageContextMenu(event, url, name) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  contextMenuImageUrl = url;
+  contextMenuImageName = name;
+
+  const menu = document.getElementById('customContextMenu');
+  menu.classList.add('active');
+
+  // Position the menu at cursor
+  const x = event.clientX;
+  const y = event.clientY;
+
+  // Adjust position if menu would go off screen
+  const menuWidth = 180;
+  const menuHeight = 140;
+  const windowWidth = window.innerWidth;
+  const windowHeight = window.innerHeight;
+
+  let left = x;
+  let top = y;
+
+  if (x + menuWidth > windowWidth) {
+    left = windowWidth - menuWidth - 10;
+  }
+
+  if (y + menuHeight > windowHeight) {
+    top = windowHeight - menuHeight - 10;
+  }
+
+  menu.style.left = `${left}px`;
+  menu.style.top = `${top}px`;
+
+  lucide.createIcons();
+
+  return false;
+}
+
+function hideContextMenu() {
+  const menu = document.getElementById('customContextMenu');
+  menu.classList.remove('active');
+}
+
+// Hide context menu on click outside
+document.addEventListener('click', () => {
+  hideContextMenu();
+});
+
+// Context menu actions
+document.getElementById('contextCopyImage').addEventListener('click', () => {
+  copyImageToClipboard(contextMenuImageUrl, contextMenuImageName);
+  hideContextMenu();
+});
+
+document.getElementById('contextOpenImage').addEventListener('click', () => {
+  window.open(contextMenuImageUrl, '_blank');
+  hideContextMenu();
+});
+
+document.getElementById('contextDownloadImage').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.href = contextMenuImageUrl;
+  a.download = contextMenuImageName;
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast('Download Started', `Downloading ${contextMenuImageName}`, 'success');
+  hideContextMenu();
+});
+
+/* ====== COPY IMAGE TO CLIPBOARD ====== */
+async function copyImageToClipboard(url, name) {
+  try {
+    showToast('Copying...', 'Copying image to clipboard', 'info');
+
+    // Fetch the image as a blob
+    const response = await fetch(url);
+    const blob = await response.blob();
+
+    // Check if the blob is an image
+    if (!blob.type.startsWith('image/')) {
+      throw new Error('Not a valid image file');
+    }
+
+    // Use Clipboard API to copy image
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        [blob.type]: blob
+      })
+    ]);
+
+    showToast('Copied!', 'Image copied to clipboard. You can now paste it in WhatsApp!', 'success');
+  } catch (error) {
+    console.error('Copy failed:', error);
+
+    // Fallback: copy the image URL as text
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast('URL Copied', 'Image URL copied to clipboard (image copy not supported)', 'info');
+    } catch (e) {
+      showToast('Copy Failed', 'Could not copy image. Try downloading instead.', 'error');
+    }
+  }
+}
 
 /* ====== BOOT ====== */
 window.addEventListener('DOMContentLoaded', async ()=>{
