@@ -531,6 +531,7 @@
     </div>
     <div class="preview-body" id="previewBody"></div>
     <div class="preview-footer">
+      <button id="previewShareBtn" class="btn btn-sm"><i data-lucide="share-2"></i> Share Link</button>
       <button id="previewSendBtn" class="btn btn-sm" style="display:none;"><i data-lucide="send"></i> Send via WhatsApp</button>
       <button id="previewCopyWABtn" class="btn btn-sm"><i data-lucide="message-circle"></i> Copy for WhatsApp</button>
       <button id="previewCopyEmailBtn" class="btn btn-sm"><i data-lucide="mail"></i> Copy for Email</button>
@@ -1728,6 +1729,19 @@ document.getElementById('previewSendBtn').addEventListener('click', () => {
   if(previewModalType === 'whatsapp' && previewModalItemId){
     closePreviewModal();
     openWASendModal(previewModalItemId);
+  }
+});
+
+document.getElementById('previewShareBtn').addEventListener('click', async () => {
+  if(previewModalItemId && previewModalType){
+    const shareUrl = `${window.location.origin}${window.location.pathname}#/${previewModalType}/${previewModalItemId}`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      showToast('Link Copied!', 'Shareable link copied to clipboard', 'success');
+    } catch(err) {
+      console.error('Failed to copy link:', err);
+      showToast('Copy Failed', 'Could not copy link to clipboard', 'error');
+    }
   }
 });
 
