@@ -751,11 +751,6 @@ function navigateToHash(){
 // Listen for hash changes
 window.addEventListener('hashchange', navigateToHash);
 
-// Navigate to initial hash on load
-window.addEventListener('DOMContentLoaded', () => {
-  navigateToHash();
-});
-
 /* ====== UTILS ====== */
 const escapeHtml = (s='') => s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 const toWhatsApp = (text='') => text
@@ -1932,6 +1927,8 @@ async function syncWAContents(){
     renderWA();
   }finally{
     if(syncIcon) syncIcon.classList.remove('spin');
+    // Navigate to hash after data is loaded
+    navigateToHash();
   }
 }
 
@@ -2651,6 +2648,8 @@ async function syncGPTPrompts(){
     renderGPT();
   }finally{
     if(syncIcon) syncIcon.classList.remove('spin');
+    // Navigate to hash after data is loaded
+    navigateToHash();
   }
 }
 
