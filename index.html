@@ -12,14 +12,14 @@
     :root{
       --ink:#0b0b0c; --fg:#0b0b0c; --muted:#f4f5f7; --muted-ink:#6b7280;
       --brand:#d6b160; --brand-ink:#000; --chip:#0f766e; --chip-ink:#ecfeff;
-      --card:#ffffff; --border:rgba(0,0,0,.08); --bg:#ffffff;
+      --card:#ffffff; --border:rgba(0,0,0,.08); --bg:#ffffff; --canvas:#f9fafb;
       --wa:#e7f1e9; --wa-ink:#0b0b0c;
       --prompt:#f0f4ff; --prompt-ink:#0b0b0c;
     }
     [data-theme="dark"]{
       --ink:#e5e7eb; --fg:#e5e7eb; --muted:#16181b; --muted-ink:#9ca3af;
       --brand:#d6b160; --brand-ink:#000; --chip:#0d9488; --chip-ink:#ecfeff;
-      --card:#0f1114; --border:rgba(255,255,255,.10); --bg:#0b0b0c;
+      --card:#0f1114; --border:rgba(255,255,255,.10); --bg:#0b0b0c; --canvas:#1a1d21;
       --wa:#0f1a13; --wa-ink:#e5e7eb;
       --prompt:#1a1f2e; --prompt-ink:#e5e7eb;
     }
@@ -64,6 +64,14 @@
     .format-btn:hover{ background:var(--brand); color:var(--brand-ink); border-color:var(--brand); transform:scale(1.05); }
     .format-btn:active{ transform:scale(.95); }
     .format-btn i{ width:16px; height:16px; }
+    /* ---------- FILE PREVIEW CARDS ---------- */
+    .file-preview-card{ position:relative; transition:all .2s ease; }
+    .file-preview-card:hover{ transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.15); }
+    [data-theme="dark"] .file-preview-card:hover{ box-shadow:0 4px 12px rgba(0,0,0,.4); }
+    .file-preview-thumbnail{ transition:all .2s ease; }
+    .file-preview-remove{ opacity:0; transition:all .2s ease; }
+    .file-preview-card:hover .file-preview-remove{ opacity:1; }
+    .file-preview-remove:hover{ transform:scale(1.1); }
     /* ---------- TABS ---------- */
     .tab{ padding:.75rem 1.5rem; border-bottom:2px solid transparent; cursor:pointer; transition:all .2s; }
     .tab:hover{ background:rgba(0,0,0,.04); }
@@ -390,7 +398,13 @@
         <textarea id="wa-editContent" rows="8" class="w-full p-2 rounded-b-lg border border-t-0 border-[var(--border)] bg-transparent" style="border-top-left-radius: 0; border-top-right-radius: 0;"></textarea>
       </div>
       <div><label class="block text-sm mb-1">Tags (comma separated)</label><input id="wa-editTags" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/></div>
-      <div><label class="block text-sm mb-1">Attachments</label><input id="wa-editFileUpload" type="file" multiple class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/><div id="wa-editUploadStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div><div id="wa-editExistingFiles" class="mt-2 text-sm"></div></div>
+      <div>
+        <label class="block text-sm mb-1">Attachments</label>
+        <input id="wa-editFileUpload" type="file" multiple class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/>
+        <div id="wa-editUploadStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div>
+        <div id="wa-editFilePreview" class="mt-3 grid grid-cols-2 gap-2"></div>
+        <div id="wa-editExistingFiles" class="mt-2 text-sm"></div>
+      </div>
       <div><label class="block text-sm mb-1">WhatsApp Preview</label><div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-2"><div id="wa-editPreview" class="wa-bubble text-sm max-h-48 overflow-auto whitespace-pre-wrap scrollbar-thin"></div></div></div>
     </div>
     <div class="p-4 border-t border-[var(--border)] flex justify-end gap-2">
@@ -433,7 +447,12 @@
         <textarea id="wa-contentInput" rows="8" class="w-full p-2 rounded-b-lg border border-t-0 border-[var(--border)] bg-transparent" placeholder="Use the toolbar above or type manually..." style="border-top-left-radius: 0; border-top-right-radius: 0;"></textarea>
       </div>
       <div><label class="block text-sm mb-1">Tags (comma separated)</label><input id="wa-tagsInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="motivation, weekly, inspiration"/></div>
-      <div><label class="block text-sm mb-1">Attachments</label><input id="wa-fileUpload" type="file" multiple class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/><div id="wa-uploadStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div></div>
+      <div>
+        <label class="block text-sm mb-1">Attachments</label>
+        <input id="wa-fileUpload" type="file" multiple class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/>
+        <div id="wa-uploadStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div>
+        <div id="wa-filePreview" class="mt-3 grid grid-cols-2 gap-2"></div>
+      </div>
       <div><label class="block text-sm mb-1">WhatsApp Preview</label><div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-2"><div id="wa-waPreview" class="wa-bubble text-sm max-h-48 overflow-auto whitespace-pre-wrap scrollbar-thin">(start typing above)</div></div></div>
     </div>
     <div class="p-4 border-t border-[var(--border)] flex justify-end gap-2">
@@ -2323,6 +2342,7 @@ function openWAEditModal(id){
   document.getElementById('wa-editUploadStatus').textContent = '';
   waEditNewAttachments = [];
   waEditInflightUploads = 0;
+  renderEditFilePreview(); // Clear preview
 
   updateWAEditPreview();
   waEditModal.classList.remove('hidden'); waEditModal.classList.add('flex');
@@ -2335,6 +2355,140 @@ function updateWAEditPreview(){ waEditPreview.innerHTML = whatsappPreviewHTML(to
 waEditContent.addEventListener('input', updateWAEditPreview);
 // Enable formatted paste for edit textarea
 handleFormattedPaste(waEditContent);
+
+/* ==================== FILE PREVIEW HELPERS ==================== */
+
+// Format file size in human-readable format
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+// Get file type icon based on mime type or extension
+function getFileIcon(file) {
+  const type = file.type || '';
+  const name = file.name || '';
+
+  if (type.startsWith('image/')) return 'image';
+  if (type.startsWith('video/')) return 'video';
+  if (type.startsWith('audio/')) return 'music';
+  if (type.includes('pdf')) return 'file-text';
+  if (type.includes('word') || name.endsWith('.doc') || name.endsWith('.docx')) return 'file-text';
+  if (type.includes('sheet') || name.endsWith('.xls') || name.endsWith('.xlsx') || name.endsWith('.csv')) return 'table';
+  if (type.includes('presentation') || name.endsWith('.ppt') || name.endsWith('.pptx')) return 'presentation';
+  if (type.includes('zip') || type.includes('rar') || type.includes('7z')) return 'archive';
+
+  return 'file';
+}
+
+// Check if file is an image
+function isImageFile(file) {
+  return file.type && file.type.startsWith('image/');
+}
+
+// Create file preview card HTML
+function createFilePreviewCard(file, index, onRemove) {
+  const isImage = isImageFile(file);
+  const fileSize = file.size ? formatFileSize(file.size) : '';
+  const icon = getFileIcon(file);
+
+  return `
+    <div class="file-preview-card relative rounded-lg border border-[var(--border)] bg-[var(--muted)] p-2 flex flex-col gap-2" data-file-index="${index}">
+      ${isImage && file.url ? `
+        <div class="file-preview-thumbnail w-full h-32 rounded overflow-hidden bg-[var(--canvas)] flex items-center justify-center">
+          <img src="${file.url}" alt="${file.name}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i data-lucide=\\'image-off\\' class=\\'text-[var(--muted-ink)]\\'></i>';" />
+        </div>
+      ` : `
+        <div class="file-preview-thumbnail w-full h-32 rounded overflow-hidden bg-[var(--canvas)] flex items-center justify-center">
+          <i data-lucide="${icon}" class="w-12 h-12 text-[var(--muted-ink)]"></i>
+        </div>
+      `}
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-medium truncate" title="${file.name}">${file.name}</div>
+        ${fileSize ? `<div class="text-xs text-[var(--muted-ink)] mt-1">${fileSize}</div>` : ''}
+      </div>
+      <button type="button" class="file-preview-remove absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg transition-colors" onclick="${onRemove}" title="Remove file">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+  `;
+}
+
+// Render file previews for Edit modal
+function renderEditFilePreview() {
+  const previewContainer = document.getElementById('wa-editFilePreview');
+  if (!previewContainer) return;
+
+  if (waEditNewAttachments.length === 0) {
+    previewContainer.innerHTML = '';
+    return;
+  }
+
+  previewContainer.innerHTML = waEditNewAttachments.map((file, index) =>
+    createFilePreviewCard(file, index, `removeEditFile(${index})`)
+  ).join('');
+
+  lucide.createIcons();
+}
+
+// Render file previews for Add modal
+function renderAddFilePreview() {
+  const previewContainer = document.getElementById('wa-filePreview');
+  if (!previewContainer) return;
+
+  if (addAttachments.length === 0) {
+    previewContainer.innerHTML = '';
+    return;
+  }
+
+  previewContainer.innerHTML = addAttachments.map((file, index) =>
+    createFilePreviewCard(file, index, `removeAddFile(${index})`)
+  ).join('');
+
+  lucide.createIcons();
+}
+
+// Remove file from Edit modal
+function removeEditFile(index) {
+  if (index >= 0 && index < waEditNewAttachments.length) {
+    const removedFile = waEditNewAttachments.splice(index, 1)[0];
+    renderEditFilePreview();
+
+    // Update status text
+    const statusEl = document.getElementById('wa-editUploadStatus');
+    if (statusEl) {
+      statusEl.textContent = waEditNewAttachments.length > 0
+        ? `${waEditNewAttachments.length} file(s) ready`
+        : '';
+    }
+
+    showToast('File Removed', `${removedFile.name} removed from attachments`, 'info');
+  }
+}
+
+// Remove file from Add modal
+function removeAddFile(index) {
+  if (index >= 0 && index < addAttachments.length) {
+    const removedFile = addAttachments.splice(index, 1)[0];
+    renderAddFilePreview();
+
+    // Update status text
+    const statusEl = document.getElementById('wa-uploadStatus');
+    if (statusEl) {
+      statusEl.textContent = addAttachments.length > 0
+        ? `${addAttachments.length} file(s) ready`
+        : '';
+    }
+
+    showToast('File Removed', `${removedFile.name} removed from attachments`, 'info');
+    updateWASaveDisabled();
+  }
+}
+
+/* ==================== END FILE PREVIEW HELPERS ==================== */
 
 // File upload for Edit modal
 let waEditNewAttachments = [];
@@ -2354,8 +2508,13 @@ document.getElementById('wa-editFileUpload').addEventListener('change', async fu
   for(const file of files) {
     try {
       const uploadedFile = await uploadFileDual(file);
+      // Store file metadata for preview
+      uploadedFile.size = file.size;
+      uploadedFile.type = file.type;
       waEditNewAttachments.push(uploadedFile);
       statusEl.textContent = `${waEditNewAttachments.length} file(s) uploaded${USE_DUAL_STORAGE ? ' (with backup)' : ''}`;
+      // Update preview after each successful upload
+      renderEditFilePreview();
     } catch(err) {
       console.error(err);
       showToast('Upload Error', `Failed to upload ${file.name}: ${err.message}`, 'error');
@@ -2432,6 +2591,7 @@ function resetWAAdd(){
   document.getElementById('wa-uploadStatus').textContent = '';
   addAttachments = [];
   inflightUploads = 0;
+  renderAddFilePreview(); // Clear preview
   waWaPreview.innerHTML='(start typing above)'; updateWASaveDisabled();
 }
 
@@ -2458,8 +2618,13 @@ document.getElementById('wa-fileUpload').addEventListener('change', async functi
   for(const file of files) {
     try {
       const uploadedFile = await uploadFileDual(file);
+      // Store file metadata for preview
+      uploadedFile.size = file.size;
+      uploadedFile.type = file.type;
       addAttachments.push(uploadedFile);
       statusEl.textContent = `${addAttachments.length} file(s) uploaded${USE_DUAL_STORAGE ? ' (with backup)' : ''}`;
+      // Update preview after each successful upload
+      renderAddFilePreview();
     } catch(err) {
       console.error(err);
       showToast('Upload Error', `Failed to upload ${file.name}: ${err.message}`, 'error');
