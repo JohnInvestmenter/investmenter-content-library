@@ -3,6 +3,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 const BASE_URL = process.env.WAHA_BASE_URL!;   // e.g. http://localhost:3000 or https://waha.yourdomain.com
 const API_KEY  = process.env.WAHA_API_KEY!;    // from your WAHA .env
+const SESSION_NAME = process.env.WAHA_SESSION_NAME || "John";  // Your WAHA session name
 
 function toChatId(input: string) {
   const digits = String(input || "").replace(/\D/g, "");
@@ -17,7 +18,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!to || !text) return res.status(400).json({ error: "`to` and `text` are required" });
 
     const chatId = toChatId(to);
-    const payload = { session: "default", chatId, text };
+    const payload = { session: SESSION_NAME, chatId, text };
 
     const r = await fetch(`${BASE_URL}/api/sendText`, {
       method: "POST",
