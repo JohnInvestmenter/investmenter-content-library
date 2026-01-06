@@ -2781,8 +2781,9 @@ document.getElementById('wa-send').addEventListener('click', async ()=>{
 
         if(!r.ok) {
           const errorData = await r.json().catch(() => ({}));
-          const errorMsg = errorData.error || errorData.details?.error || `HTTP ${r.status}`;
-          throw new Error(`Failed to send link ${i+1}: ${errorMsg}`);
+          console.error('WAHA Error Details:', errorData);
+          const errorMsg = errorData.details?.message || errorData.details?.error || errorData.error || `HTTP ${r.status}`;
+          throw new Error(`Failed to send link ${i+1}: ${errorMsg}\n\nFull error: ${JSON.stringify(errorData.details || errorData)}`);
         }
 
         // Small delay between messages to avoid rate limiting
@@ -2799,8 +2800,9 @@ document.getElementById('wa-send').addEventListener('click', async ()=>{
 
     if(!r.ok) {
       const errorData = await r.json().catch(() => ({}));
-      const errorMsg = errorData.error || errorData.details?.error || `HTTP ${r.status}`;
-      throw new Error(`Failed to send message: ${errorMsg}`);
+      console.error('WAHA Error Details:', errorData);
+      const errorMsg = errorData.details?.message || errorData.details?.error || errorData.error || `HTTP ${r.status}`;
+      throw new Error(`Failed to send message: ${errorMsg}\n\nFull error: ${JSON.stringify(errorData.details || errorData)}`);
     }
 
     if(attachments.length > 0){
