@@ -2779,7 +2779,11 @@ document.getElementById('wa-send').addEventListener('click', async ()=>{
           })
         });
 
-        if(!r.ok) throw new Error(`Failed to send link ${i+1}: HTTP ${r.status}`);
+        if(!r.ok) {
+          const errorData = await r.json().catch(() => ({}));
+          const errorMsg = errorData.error || errorData.details?.error || `HTTP ${r.status}`;
+          throw new Error(`Failed to send link ${i+1}: ${errorMsg}`);
+        }
 
         // Small delay between messages to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -2793,7 +2797,11 @@ document.getElementById('wa-send').addEventListener('click', async ()=>{
       body:JSON.stringify({to:digits,text})
     });
 
-    if(!r.ok) throw new Error('HTTP '+r.status);
+    if(!r.ok) {
+      const errorData = await r.json().catch(() => ({}));
+      const errorMsg = errorData.error || errorData.details?.error || `HTTP ${r.status}`;
+      throw new Error(`Failed to send message: ${errorMsg}`);
+    }
 
     if(attachments.length > 0){
       showToast('Sent!', `${attachments.length} link(s) + message sent via WhatsApp successfully`, 'success');
