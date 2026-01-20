@@ -378,3 +378,12 @@ if (typeof module !== 'undefined' && module.exports) {
     detectAIProvider
   };
 }
+
+// Auto-initialize when loaded in browser
+if (typeof window !== 'undefined') {
+  window.addEventListener('DOMContentLoaded', () => {
+    initAISearch().then(available => {
+      console.log('🤖 AI Search System initialized:', available ? getAIStatus().displayName : 'Disabled');
+    });
+  });
+}
