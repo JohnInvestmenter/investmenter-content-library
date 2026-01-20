@@ -146,9 +146,9 @@ class AIChatWidget {
       this.addMessage(response, 'ai');
 
     } catch (error) {
-      console.error(error);
+      console.error('AI Chat Error:', error);
       this.hideTyping();
-      this.addMessage("Sorry, I encountered an error connecting to the AI. Please verify your API key or connection.", 'ai');
+      this.addMessage(`⚠️ **Error:** ${error.message || 'Unknown connection error'}`, 'ai');
     }
   }
 
@@ -209,10 +209,19 @@ class AIChatWidget {
   }
 
   async callAI(query, context) {
-    // Get current AI status
-    const status = typeof getAIStatus === 'function' ? getAIStatus() : { provider: 'none' };
+    // 1. Get current AI status
+    let status = typeof getAIStatus === 'function' ? getAIStatus() : { provider: 'none' };
 
-    // Check if ai-search.js functions exist
+    // 2. Retry detection if none
+    if (status.provider === 'none' && typeof detectAIProvider === 'function') {
+      console.log('Chat Widget: Re-checking AI provider...');
+      await detectAIProvider();
+      status = getAIStatus();
+    }
+
+    console.log('Chat Widget using provider:', status.provider);
+
+    // 3. Check for Gemini
     if (typeof callGemini === 'function' && status.provider === 'gemini') {
       const prompt = `You are a helpful assistant for an investment content library.
       
@@ -226,13 +235,13 @@ Answer politely and briefly using the context provided. If the answer isn't in t
       return await callGemini(prompt);
     }
 
-    // Fallback to Ollama if available
+    // 4. Check for Ollama
     if (typeof callOllama === 'function' && status.provider === 'ollama') {
       return await callOllama(`Context:\n${context}\n\nQuestion: ${query}`);
     }
 
-    // Direct fetch (backup)
-    throw new Error('No AI provider available');
+    // 5. No Provider Found
+    throw new Error(`No AI provider connected. (Status: ${status.provider})\n\nPotential causes:\n1. API Rate limit exceeded (wait 1 min)\n2. API Key invalid\n3. Network issue`);
   }
 }
 
