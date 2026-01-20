@@ -24,7 +24,7 @@ export default async function handler(req) {
             apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
             headers['Authorization'] = `Bearer ${apiKey}`;
             body = {
-                model: 'llama3-8b-8192',
+                model: 'llama-3.1-8b-instant',
                 messages: [
                     { role: 'system', content: `You are a helpful assistant for an investment library. Context:\n${context}` },
                     { role: 'user', content: message }
