@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -8,669 +9,1776 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="stylesheet" href="command-palette.css">
+  <link rel="stylesheet" href="ai-chat-widget.css">
   <style>
     /* ---------- THEME ---------- */
-    :root{
-      --ink:#0b0b0c; --fg:#0b0b0c; --muted:#f4f5f7; --muted-ink:#6b7280;
-      --brand:#d6b160; --brand-ink:#000; --chip:#0f766e; --chip-ink:#ecfeff;
-      --card:#ffffff; --border:rgba(0,0,0,.08); --bg:#ffffff; --canvas:#f9fafb;
-      --wa:#e7f1e9; --wa-ink:#0b0b0c;
-      --prompt:#f0f4ff; --prompt-ink:#0b0b0c;
+    :root {
+      --ink: #0b0b0c;
+      --fg: #0b0b0c;
+      --muted: #f4f5f7;
+      --muted-ink: #6b7280;
+      --brand: #d6b160;
+      --brand-ink: #000;
+      --chip: #0f766e;
+      --chip-ink: #ecfeff;
+      --card: #ffffff;
+      --border: rgba(0, 0, 0, .08);
+      --bg: #ffffff;
+      --canvas: #f9fafb;
+      --wa: #e7f1e9;
+      --wa-ink: #0b0b0c;
+      --prompt: #f0f4ff;
+      --prompt-ink: #0b0b0c;
     }
-    [data-theme="dark"]{
-      --ink:#e5e7eb; --fg:#e5e7eb; --muted:#16181b; --muted-ink:#9ca3af;
-      --brand:#d6b160; --brand-ink:#000; --chip:#0d9488; --chip-ink:#ecfeff;
-      --card:#0f1114; --border:rgba(255,255,255,.10); --bg:#0b0b0c; --canvas:#1a1d21;
-      --wa:#0f1a13; --wa-ink:#e5e7eb;
-      --prompt:#1a1f2e; --prompt-ink:#e5e7eb;
+
+    [data-theme="dark"] {
+      --ink: #e5e7eb;
+      --fg: #e5e7eb;
+      --muted: #16181b;
+      --muted-ink: #9ca3af;
+      --brand: #d6b160;
+      --brand-ink: #000;
+      --chip: #0d9488;
+      --chip-ink: #ecfeff;
+      --card: #0f1114;
+      --border: rgba(255, 255, 255, .10);
+      --bg: #0b0b0c;
+      --canvas: #1a1d21;
+      --wa: #0f1a13;
+      --wa-ink: #e5e7eb;
+      --prompt: #1a1f2e;
+      --prompt-ink: #e5e7eb;
     }
-    body{ background:var(--bg); color:var(--fg); }
-    .card{ background:var(--card); border:1px solid var(--border); transition:all .3s ease; }
-    .card:hover{ transform:translateY(-4px); box-shadow:0 12px 40px rgba(0,0,0,.15); }
-    [data-theme="dark"] .card:hover{ box-shadow:0 12px 40px rgba(0,0,0,.4); }
-    .chip{ border-radius:9999px; padding:2px 8px; font-size:12px; transition:all .2s ease; }
-    .chip:hover{ transform:scale(1.05); }
-    .chip-folder{ background:var(--muted); color:var(--fg); border:1px solid var(--border); display:inline-flex; align-items:center; gap:6px; }
-    .btn{ display:inline-flex; align-items:center; gap:.5rem; border:1px solid var(--border); padding:.55rem .8rem; border-radius:.75rem; cursor:pointer; position:relative; overflow:hidden; transition:all .2s ease; }
-    .btn:hover:not([disabled]){ background:rgba(255,255,255,.06); transform:translateY(-1px); }
-    [data-theme="light"] .btn:hover:not([disabled]){ background:rgba(0,0,0,.04) }
-    .btn:active:not([disabled]){ transform:translateY(0); }
-    .btn-brand{ background:var(--brand); color:var(--brand-ink); border-color:transparent; }
-    .btn-brand:hover:not([disabled]){ filter:brightness(.95); box-shadow:0 4px 12px rgba(214,177,96,.3); }
-    .btn[disabled]{ opacity:.6; cursor:not-allowed; }
-    @keyframes ripple{ 0%{transform:scale(0);opacity:1} 100%{transform:scale(4);opacity:0} }
-    .btn::after{ content:''; position:absolute; width:100%; height:100%; background:rgba(255,255,255,.3); border-radius:50%; transform:scale(0); pointer-events:none; }
-    .btn:active::after{ animation:ripple .6s ease-out; }
-    .shadow-soft{ box-shadow:0 8px 30px rgba(0,0,0,.12) }
-    [data-theme="dark"] .shadow-soft{ box-shadow:0 8px 30px rgba(0,0,0,.35) }
-    .scrollbar-thin{ scrollbar-width: thin; }
-    .scrollbar-thin::-webkit-scrollbar{ height:6px; width:6px;}
-    .scrollbar-thin::-webkit-scrollbar-thumb{ background:rgba(127,127,127,.35); border-radius:999px;}
-    .wa-bubble { background:var(--wa); color:var(--wa-ink); border:1px solid var(--border); border-radius:12px; padding:12px; }
-    .wa-bubble strong{ font-weight:700; }
-    .wa-bubble em{ font-style:italic; }
-    .wa-bubble s{ text-decoration:line-through; }
-    .wa-bubble code{
-      background:transparent; border:1px solid var(--border); border-radius:6px; padding:1px 4px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:.875em;
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
     }
-    .prompt-bubble { background:var(--prompt); color:var(--prompt-ink); border:1px solid var(--border); border-radius:12px; padding:12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:.875em; white-space: pre-wrap; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      transition: all .3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, .15);
+    }
+
+    [data-theme="dark"] .card:hover {
+      box-shadow: 0 12px 40px rgba(0, 0, 0, .4);
+    }
+
+    .chip {
+      border-radius: 9999px;
+      padding: 2px 8px;
+      font-size: 12px;
+      transition: all .2s ease;
+    }
+
+    .chip:hover {
+      transform: scale(1.05);
+    }
+
+    .chip-folder {
+      background: var(--muted);
+      color: var(--fg);
+      border: 1px solid var(--border);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      border: 1px solid var(--border);
+      padding: .55rem .8rem;
+      border-radius: .75rem;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: all .2s ease;
+    }
+
+    .btn:hover:not([disabled]) {
+      background: rgba(255, 255, 255, .06);
+      transform: translateY(-1px);
+    }
+
+    [data-theme="light"] .btn:hover:not([disabled]) {
+      background: rgba(0, 0, 0, .04)
+    }
+
+    .btn:active:not([disabled]) {
+      transform: translateY(0);
+    }
+
+    .btn-brand {
+      background: var(--brand);
+      color: var(--brand-ink);
+      border-color: transparent;
+    }
+
+    .btn-brand:hover:not([disabled]) {
+      filter: brightness(.95);
+      box-shadow: 0 4px 12px rgba(214, 177, 96, .3);
+    }
+
+    .btn[disabled] {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    @keyframes ripple {
+      0% {
+        transform: scale(0);
+        opacity: 1
+      }
+
+      100% {
+        transform: scale(4);
+        opacity: 0
+      }
+    }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, .3);
+      border-radius: 50%;
+      transform: scale(0);
+      pointer-events: none;
+    }
+
+    .btn:active::after {
+      animation: ripple .6s ease-out;
+    }
+
+    .shadow-soft {
+      box-shadow: 0 8px 30px rgba(0, 0, 0, .12)
+    }
+
+    [data-theme="dark"] .shadow-soft {
+      box-shadow: 0 8px 30px rgba(0, 0, 0, .35)
+    }
+
+    .scrollbar-thin {
+      scrollbar-width: thin;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: rgba(127, 127, 127, .35);
+      border-radius: 999px;
+    }
+
+    .wa-bubble {
+      background: var(--wa);
+      color: var(--wa-ink);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .wa-bubble strong {
+      font-weight: 700;
+    }
+
+    .wa-bubble em {
+      font-style: italic;
+    }
+
+    .wa-bubble s {
+      text-decoration: line-through;
+    }
+
+    .wa-bubble code {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1px 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: .875em;
+    }
+
+    .prompt-bubble {
+      background: var(--prompt);
+      color: var(--prompt-ink);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: .875em;
+      white-space: pre-wrap;
+    }
+
     /* ---------- compact buttons ---------- */
-    .btn-sm{ padding:.35rem .55rem; border-radius:.6rem; font-size:12px; gap:.35rem; line-height:1; }
-    .btn-xs{ padding:.25rem .45rem; border-radius:.5rem; font-size:11px; gap:.3rem; line-height:1; }
-    .btn-sm .lucide, .btn-xs .lucide{ width:16px; height:16px; }
+    .btn-sm {
+      padding: .35rem .55rem;
+      border-radius: .6rem;
+      font-size: 12px;
+      gap: .35rem;
+      line-height: 1;
+    }
+
+    .btn-xs {
+      padding: .25rem .45rem;
+      border-radius: .5rem;
+      font-size: 11px;
+      gap: .3rem;
+      line-height: 1;
+    }
+
+    .btn-sm .lucide,
+    .btn-xs .lucide {
+      width: 16px;
+      height: 16px;
+    }
+
     /* ---------- FORMAT TOOLBAR ---------- */
-    .formatting-toolbar{ display:flex; align-items:center; gap:.25rem; }
-    .format-btn{ display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:.5rem; border:1px solid var(--border); background:transparent; cursor:pointer; transition:all .2s ease; }
-    .format-btn:hover{ background:var(--brand); color:var(--brand-ink); border-color:var(--brand); transform:scale(1.05); }
-    .format-btn:active{ transform:scale(.95); }
-    .format-btn i{ width:16px; height:16px; }
+    .formatting-toolbar {
+      display: flex;
+      align-items: center;
+      gap: .25rem;
+    }
+
+    .format-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: .5rem;
+      border: 1px solid var(--border);
+      background: transparent;
+      cursor: pointer;
+      transition: all .2s ease;
+    }
+
+    .format-btn:hover {
+      background: var(--brand);
+      color: var(--brand-ink);
+      border-color: var(--brand);
+      transform: scale(1.05);
+    }
+
+    .format-btn:active {
+      transform: scale(.95);
+    }
+
+    .format-btn i {
+      width: 16px;
+      height: 16px;
+    }
+
     /* ---------- FILE PREVIEW CARDS ---------- */
-    .file-preview-card{ position:relative; transition:all .2s ease; }
-    .file-preview-card:hover{ transform:translateY(-2px); box-shadow:0 4px 16px rgba(214,177,96,.4); border-color:var(--brand); }
-    [data-theme="dark"] .file-preview-card:hover{ box-shadow:0 4px 16px rgba(214,177,96,.3); }
-    .file-preview-thumbnail{ transition:all .2s ease; }
-    .file-preview-remove{ opacity:0; transition:all .2s ease; }
-    .file-preview-card:hover .file-preview-remove{ opacity:1; }
-    .file-preview-remove:hover{ transform:scale(1.1); filter:brightness(.9); }
+    .file-preview-card {
+      position: relative;
+      transition: all .2s ease;
+    }
+
+    .file-preview-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(214, 177, 96, .4);
+      border-color: var(--brand);
+    }
+
+    [data-theme="dark"] .file-preview-card:hover {
+      box-shadow: 0 4px 16px rgba(214, 177, 96, .3);
+    }
+
+    .file-preview-thumbnail {
+      transition: all .2s ease;
+    }
+
+    .file-preview-remove {
+      opacity: 0;
+      transition: all .2s ease;
+    }
+
+    .file-preview-card:hover .file-preview-remove {
+      opacity: 1;
+    }
+
+    .file-preview-remove:hover {
+      transform: scale(1.1);
+      filter: brightness(.9);
+    }
+
     /* ---------- TABS ---------- */
-    .tab{ padding:.75rem 1.5rem; border-bottom:2px solid transparent; cursor:pointer; transition:all .2s; }
-    .tab:hover{ background:rgba(0,0,0,.04); }
-    [data-theme="dark"] .tab:hover{ background:rgba(255,255,255,.06); }
-    .tab.active{ border-bottom-color:var(--brand); font-weight:600; }
-    .hidden{ display:none !important; }
+    .tab {
+      padding: .75rem 1.5rem;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .tab:hover {
+      background: rgba(0, 0, 0, .04);
+    }
+
+    [data-theme="dark"] .tab:hover {
+      background: rgba(255, 255, 255, .06);
+    }
+
+    .tab.active {
+      border-bottom-color: var(--brand);
+      font-weight: 600;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
     /* ---------- TUTORIAL ---------- */
-    .tutorial-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:9999; display:none; }
-    .tutorial-overlay.active{ display:block; }
-    .tutorial-highlight{ position:absolute; box-shadow:0 0 0 9999px rgba(0,0,0,.65); border:3px solid var(--brand); border-radius:12px; z-index:10000; transition:all .3s ease; pointer-events:none; }
-    .tutorial-tooltip{ position:absolute; background:var(--card); border:2px solid var(--brand); border-radius:12px; padding:20px; max-width:400px; z-index:10001; box-shadow:0 10px 40px rgba(0,0,0,.3); }
-    .tutorial-arrow{ position:absolute; width:0; height:0; border:12px solid transparent; }
-    .tutorial-arrow.top{ border-bottom-color:var(--brand); top:-24px; left:50%; transform:translateX(-50%); }
-    .tutorial-arrow.bottom{ border-top-color:var(--brand); bottom:-24px; left:50%; transform:translateX(-50%); }
-    .tutorial-arrow.left{ border-right-color:var(--brand); left:-24px; top:50%; transform:translateY(-50%); }
-    .tutorial-arrow.right{ border-left-color:var(--brand); right:-24px; top:50%; transform:translateY(-50%); }
+    .tutorial-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .65);
+      z-index: 9999;
+      display: none;
+    }
+
+    .tutorial-overlay.active {
+      display: block;
+    }
+
+    .tutorial-highlight {
+      position: absolute;
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, .65);
+      border: 3px solid var(--brand);
+      border-radius: 12px;
+      z-index: 10000;
+      transition: all .3s ease;
+      pointer-events: none;
+    }
+
+    .tutorial-tooltip {
+      position: absolute;
+      background: var(--card);
+      border: 2px solid var(--brand);
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 400px;
+      z-index: 10001;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, .3);
+    }
+
+    .tutorial-arrow {
+      position: absolute;
+      width: 0;
+      height: 0;
+      border: 12px solid transparent;
+    }
+
+    .tutorial-arrow.top {
+      border-bottom-color: var(--brand);
+      top: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .tutorial-arrow.bottom {
+      border-top-color: var(--brand);
+      bottom: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .tutorial-arrow.left {
+      border-right-color: var(--brand);
+      left: -24px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .tutorial-arrow.right {
+      border-left-color: var(--brand);
+      right: -24px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
     /* ---------- TOAST NOTIFICATIONS ---------- */
-    .toast-container{ position:fixed; top:20px; right:20px; z-index:99999; display:flex; flex-direction:column; gap:10px; pointer-events:none; }
-    .toast{ background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 20px; box-shadow:0 8px 30px rgba(0,0,0,.2); display:flex; align-items:center; gap:12px; min-width:300px; max-width:400px; pointer-events:auto; transform:translateX(500px); animation:slideIn .3s ease forwards; }
-    @keyframes slideIn{ to{transform:translateX(0)} }
-    @keyframes slideOut{ to{transform:translateX(500px);opacity:0} }
-    .toast.hiding{ animation:slideOut .3s ease forwards; }
-    .toast-success{ border-left:4px solid #10b981; }
-    .toast-error{ border-left:4px solid #ef4444; }
-    .toast-info{ border-left:4px solid #3b82f6; }
-    .toast-icon{ width:24px; height:24px; flex-shrink:0; }
-    .toast-success .toast-icon{ color:#10b981; }
-    .toast-error .toast-icon{ color:#ef4444; }
-    .toast-info .toast-icon{ color:#3b82f6; }
-    .toast-content{ flex:1; }
-    .toast-title{ font-weight:600; margin-bottom:2px; }
-    .toast-message{ font-size:14px; opacity:.8; }
-    .toast-close{ cursor:pointer; opacity:.5; transition:opacity .2s; }
-    .toast-close:hover{ opacity:1; }
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, .2);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 300px;
+      max-width: 400px;
+      pointer-events: auto;
+      transform: translateX(500px);
+      animation: slideIn .3s ease forwards;
+    }
+
+    @keyframes slideIn {
+      to {
+        transform: translateX(0)
+      }
+    }
+
+    @keyframes slideOut {
+      to {
+        transform: translateX(500px);
+        opacity: 0
+      }
+    }
+
+    .toast.hiding {
+      animation: slideOut .3s ease forwards;
+    }
+
+    .toast-success {
+      border-left: 4px solid #10b981;
+    }
+
+    .toast-error {
+      border-left: 4px solid #ef4444;
+    }
+
+    .toast-info {
+      border-left: 4px solid #3b82f6;
+    }
+
+    .toast-icon {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .toast-success .toast-icon {
+      color: #10b981;
+    }
+
+    .toast-error .toast-icon {
+      color: #ef4444;
+    }
+
+    .toast-info .toast-icon {
+      color: #3b82f6;
+    }
+
+    .toast-content {
+      flex: 1;
+    }
+
+    .toast-title {
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .toast-message {
+      font-size: 14px;
+      opacity: .8;
+    }
+
+    .toast-close {
+      cursor: pointer;
+      opacity: .5;
+      transition: opacity .2s;
+    }
+
+    .toast-close:hover {
+      opacity: 1;
+    }
+
     /* ---------- LOADING SKELETON ---------- */
-    .skeleton{ background:linear-gradient(90deg,var(--muted) 25%,var(--border) 50%,var(--muted) 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:8px; }
-    @keyframes shimmer{ 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-    .skeleton-card{ height:420px; }
-    .skeleton-line{ height:16px; margin:8px 0; }
-    .skeleton-circle{ border-radius:50%; width:40px; height:40px; }
+    .skeleton {
+      background: linear-gradient(90deg, var(--muted) 25%, var(--border) 50%, var(--muted) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 8px;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: 200% 0
+      }
+
+      100% {
+        background-position: -200% 0
+      }
+    }
+
+    .skeleton-card {
+      height: 420px;
+    }
+
+    .skeleton-line {
+      height: 16px;
+      margin: 8px 0;
+    }
+
+    .skeleton-circle {
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+    }
+
     /* ---------- EMPTY STATE ---------- */
-    .empty-state{ text-align:center; padding:60px 20px; opacity:.6; }
-    .empty-state-icon{ font-size:64px; margin-bottom:20px; opacity:.3; }
-    .empty-state-title{ font-size:20px; font-weight:600; margin-bottom:8px; }
-    .empty-state-text{ font-size:14px; margin-bottom:20px; }
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      opacity: .6;
+    }
+
+    .empty-state-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+      opacity: .3;
+    }
+
+    .empty-state-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .empty-state-text {
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
     /* ---------- CATEGORY COLORS ---------- */
-    .category-general{ background:#8b5cf6 !important; color:#fff !important; }
-    .category-motivation{ background:#f59e0b !important; color:#fff !important; }
-    .category-tech-tips{ background:#3b82f6 !important; color:#fff !important; }
-    .category-fun-facts{ background:#ec4899 !important; color:#fff !important; }
-    .category-announcements{ background:#ef4444 !important; color:#fff !important; }
-    .category-events{ background:#10b981 !important; color:#fff !important; }
-    .category-educational{ background:#06b6d4 !important; color:#fff !important; }
-    .category-sales{ background:#8b5cf6 !important; color:#fff !important; }
-    .category-marketing{ background:#f59e0b !important; color:#fff !important; }
-    .category-support{ background:#10b981 !important; color:#fff !important; }
-    .category-technical{ background:#3b82f6 !important; color:#fff !important; }
-    .category-creative{ background:#ec4899 !important; color:#fff !important; }
-    .category-analysis{ background:#06b6d4 !important; color:#fff !important; }
-    .card-border-general{ border-left:4px solid #8b5cf6 !important; }
-    .card-border-motivation{ border-left:4px solid #f59e0b !important; }
-    .card-border-tech-tips{ border-left:4px solid #3b82f6 !important; }
-    .card-border-fun-facts{ border-left:4px solid #ec4899 !important; }
-    .card-border-announcements{ border-left:4px solid #ef4444 !important; }
-    .card-border-events{ border-left:4px solid #10b981 !important; }
-    .card-border-educational{ border-left:4px solid #06b6d4 !important; }
-    .card-border-sales{ border-left:4px solid #8b5cf6 !important; }
-    .card-border-marketing{ border-left:4px solid #f59e0b !important; }
-    .card-border-support{ border-left:4px solid #10b981 !important; }
-    .card-border-technical{ border-left:4px solid #3b82f6 !important; }
-    .card-border-creative{ border-left:4px solid #ec4899 !important; }
-    .card-border-analysis{ border-left:4px solid #06b6d4 !important; }
+    .category-general {
+      background: #8b5cf6 !important;
+      color: #fff !important;
+    }
+
+    .category-motivation {
+      background: #f59e0b !important;
+      color: #fff !important;
+    }
+
+    .category-tech-tips {
+      background: #3b82f6 !important;
+      color: #fff !important;
+    }
+
+    .category-fun-facts {
+      background: #ec4899 !important;
+      color: #fff !important;
+    }
+
+    .category-announcements {
+      background: #ef4444 !important;
+      color: #fff !important;
+    }
+
+    .category-events {
+      background: #10b981 !important;
+      color: #fff !important;
+    }
+
+    .category-educational {
+      background: #06b6d4 !important;
+      color: #fff !important;
+    }
+
+    .category-sales {
+      background: #8b5cf6 !important;
+      color: #fff !important;
+    }
+
+    .category-marketing {
+      background: #f59e0b !important;
+      color: #fff !important;
+    }
+
+    .category-support {
+      background: #10b981 !important;
+      color: #fff !important;
+    }
+
+    .category-technical {
+      background: #3b82f6 !important;
+      color: #fff !important;
+    }
+
+    .category-creative {
+      background: #ec4899 !important;
+      color: #fff !important;
+    }
+
+    .category-analysis {
+      background: #06b6d4 !important;
+      color: #fff !important;
+    }
+
+    .card-border-general {
+      border-left: 4px solid #8b5cf6 !important;
+    }
+
+    .card-border-motivation {
+      border-left: 4px solid #f59e0b !important;
+    }
+
+    .card-border-tech-tips {
+      border-left: 4px solid #3b82f6 !important;
+    }
+
+    .card-border-fun-facts {
+      border-left: 4px solid #ec4899 !important;
+    }
+
+    .card-border-announcements {
+      border-left: 4px solid #ef4444 !important;
+    }
+
+    .card-border-events {
+      border-left: 4px solid #10b981 !important;
+    }
+
+    .card-border-educational {
+      border-left: 4px solid #06b6d4 !important;
+    }
+
+    .card-border-sales {
+      border-left: 4px solid #8b5cf6 !important;
+    }
+
+    .card-border-marketing {
+      border-left: 4px solid #f59e0b !important;
+    }
+
+    .card-border-support {
+      border-left: 4px solid #10b981 !important;
+    }
+
+    .card-border-technical {
+      border-left: 4px solid #3b82f6 !important;
+    }
+
+    .card-border-creative {
+      border-left: 4px solid #ec4899 !important;
+    }
+
+    .card-border-analysis {
+      border-left: 4px solid #06b6d4 !important;
+    }
+
     /* ---------- BADGES ---------- */
-    .badge{ display:inline-flex; align-items:center; gap:4px; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:600; }
-    .badge-new{ background:#10b981; color:#fff; }
-    .badge-trending{ background:#ef4444; color:#fff; animation:pulse 2s infinite; }
-    @keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.7} }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-new {
+      background: #10b981;
+      color: #fff;
+    }
+
+    .badge-trending {
+      background: #ef4444;
+      color: #fff;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .7
+      }
+    }
+
     /* ---------- SEARCH ENHANCEMENTS ---------- */
-    .search-wrapper{ position:relative; }
-    .search-wrapper input{ padding-left:40px; }
-    .search-icon{ position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:.5; pointer-events:none; }
-    .search-clear{ position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; opacity:.5; transition:opacity .2s; }
-    .search-clear:hover{ opacity:1; }
+    .search-wrapper {
+      position: relative;
+    }
+
+    .search-wrapper input {
+      padding-left: 40px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: .5;
+      pointer-events: none;
+    }
+
+    .search-clear {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      opacity: .5;
+      transition: opacity .2s;
+    }
+
+    .search-clear:hover {
+      opacity: 1;
+    }
+
     /* ---------- ICON ANIMATIONS ---------- */
-    @keyframes spin{ from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-    .spin{ animation:spin 1s linear infinite; }
-    @keyframes bounce{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
-    .bounce{ animation:bounce .5s ease; }
+    @keyframes spin {
+      from {
+        transform: rotate(0deg)
+      }
+
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    .spin {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes bounce {
+
+      0%,
+      100% {
+        transform: translateY(0)
+      }
+
+      50% {
+        transform: translateY(-5px)
+      }
+    }
+
+    .bounce {
+      animation: bounce .5s ease;
+    }
+
     /* ---------- STATS ANIMATIONS ---------- */
-    .stat-value{ font-size:2rem; font-weight:700; transition:all .3s ease; }
-    .stat-value:hover{ transform:scale(1.1); color:var(--brand); }
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      transition: all .3s ease;
+    }
+
+    .stat-value:hover {
+      transform: scale(1.1);
+      color: var(--brand);
+    }
+
     /* ---------- PREVIEW MODAL ---------- */
-    .preview-modal{ position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:9998; display:none; align-items:center; justify-content:center; padding:20px; }
-    .preview-modal.active{ display:flex; }
-    .preview-content{ background:var(--card); border-radius:16px; max-width:800px; width:100%; max-height:90vh; overflow:hidden; display:flex; flex-direction:column; animation:modalIn .3s ease; }
-    @keyframes modalIn{ from{transform:scale(.9);opacity:0} to{transform:scale(1);opacity:1} }
-    .preview-header{ padding:20px; border-bottom:1px solid var(--border); display:flex; justify-content:between; align-items:center; }
-    .preview-body{ padding:20px; overflow-y:auto; flex:1; }
-    .preview-footer{ padding:20px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:10px; }
+    .preview-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .7);
+      z-index: 9998;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .preview-modal.active {
+      display: flex;
+    }
+
+    .preview-content {
+      background: var(--card);
+      border-radius: 16px;
+      max-width: 800px;
+      width: 100%;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: modalIn .3s ease;
+    }
+
+    @keyframes modalIn {
+      from {
+        transform: scale(.9);
+        opacity: 0
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1
+      }
+    }
+
+    .preview-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: between;
+      align-items: center;
+    }
+
+    .preview-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .preview-footer {
+      padding: 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
     /* ---------- ATTACHMENT THUMBNAILS ---------- */
-    .attachment-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
-    .attachment-card{ display:flex; flex-direction:column; border-radius:12px; overflow:hidden; border:1px solid var(--border); background:var(--muted); transition:all .3s ease; text-decoration:none; color:inherit; }
-    .attachment-card:hover{ transform:translateY(-4px); box-shadow:0 8px 24px rgba(0,0,0,.15); border-color:var(--brand); }
-    .attachment-thumbnail{ width:100%; height:150px; background:var(--card); position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; }
-    .attachment-thumbnail img{ width:100%; height:100%; object-fit:cover; }
-    .attachment-thumbnail video{ width:100%; height:100%; object-fit:cover; }
-    .attachment-thumbnail iframe{ width:100%; height:100%; border:none; pointer-events:none; }
-    .attachment-icon{ display:flex; align-items:center; justify-content:center; width:100%; height:100%; font-size:48px; color:var(--brand); opacity:.5; }
-    .attachment-play-icon{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:48px; color:white; opacity:.9; pointer-events:none; }
-    .attachment-info{ padding:8px 12px; display:flex; flex-direction:column; gap:4px; }
-    .attachment-name{ font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .attachment-type{ font-size:10px; color:var(--muted-ink); font-weight:600; text-transform:uppercase; }
+    .attachment-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+    }
+
+    .attachment-card {
+      display: flex;
+      flex-direction: column;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--muted);
+      transition: all .3s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .attachment-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .15);
+      border-color: var(--brand);
+    }
+
+    .attachment-thumbnail {
+      width: 100%;
+      height: 150px;
+      background: var(--card);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .attachment-thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .attachment-thumbnail video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .attachment-thumbnail iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      pointer-events: none;
+    }
+
+    .attachment-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      font-size: 48px;
+      color: var(--brand);
+      opacity: .5;
+    }
+
+    .attachment-play-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      color: white;
+      opacity: .9;
+      pointer-events: none;
+    }
+
+    .attachment-info {
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .attachment-name {
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .attachment-type {
+      font-size: 10px;
+      color: var(--muted-ink);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
     /* ---------- FADE IN ANIMATION ---------- */
-    @keyframes fadeIn{ from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
     /* ---------- FOLDER SIDEBAR ---------- */
-    .sidebar-layout{ display:flex; gap:20px; }
-    .folder-sidebar{ width:240px; min-width:240px; }
-    .folder-tabs{ display:flex; flex-direction:column; gap:8px; }
-    .folder-tab{ display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:8px; cursor:pointer; transition:all .2s ease; background:var(--card); border:1px solid var(--border); }
-    .folder-tab:hover{ background:var(--accent-bg); border-color:var(--brand); }
-    .folder-tab.active{ background:var(--brand); color:#fff; border-color:var(--brand); }
-    .folder-icon{ width:20px; height:20px; opacity:.7; }
-    .folder-tab.active .folder-icon{ opacity:1; }
-    .folder-name{ flex:1; font-weight:500; font-size:14px; }
-    .folder-count{ font-size:12px; opacity:.7; background:rgba(0,0,0,.1); padding:2px 8px; border-radius:12px; }
-    .folder-tab.active .folder-count{ background:rgba(255,255,255,.2); }
-    .sidebar-header{ display:flex; align-items:center; justify-content:between; margin-bottom:16px; }
-    .sidebar-title{ font-weight:600; font-size:14px; text-transform:uppercase; opacity:.6; letter-spacing:.5px; }
-    .sidebar-manage-btn{ padding:6px 12px; font-size:12px; }
-    .main-content-area{ flex:1; min-width:0; }
-    @media (max-width:768px){ .sidebar-layout{ flex-direction:column; } .folder-sidebar{ width:100%; min-width:auto; } }
-    .fade-in{ animation:fadeIn .4s ease forwards; }
+    .sidebar-layout {
+      display: flex;
+      gap: 20px;
+    }
+
+    .folder-sidebar {
+      width: 240px;
+      min-width: 240px;
+    }
+
+    .folder-tabs {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .folder-tab {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all .2s ease;
+      background: var(--card);
+      border: 1px solid var(--border);
+    }
+
+    .folder-tab:hover {
+      background: var(--accent-bg);
+      border-color: var(--brand);
+    }
+
+    .folder-tab.active {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--brand);
+    }
+
+    .folder-icon {
+      width: 20px;
+      height: 20px;
+      opacity: .7;
+    }
+
+    .folder-tab.active .folder-icon {
+      opacity: 1;
+    }
+
+    .folder-name {
+      flex: 1;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .folder-count {
+      font-size: 12px;
+      opacity: .7;
+      background: rgba(0, 0, 0, .1);
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    .folder-tab.active .folder-count {
+      background: rgba(255, 255, 255, .2);
+    }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: between;
+      margin-bottom: 16px;
+    }
+
+    .sidebar-title {
+      font-weight: 600;
+      font-size: 14px;
+      text-transform: uppercase;
+      opacity: .6;
+      letter-spacing: .5px;
+    }
+
+    .sidebar-manage-btn {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    .main-content-area {
+      flex: 1;
+      min-width: 0;
+    }
+
+    @media (max-width:768px) {
+      .sidebar-layout {
+        flex-direction: column;
+      }
+
+      .folder-sidebar {
+        width: 100%;
+        min-width: auto;
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn .4s ease forwards;
+    }
+
     /* ---------- MEDIA LIGHTBOX ---------- */
-    .media-lightbox{ position:fixed; inset:0; background:rgba(0,0,0,.95); z-index:99999; display:none; align-items:center; justify-content:center; padding:20px; }
-    .media-lightbox.active{ display:flex; }
-    .media-lightbox-content{ max-width:95vw; max-height:95vh; display:flex; flex-direction:column; align-items:center; position:relative; }
-    .media-lightbox-close{ position:absolute; top:20px; right:20px; width:48px; height:48px; background:rgba(255,255,255,.1); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.2); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:100001; transition:all .2s; }
-    .media-lightbox-close:hover{ background:rgba(255,255,255,.2); transform:scale(1.1); }
-    .media-lightbox-close i{ color:#fff; width:24px; height:24px; }
-    .media-lightbox-media{ max-width:100%; max-height:85vh; object-fit:contain; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.5); }
-    .media-lightbox-video{ max-width:100%; max-height:85vh; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.5); }
-    .media-lightbox-pdf{ width:90vw; height:85vh; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.5); background:#fff; }
-    .media-lightbox-title{ color:#fff; margin-top:20px; font-size:18px; font-weight:600; text-align:center; max-width:800px; }
-    .media-lightbox-actions{ margin-top:16px; display:flex; gap:12px; }
-    .media-lightbox-btn{ padding:12px 24px; background:rgba(255,255,255,.1); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.2); border-radius:8px; color:#fff; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all .2s; }
-    .media-lightbox-btn:hover{ background:rgba(255,255,255,.2); transform:translateY(-2px); }
-    .media-lightbox-btn i{ width:20px; height:20px; }
+    .media-lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .95);
+      z-index: 99999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .media-lightbox.active {
+      display: flex;
+    }
+
+    .media-lightbox-content {
+      max-width: 95vw;
+      max-height: 95vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .media-lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 48px;
+      height: 48px;
+      background: rgba(255, 255, 255, .1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, .2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 100001;
+      transition: all .2s;
+    }
+
+    .media-lightbox-close:hover {
+      background: rgba(255, 255, 255, .2);
+      transform: scale(1.1);
+    }
+
+    .media-lightbox-close i {
+      color: #fff;
+      width: 24px;
+      height: 24px;
+    }
+
+    .media-lightbox-media {
+      max-width: 100%;
+      max-height: 85vh;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+    }
+
+    .media-lightbox-video {
+      max-width: 100%;
+      max-height: 85vh;
+      border-radius: 8px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+    }
+
+    .media-lightbox-pdf {
+      width: 90vw;
+      height: 85vh;
+      border-radius: 8px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+      background: #fff;
+    }
+
+    .media-lightbox-title {
+      color: #fff;
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: 600;
+      text-align: center;
+      max-width: 800px;
+    }
+
+    .media-lightbox-actions {
+      margin-top: 16px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .media-lightbox-btn {
+      padding: 12px 24px;
+      background: rgba(255, 255, 255, .1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, .2);
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all .2s;
+    }
+
+    .media-lightbox-btn:hover {
+      background: rgba(255, 255, 255, .2);
+      transform: translateY(-2px);
+    }
+
+    .media-lightbox-btn i {
+      width: 20px;
+      height: 20px;
+    }
+
     /* ---------- CUSTOM CONTEXT MENU ---------- */
-    .custom-context-menu{ position:fixed; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:4px; min-width:180px; box-shadow:0 8px 24px rgba(0,0,0,.2); z-index:100000; display:none; }
-    .custom-context-menu.active{ display:block; }
-    .context-menu-item{ padding:10px 14px; cursor:pointer; border-radius:6px; display:flex; align-items:center; gap:10px; transition:all .2s; font-size:14px; }
-    .context-menu-item:hover{ background:var(--muted); }
-    .context-menu-item i{ width:18px; height:18px; opacity:.7; }
-    .context-menu-divider{ height:1px; background:var(--border); margin:4px 0; }
+    .custom-context-menu {
+      position: fixed;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px;
+      min-width: 180px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
+      z-index: 100000;
+      display: none;
+    }
+
+    .custom-context-menu.active {
+      display: block;
+    }
+
+    .context-menu-item {
+      padding: 10px 14px;
+      cursor: pointer;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all .2s;
+      font-size: 14px;
+    }
+
+    .context-menu-item:hover {
+      background: var(--muted);
+    }
+
+    .context-menu-item i {
+      width: 18px;
+      height: 18px;
+      opacity: .7;
+    }
+
+    .context-menu-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
     /* Make attachment cards clickable */
-    .attachment-card{ cursor:pointer; }
+    .attachment-card {
+      cursor: pointer;
+    }
   </style>
 </head>
+
 <body class="min-h-screen p-6">
-<div class="max-w-7xl mx-auto space-y-6">
+  <div class="max-w-7xl mx-auto space-y-6">
 
-  <!-- Header -->
-  <header class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-    <div class="flex items-center gap-3">
-      <button id="tutorialBtn" class="btn btn-brand"><i data-lucide="help-circle"></i><span class="hidden md:inline">Tutorial</span></button>
-      <h1 class="text-3xl font-bold flex items-center gap-2 tracking-tight">
-        <i data-lucide="library"></i> Content Library
-      </h1>
+    <!-- Header -->
+    <header class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div class="flex items-center gap-3">
+        <button id="tutorialBtn" class="btn btn-brand"><i data-lucide="help-circle"></i><span
+            class="hidden md:inline">Tutorial</span></button>
+        <h1 class="text-3xl font-bold flex items-center gap-2 tracking-tight">
+          <i data-lucide="library"></i> Content Library
+        </h1>
+      </div>
+      <div class="flex gap-2">
+        <button id="cmdKBtn" class="btn" title="Quick search (Cmd+K)"><i data-lucide="command"></i><span
+            class="hidden md:inline">Cmd+K</span></button>
+        <button id="supportBtn" class="btn"><i data-lucide="life-buoy"></i><span
+            class="hidden md:inline">Support</span></button>
+        <button id="themeBtn" class="btn"><i data-lucide="moon"></i><span class="hidden md:inline">Dark</span></button>
+      </div>
+    </header>
+
+    <!-- Tabs -->
+    <div class="card rounded-xl shadow-soft flex border-b-0">
+      <div class="tab active" data-tab="whatsapp">
+        <i data-lucide="message-circle"></i> WhatsApp Content
+      </div>
+      <div class="tab" data-tab="prompts">
+        <i data-lucide="cpu"></i> GPT Prompts
+      </div>
     </div>
-    <div class="flex gap-2">
-      <button id="cmdKBtn" class="btn" title="Quick search (Cmd+K)"><i data-lucide="command"></i><span class="hidden md:inline">Cmd+K</span></button>
-      <button id="supportBtn" class="btn"><i data-lucide="life-buoy"></i><span class="hidden md:inline">Support</span></button>
-      <button id="themeBtn" class="btn"><i data-lucide="moon"></i><span class="hidden md:inline">Dark</span></button>
-    </div>
-  </header>
 
-  <!-- Tabs -->
-  <div class="card rounded-xl shadow-soft flex border-b-0">
-    <div class="tab active" data-tab="whatsapp">
-      <i data-lucide="message-circle"></i> WhatsApp Content
-    </div>
-    <div class="tab" data-tab="prompts">
-      <i data-lucide="cpu"></i> GPT Prompts
-    </div>
-  </div>
+    <!-- ==================== WHATSAPP SECTION ==================== -->
+    <div id="whatsapp-section" class="tab-content">
+      <div class="sidebar-layout">
 
-  <!-- ==================== WHATSAPP SECTION ==================== -->
-  <div id="whatsapp-section" class="tab-content">
-    <div class="sidebar-layout">
+        <!-- Left Folder Sidebar -->
+        <aside class="folder-sidebar">
+          <div class="sidebar-header">
+            <div class="sidebar-title">Folders</div>
+            <button id="wa-manageCategoriesBtn" class="btn btn-sm sidebar-manage-btn" title="Manage Categories">
+              <i data-lucide="settings"></i>
+            </button>
+          </div>
+          <div id="wa-folderTabs" class="folder-tabs">
+            <!-- Dynamically populated folder tabs -->
+          </div>
+        </aside>
 
-      <!-- Left Folder Sidebar -->
-      <aside class="folder-sidebar">
-        <div class="sidebar-header">
-          <div class="sidebar-title">Folders</div>
-          <button id="wa-manageCategoriesBtn" class="btn btn-sm sidebar-manage-btn" title="Manage Categories">
-            <i data-lucide="settings"></i>
-          </button>
-        </div>
-        <div id="wa-folderTabs" class="folder-tabs">
-          <!-- Dynamically populated folder tabs -->
-        </div>
-      </aside>
-
-      <!-- Main Content Area -->
-      <div class="main-content-area">
-        <!-- Toolbar -->
-        <section class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div class="flex gap-2 w-full md:w-auto">
-            <div class="search-wrapper flex-1">
-              <i data-lucide="search" class="search-icon"></i>
-              <input id="wa-searchInput" placeholder="Search content..." class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent"/>
-              <i data-lucide="x" class="search-clear hidden" id="wa-searchClear"></i>
+        <!-- Main Content Area -->
+        <div class="main-content-area">
+          <!-- Toolbar -->
+          <section class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div class="flex gap-2 w-full md:w-auto">
+              <div class="search-wrapper flex-1">
+                <i data-lucide="search" class="search-icon"></i>
+                <input id="wa-searchInput" placeholder="Search content..."
+                  class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent" />
+                <i data-lucide="x" class="search-clear hidden" id="wa-searchClear"></i>
+              </div>
             </div>
-          </div>
-          <div class="flex gap-2 items-center">
-            <button id="wa-syncBtn" class="btn"><i data-lucide="refresh-cw"></i><span class="hidden md:inline">Sync</span></button>
-            <button id="wa-addBtn" class="btn btn-brand"><i data-lucide="plus"></i><span class="hidden md:inline">Add Content</span></button>
-          </div>
-        </section>
+            <div class="flex gap-2 items-center">
+              <button id="wa-syncBtn" class="btn"><i data-lucide="refresh-cw"></i><span
+                  class="hidden md:inline">Sync</span></button>
+              <button id="wa-addBtn" class="btn btn-brand"><i data-lucide="plus"></i><span class="hidden md:inline">Add
+                  Content</span></button>
+            </div>
+          </section>
 
-        <!-- Grid -->
-        <section>
-          <div id="wa-contentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch"></div>
-          <div class="flex items-center justify-between mt-4">
-            <button id="wa-prevPage" class="btn" disabled><i data-lucide="chevron-left"></i> Prev</button>
-            <div class="text-sm text-[var(--muted-ink)]">Page <span id="wa-pageNum">1</span> of <span id="wa-pageCount">1</span></div>
-            <button id="wa-nextPage" class="btn">Next <i data-lucide="chevron-right"></i></button>
-          </div>
-        </section>
+          <!-- Grid -->
+          <section>
+            <div id="wa-contentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch"></div>
+            <div class="flex items-center justify-between mt-4">
+              <button id="wa-prevPage" class="btn" disabled><i data-lucide="chevron-left"></i> Prev</button>
+              <div class="text-sm text-[var(--muted-ink)]">Page <span id="wa-pageNum">1</span> of <span
+                  id="wa-pageCount">1</span></div>
+              <button id="wa-nextPage" class="btn">Next <i data-lucide="chevron-right"></i></button>
+            </div>
+          </section>
 
-        <!-- Stats -->
-        <section class="card rounded-xl p-4 shadow-soft">
-          <h2 class="font-semibold mb-2">Content Statistics</h2>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div><div id="wa-statTotal" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Total Content</div></div>
-            <div><div id="wa-statUses" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Total Uses</div></div>
-            <div><div id="wa-statCategories" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Categories</div></div>
-            <div><div id="wa-statRecent" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Recently Used</div></div>
-          </div>
-        </section>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== GPT PROMPTS SECTION ==================== -->
-  <div id="prompts-section" class="tab-content hidden">
-
-    <!-- Toolbar -->
-    <section class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-      <div class="flex gap-2 w-full md:w-auto">
-        <div class="search-wrapper flex-1">
-          <i data-lucide="search" class="search-icon"></i>
-          <input id="gpt-searchInput" placeholder="Search prompts..." class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent"/>
-          <i data-lucide="x" class="search-clear hidden" id="gpt-searchClear"></i>
+          <!-- Stats -->
+          <section class="card rounded-xl p-4 shadow-soft">
+            <h2 class="font-semibold mb-2">Content Statistics</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div>
+                <div id="wa-statTotal" class="stat-value">0</div>
+                <div class="text-sm text-[var(--muted-ink)]">Total Content</div>
+              </div>
+              <div>
+                <div id="wa-statUses" class="stat-value">0</div>
+                <div class="text-sm text-[var(--muted-ink)]">Total Uses</div>
+              </div>
+              <div>
+                <div id="wa-statCategories" class="stat-value">0</div>
+                <div class="text-sm text-[var(--muted-ink)]">Categories</div>
+              </div>
+              <div>
+                <div id="wa-statRecent" class="stat-value">0</div>
+                <div class="text-sm text-[var(--muted-ink)]">Recently Used</div>
+              </div>
+            </div>
+          </section>
         </div>
-        <select id="gpt-categorySelect" class="p-3 rounded-lg border border-[var(--border)] bg-transparent">
-          <option value="all">All Categories</option>
-        </select>
-        <button id="gpt-manageCategoriesBtn" class="btn" title="Manage Categories">
-          <i data-lucide="settings"></i><span class="hidden md:inline">Manage</span>
-        </button>
       </div>
-      <div class="flex gap-2 items-center">
-        <button id="gpt-syncBtn" class="btn"><i data-lucide="refresh-cw"></i><span class="hidden md:inline">Sync</span></button>
-        <button id="gpt-addBtn" class="btn btn-brand"><i data-lucide="plus"></i><span class="hidden md:inline">Add Prompt</span></button>
-      </div>
-    </section>
-
-    <!-- Grid -->
-    <section>
-      <div id="gpt-contentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch"></div>
-      <div class="flex items-center justify-between mt-4">
-        <button id="gpt-prevPage" class="btn" disabled><i data-lucide="chevron-left"></i> Prev</button>
-        <div class="text-sm text-[var(--muted-ink)]">Page <span id="gpt-pageNum">1</span> of <span id="gpt-pageCount">1</span></div>
-        <button id="gpt-nextPage" class="btn">Next <i data-lucide="chevron-right"></i></button>
-      </div>
-    </section>
-
-    <!-- Stats -->
-    <section class="card rounded-xl p-4 shadow-soft">
-      <h2 class="font-semibold mb-2">Prompts Statistics</h2>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-        <div><div id="gpt-statTotal" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Total Prompts</div></div>
-        <div><div id="gpt-statUses" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Total Uses</div></div>
-        <div><div id="gpt-statCategories" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Categories</div></div>
-        <div><div id="gpt-statRecent" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Recently Used</div></div>
-      </div>
-    </section>
-  </div>
-
-</div>
-
-<!-- ==================== WHATSAPP MODALS ==================== -->
-
-<!-- WA Edit Modal -->
-<div id="wa-editModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
-  <div class="card w-full max-w-2xl rounded-xl shadow-soft flex flex-col max-h-[90vh]">
-    <div class="flex items-center justify-between p-4 border-b border-[var(--border)]">
-      <h2 class="text-xl font-semibold">Edit Content</h2>
-      <button id="wa-editClose" class="btn"><i data-lucide="x"></i></button>
     </div>
-    <div class="p-4 space-y-4 overflow-y-auto scrollbar-thin" style="max-height:60vh">
-      <div><label class="block text-sm mb-1">Title</label><input id="wa-editTitle" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/></div>
-      <div><label class="block text-sm mb-1">Category</label><select id="wa-editCategory" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
-      <div><label class="block text-sm mb-1">Folder</label><select id="wa-editFolder" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
-      <div>
-        <label class="block text-sm mb-1">Content</label>
-        <div class="formatting-toolbar flex items-center gap-1 p-2 rounded-t-lg border border-b-0 border-[var(--border)] bg-[var(--muted)]">
-          <button type="button" class="format-btn" data-format="bold" data-target="wa-editContent" title="Bold (*text*)">
-            <i data-lucide="bold"></i>
-          </button>
-          <button type="button" class="format-btn" data-format="italic" data-target="wa-editContent" title="Italic (_text_)">
-            <i data-lucide="italic"></i>
-          </button>
-          <button type="button" class="format-btn" data-format="strikethrough" data-target="wa-editContent" title="Strikethrough (~text~)">
-            <i data-lucide="strikethrough"></i>
-          </button>
-          <button type="button" class="format-btn" data-format="code" data-target="wa-editContent" title="Code (`text`)">
-            <i data-lucide="code"></i>
-          </button>
-          <button type="button" class="format-btn" data-format="monospace" data-target="wa-editContent" title="Monospace (```text```)">
-            <i data-lucide="file-code"></i>
+
+    <!-- ==================== GPT PROMPTS SECTION ==================== -->
+    <div id="prompts-section" class="tab-content hidden">
+
+      <!-- Toolbar -->
+      <section class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div class="flex gap-2 w-full md:w-auto">
+          <div class="search-wrapper flex-1">
+            <i data-lucide="search" class="search-icon"></i>
+            <input id="gpt-searchInput" placeholder="Search prompts..."
+              class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent" />
+            <i data-lucide="x" class="search-clear hidden" id="gpt-searchClear"></i>
+          </div>
+          <select id="gpt-categorySelect" class="p-3 rounded-lg border border-[var(--border)] bg-transparent">
+            <option value="all">All Categories</option>
+          </select>
+          <button id="gpt-manageCategoriesBtn" class="btn" title="Manage Categories">
+            <i data-lucide="settings"></i><span class="hidden md:inline">Manage</span>
           </button>
         </div>
-        <textarea id="wa-editContent" rows="8" class="w-full p-2 rounded-b-lg border border-t-0 border-[var(--border)] bg-transparent" style="border-top-left-radius: 0; border-top-right-radius: 0;"></textarea>
-      </div>
-      <div><label class="block text-sm mb-1">Tags (comma separated)</label><input id="wa-editTags" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/></div>
-      <div>
-        <label class="block text-sm mb-1">Attachments</label>
-        <input id="wa-editFileUpload" type="file" multiple class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/>
-        <div id="wa-editUploadStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div>
-        <div id="wa-editFilePreview" class="mt-3 grid grid-cols-2 gap-2"></div>
-        <div id="wa-editExistingFiles" class="mt-2 text-sm"></div>
-      </div>
-      <div><label class="block text-sm mb-1">WhatsApp Preview</label><div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-2"><div id="wa-editPreview" class="wa-bubble text-sm max-h-48 overflow-auto whitespace-pre-wrap scrollbar-thin"></div></div></div>
+        <div class="flex gap-2 items-center">
+          <button id="gpt-syncBtn" class="btn"><i data-lucide="refresh-cw"></i><span
+              class="hidden md:inline">Sync</span></button>
+          <button id="gpt-addBtn" class="btn btn-brand"><i data-lucide="plus"></i><span class="hidden md:inline">Add
+              Prompt</span></button>
+        </div>
+      </section>
+
+      <!-- Grid -->
+      <section>
+        <div id="gpt-contentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch"></div>
+        <div class="flex items-center justify-between mt-4">
+          <button id="gpt-prevPage" class="btn" disabled><i data-lucide="chevron-left"></i> Prev</button>
+          <div class="text-sm text-[var(--muted-ink)]">Page <span id="gpt-pageNum">1</span> of <span
+              id="gpt-pageCount">1</span></div>
+          <button id="gpt-nextPage" class="btn">Next <i data-lucide="chevron-right"></i></button>
+        </div>
+      </section>
+
+      <!-- Stats -->
+      <section class="card rounded-xl p-4 shadow-soft">
+        <h2 class="font-semibold mb-2">Prompts Statistics</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div>
+            <div id="gpt-statTotal" class="stat-value">0</div>
+            <div class="text-sm text-[var(--muted-ink)]">Total Prompts</div>
+          </div>
+          <div>
+            <div id="gpt-statUses" class="stat-value">0</div>
+            <div class="text-sm text-[var(--muted-ink)]">Total Uses</div>
+          </div>
+          <div>
+            <div id="gpt-statCategories" class="stat-value">0</div>
+            <div class="text-sm text-[var(--muted-ink)]">Categories</div>
+          </div>
+          <div>
+            <div id="gpt-statRecent" class="stat-value">0</div>
+            <div class="text-sm text-[var(--muted-ink)]">Recently Used</div>
+          </div>
+        </div>
+      </section>
     </div>
-    <div class="p-4 border-t border-[var(--border)] flex justify-end gap-2">
-      <button id="wa-editCancel" class="btn">Cancel</button>
-      <button id="wa-editSave" class="btn btn-brand"><span id="wa-editSaveText">Save changes</span></button>
+
+  </div>
+
+  <!-- ==================== WHATSAPP MODALS ==================== -->
+
+  <!-- WA Edit Modal -->
+  <div id="wa-editModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+    <div class="card w-full max-w-2xl rounded-xl shadow-soft flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between p-4 border-b border-[var(--border)]">
+        <h2 class="text-xl font-semibold">Edit Content</h2>
+        <button id="wa-editClose" class="btn"><i data-lucide="x"></i></button>
+      </div>
+      <div class="p-4 space-y-4 overflow-y-auto scrollbar-thin" style="max-height:60vh">
+        <div><label class="block text-sm mb-1">Title</label><input id="wa-editTitle"
+            class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" /></div>
+        <div><label class="block text-sm mb-1">Category</label><select id="wa-editCategory"
+            class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
+        <div><label class="block text-sm mb-1">Folder</label><select id="wa-editFolder"
+            class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
+        <div>
+          <label class="block text-sm mb-1">Content</label>
+          <div
+            class="formatting-toolbar flex items-center gap-1 p-2 rounded-t-lg border border-b-0 border-[var(--border)] bg-[var(--muted)]">
+            <button type="button" class="format-btn" data-format="bold" data-target="wa-editContent"
+              title="Bold (*text*)">
+              <i data-lucide="bold"></i>
+            </button>
+            <button type="button" class="format-btn" data-format="italic" data-target="wa-editContent"
+              title="Italic (_text_)">
+              <i data-lucide="italic"></i>
+            </button>
+            <button type="button" class="format-btn" data-format="strikethrough" data-target="wa-editContent"
+              title="Strikethrough (~text~)">
+              <i data-lucide="strikethrough"></i>
+            </button>
+            <button type="button" class="format-btn" data-format="code" data-target="wa-editContent"
+              title="Code (`text`)">
+              <i data-lucide="code"></i>
+            </button>
+            <button type="button" class="format-btn" data-format="monospace" data-target="wa-editContent"
+              title="Monospace (```text```)">
+              <i data-lucide="file-code"></i>
+            </button>
+          </div>
+          <textarea id="wa-editContent" rows="8"
+            class="w-full p-2 rounded-b-lg border border-t-0 border-[var(--border)] bg-transparent"
+            style="border-top-left-radius: 0; border-top-right-radius: 0;"></textarea>
+        </div>
+        <div><label class="block text-sm mb-1">Tags (comma separated)</label><input id="wa-editTags"
+            class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" /></div>
+        <div>
+          <label class="block text-sm mb-1">Attachments</label>
+          <input id="wa-editFileUpload" type="file" multiple
+            class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" />
+          <div id="wa-editUploadStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div>
+          <div id="wa-editFilePreview" class="mt-3 grid grid-cols-2 gap-2"></div>
+          <div id="wa-editExistingFiles" class="mt-2 text-sm"></div>
+        </div>
+        <div><label class="block text-sm mb-1">WhatsApp Preview</label>
+          <div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-2">
+            <div id="wa-editPreview"
+              class="wa-bubble text-sm max-h-48 overflow-auto whitespace-pre-wrap scrollbar-thin"></div>
+          </div>
+        </div>
+      </div>
+      <div class="p-4 border-t border-[var(--border)] flex justify-end gap-2">
+        <button id="wa-editCancel" class="btn">Cancel</button>
+        <button id="wa-editSave" class="btn btn-brand"><span id="wa-editSaveText">Save changes</span></button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- WA Add Modal -->
-<div id="wa-addModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
-  <div class="card w-full max-w-2xl rounded-xl shadow-soft flex flex-col max-h-[90vh]">
-    <div class="flex items-center justify-between p-4 border-b border-[var(--border)]">
-      <h2 class="text-xl font-semibold">Add New Content</h2>
-      <button id="wa-addClose" class="btn"><i data-lucide="x"></i></button>
+  <!-- WA Add Modal -->
+  <div id="wa-addModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+    <div class="card w-full max-w-2xl rounded-xl shadow-soft flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between p-4 border-b border-[var(--border)]">
+        <h2 class="text-xl font-semibold">Add New Content</h2>
+        <button id="wa-addClose" class="btn"><i data-lucide="x"></i></button>
+      </div>
+      <div class="p-4 space-y-4 overflow-y-auto scrollbar-thin" style="max-height:60vh">
+        <div><label class="block text-sm mb-1">Title</label><input id="wa-titleInput"
+            class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="Content title..." />
+        </div>
+        <div><label class="block text-sm mb-1">Category</label><select id="wa-categoryInput"
+            class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
+        <div><label class="block text-sm mb-1">Folder</label><select id="wa-folderInput"
+            class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
+        <div>
+          <label class="block text-sm mb-1">Content</label>
+          <div
+            class="formatting-toolbar flex items-center gap-1 p-2 rounded-t-lg border border-b-0 border-[var(--border)] bg-[var(--muted)]">
+            <button type="button" class="format-btn" data-format="bold" data-target="wa-contentInput"
+              title="Bold (*text*)">
+              <i data-lucide="bold"></i>
+            </button>
+            <button type="button" class="format-btn" data-format="italic" data-target="wa-contentInput"
+              title="Italic (_text_)">
+              <i data-lucide="italic"></i>
+            </button>
+            <button type="button" class="format-btn" data-format="strikethrough" data-target="wa-contentInput"
+              title="Strikethrough (~text~)">
+              <i data-lucide="strikethrough"></i>
+            </button>
+            <button type="button" class="format-btn" data-format="code" data-target="wa-contentInput"
+              title="Code (`text`)">
+              <i data-lucide="code"></i>
+            </button>
+            <button type="button" class="format-btn" data-format="monospace" data-target="wa-contentInput"
+              title="Monospace (```text```)">
+              <i data-lucide="file-code"></i>
+            </button>
+          </div>
+          <textarea id="wa-contentInput" rows="8"
+            class="w-full p-2 rounded-b-lg border border-t-0 border-[var(--border)] bg-transparent"
+            placeholder="Use the toolbar above or type manually..."
+            style="border-top-left-radius: 0; border-top-right-radius: 0;"></textarea>
+        </div>
+        <div><label class="block text-sm mb-1">Tags (comma separated)</label><input id="wa-tagsInput"
+            class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"
+            placeholder="motivation, weekly, inspiration" /></div>
+        <div>
+          <label class="block text-sm mb-1">Attachments</label>
+          <input id="wa-fileUpload" type="file" multiple
+            class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" />
+          <div id="wa-uploadStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div>
+          <div id="wa-filePreview" class="mt-3 grid grid-cols-2 gap-2"></div>
+        </div>
+        <div><label class="block text-sm mb-1">WhatsApp Preview</label>
+          <div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-2">
+            <div id="wa-waPreview" class="wa-bubble text-sm max-h-48 overflow-auto whitespace-pre-wrap scrollbar-thin">
+              (start typing above)</div>
+          </div>
+        </div>
+      </div>
+      <div class="p-4 border-t border-[var(--border)] flex justify-end gap-2">
+        <button id="wa-clearAdd" class="btn"><i data-lucide="eraser"></i> Clear</button>
+        <button id="wa-cancelAdd" class="btn">Cancel</button>
+        <button id="wa-saveAdd" class="btn btn-brand" disabled><span id="wa-saveAddText">Save</span></button>
+      </div>
     </div>
-    <div class="p-4 space-y-4 overflow-y-auto scrollbar-thin" style="max-height:60vh">
-      <div><label class="block text-sm mb-1">Title</label><input id="wa-titleInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="Content title..."/></div>
-      <div><label class="block text-sm mb-1">Category</label><select id="wa-categoryInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
-      <div><label class="block text-sm mb-1">Folder</label><select id="wa-folderInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
-      <div>
-        <label class="block text-sm mb-1">Content</label>
-        <div class="formatting-toolbar flex items-center gap-1 p-2 rounded-t-lg border border-b-0 border-[var(--border)] bg-[var(--muted)]">
-          <button type="button" class="format-btn" data-format="bold" data-target="wa-contentInput" title="Bold (*text*)">
-            <i data-lucide="bold"></i>
-          </button>
-          <button type="button" class="format-btn" data-format="italic" data-target="wa-contentInput" title="Italic (_text_)">
-            <i data-lucide="italic"></i>
-          </button>
-          <button type="button" class="format-btn" data-format="strikethrough" data-target="wa-contentInput" title="Strikethrough (~text~)">
-            <i data-lucide="strikethrough"></i>
-          </button>
-          <button type="button" class="format-btn" data-format="code" data-target="wa-contentInput" title="Code (`text`)">
-            <i data-lucide="code"></i>
-          </button>
-          <button type="button" class="format-btn" data-format="monospace" data-target="wa-contentInput" title="Monospace (```text```)">
-            <i data-lucide="file-code"></i>
+  </div>
+
+  <!-- WA Send Modal -->
+  <div id="wa-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+    <div class="card w-full max-w-md rounded-xl shadow-soft p-4">
+      <h3 class="text-xl font-semibold mb-4">Send via WhatsApp</h3>
+      <div id="wa-send-attachments-info"
+        class="hidden mb-4 p-3 rounded-lg bg-[var(--brand)]/10 border-2 border-[var(--brand)]">
+        <div class="flex items-center gap-2 text-sm text-[var(--fg)]">
+          <i data-lucide="paperclip" class="text-[var(--brand)]"></i>
+          <span id="wa-send-attachments-text"></span>
+        </div>
+      </div>
+      <label class="block text-sm mb-2">Phone number (international, digits only)</label>
+      <input id="wa-phone" type="tel" placeholder="9715XXXXXXXX"
+        class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent mb-4" />
+      <label class="block text-sm mb-2">Message</label>
+      <textarea id="wa-text" rows="6"
+        class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent resize-vertical mb-4"></textarea>
+      <div id="wa-send-info-text" class="hidden text-xs text-[var(--muted-ink)] mb-4 flex items-center gap-1">
+        <i data-lucide="info"></i> <span>Links will be sent first, then the text message</span>
+      </div>
+      <div class="flex gap-2 justify-end">
+        <button id="wa-cancel" class="btn">Cancel</button>
+        <button id="wa-send" class="btn btn-brand">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== GPT PROMPTS MODALS ==================== -->
+
+  <!-- GPT Edit Modal -->
+  <div id="gpt-editModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+    <div class="card w-full max-w-3xl rounded-xl shadow-soft flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between p-4 border-b border-[var(--border)]">
+        <h2 class="text-xl font-semibold">Edit Prompt</h2>
+        <button id="gpt-editClose" class="btn"><i data-lucide="x"></i></button>
+      </div>
+      <div class="p-4 space-y-4 overflow-y-auto scrollbar-thin" style="max-height:60vh">
+        <div><label class="block text-sm mb-1">Title</label><input id="gpt-editTitle"
+            class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" /></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-sm mb-1">Category</label><select id="gpt-editCategory"
+              class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
+          <div><label class="block text-sm mb-1">Model</label><select id="gpt-editModel"
+              class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent">
+              <option>GPT-4</option>
+              <option>GPT-4-Turbo</option>
+              <option>GPT-3.5</option>
+            </select></div>
+        </div>
+        <div><label class="block text-sm mb-1">System Role (optional)</label><textarea id="gpt-editSystemRole" rows="3"
+            class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"
+            placeholder="You are a helpful assistant..."></textarea></div>
+        <div><label class="block text-sm mb-1">Prompt</label><textarea id="gpt-editPrompt" rows="6"
+            class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></textarea></div>
+        <div><label class="block text-sm mb-1">Tags (comma separated)</label><input id="gpt-editTags"
+            class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" /></div>
+      </div>
+      <div class="p-4 border-t border-[var(--border)] flex justify-end gap-2">
+        <button id="gpt-editCancel" class="btn">Cancel</button>
+        <button id="gpt-editSave" class="btn btn-brand"><span id="gpt-editSaveText">Save changes</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GPT Add Modal -->
+  <div id="gpt-addModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+    <div class="card w-full max-w-3xl rounded-xl shadow-soft flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between p-4 border-b border-[var(--border)]">
+        <h2 class="text-xl font-semibold">Add New Prompt</h2>
+        <button id="gpt-addClose" class="btn"><i data-lucide="x"></i></button>
+      </div>
+      <div class="p-4 space-y-4 overflow-y-auto scrollbar-thin" style="max-height:60vh">
+        <div><label class="block text-sm mb-1">Title</label><input id="gpt-titleInput"
+            class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="Prompt title..." />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-sm mb-1">Category</label><select id="gpt-categoryInput"
+              class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
+          <div><label class="block text-sm mb-1">Model</label><select id="gpt-modelInput"
+              class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent">
+              <option>GPT-4</option>
+              <option>GPT-4-Turbo</option>
+              <option>GPT-3.5</option>
+            </select></div>
+        </div>
+        <div><label class="block text-sm mb-1">System Role (optional)</label><textarea id="gpt-systemRoleInput" rows="3"
+            class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"
+            placeholder="You are a helpful assistant..."></textarea></div>
+        <div><label class="block text-sm mb-1">Prompt</label><textarea id="gpt-promptInput" rows="6"
+            class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"
+            placeholder="Enter your GPT prompt..."></textarea></div>
+        <div><label class="block text-sm mb-1">Tags (comma separated)</label><input id="gpt-tagsInput"
+            class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"
+            placeholder="sales, email, marketing" /></div>
+      </div>
+      <div class="p-4 border-t border-[var(--border)] flex justify-end gap-2">
+        <button id="gpt-clearAdd" class="btn"><i data-lucide="eraser"></i> Clear</button>
+        <button id="gpt-cancelAdd" class="btn">Cancel</button>
+        <button id="gpt-saveAdd" class="btn btn-brand" disabled><span id="gpt-saveAddText">Save</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TOAST NOTIFICATIONS ==================== -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- ==================== PREVIEW MODAL ==================== -->
+  <div id="previewModal" class="preview-modal">
+    <div class="preview-content">
+      <div class="preview-header">
+        <h2 class="text-xl font-bold" id="previewTitle"></h2>
+        <button id="previewClose" class="btn btn-sm"><i data-lucide="x"></i></button>
+      </div>
+      <div class="preview-body" id="previewBody"></div>
+      <div class="preview-footer">
+        <button id="previewShareBtn" class="btn btn-sm"><i data-lucide="share-2"></i> Share Link</button>
+        <button id="previewSendBtn" class="btn btn-sm" style="display:none;"><i data-lucide="send"></i> Send via
+          WhatsApp</button>
+        <button id="previewCopyWABtn" class="btn btn-sm"><i data-lucide="message-circle"></i> Copy for WhatsApp</button>
+        <button id="previewCopyEmailBtn" class="btn btn-sm"><i data-lucide="mail"></i> Copy for Email</button>
+        <button id="previewCloseBtn" class="btn btn-sm btn-brand">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== CATEGORY MANAGEMENT MODAL ==================== -->
+  <div id="categoryManageModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+    <div class="card rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold">
+          Manage <span id="cat-modal-type">WhatsApp</span> Categories
+        </h2>
+        <button id="cat-closeBtn" class="btn btn-sm">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <!-- Add New Category -->
+      <div class="mb-6 p-4 rounded-lg border border-[var(--border)] bg-[var(--accent-bg)]">
+        <label class="block font-semibold mb-2">Add New Category</label>
+        <div class="flex gap-2">
+          <input id="cat-newName" type="text" placeholder="Enter category name..."
+            class="flex-1 p-3 rounded-lg border border-[var(--border)] bg-[var(--card)]" />
+          <button id="cat-addBtn" class="btn btn-brand">
+            <i data-lucide="plus"></i> Add
           </button>
         </div>
-        <textarea id="wa-contentInput" rows="8" class="w-full p-2 rounded-b-lg border border-t-0 border-[var(--border)] bg-transparent" placeholder="Use the toolbar above or type manually..." style="border-top-left-radius: 0; border-top-right-radius: 0;"></textarea>
       </div>
-      <div><label class="block text-sm mb-1">Tags (comma separated)</label><input id="wa-tagsInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="motivation, weekly, inspiration"/></div>
-      <div>
-        <label class="block text-sm mb-1">Attachments</label>
-        <input id="wa-fileUpload" type="file" multiple class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/>
-        <div id="wa-uploadStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div>
-        <div id="wa-filePreview" class="mt-3 grid grid-cols-2 gap-2"></div>
-      </div>
-      <div><label class="block text-sm mb-1">WhatsApp Preview</label><div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-2"><div id="wa-waPreview" class="wa-bubble text-sm max-h-48 overflow-auto whitespace-pre-wrap scrollbar-thin">(start typing above)</div></div></div>
-    </div>
-    <div class="p-4 border-t border-[var(--border)] flex justify-end gap-2">
-      <button id="wa-clearAdd" class="btn"><i data-lucide="eraser"></i> Clear</button>
-      <button id="wa-cancelAdd" class="btn">Cancel</button>
-      <button id="wa-saveAdd" class="btn btn-brand" disabled><span id="wa-saveAddText">Save</span></button>
-    </div>
-  </div>
-</div>
 
-<!-- WA Send Modal -->
-<div id="wa-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
-  <div class="card w-full max-w-md rounded-xl shadow-soft p-4">
-    <h3 class="text-xl font-semibold mb-4">Send via WhatsApp</h3>
-    <div id="wa-send-attachments-info" class="hidden mb-4 p-3 rounded-lg bg-[var(--brand)]/10 border-2 border-[var(--brand)]">
-      <div class="flex items-center gap-2 text-sm text-[var(--fg)]">
-        <i data-lucide="paperclip" class="text-[var(--brand)]"></i>
-        <span id="wa-send-attachments-text"></span>
+      <!-- Existing Categories -->
+      <div class="mb-4">
+        <div class="flex justify-between items-center mb-2">
+          <label class="block font-semibold">Existing Categories</label>
+          <button id="cat-refreshBtn" class="btn btn-sm">
+            <i data-lucide="refresh-cw"></i> Refresh
+          </button>
+        </div>
+        <div id="cat-list" class="space-y-2 max-h-96 overflow-y-auto">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 mt-4">
+        <button id="cat-cancelBtn" class="btn">Close</button>
       </div>
     </div>
-    <label class="block text-sm mb-2">Phone number (international, digits only)</label>
-    <input id="wa-phone" type="tel" placeholder="9715XXXXXXXX" class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent mb-4"/>
-    <label class="block text-sm mb-2">Message</label>
-    <textarea id="wa-text" rows="6" class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent resize-vertical mb-4"></textarea>
-    <div id="wa-send-info-text" class="hidden text-xs text-[var(--muted-ink)] mb-4 flex items-center gap-1">
-      <i data-lucide="info"></i> <span>Links will be sent first, then the text message</span>
-    </div>
-    <div class="flex gap-2 justify-end">
-      <button id="wa-cancel" class="btn">Cancel</button>
-      <button id="wa-send" class="btn btn-brand">Send</button>
-    </div>
   </div>
-</div>
 
-<!-- ==================== GPT PROMPTS MODALS ==================== -->
-
-<!-- GPT Edit Modal -->
-<div id="gpt-editModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
-  <div class="card w-full max-w-3xl rounded-xl shadow-soft flex flex-col max-h-[90vh]">
-    <div class="flex items-center justify-between p-4 border-b border-[var(--border)]">
-      <h2 class="text-xl font-semibold">Edit Prompt</h2>
-      <button id="gpt-editClose" class="btn"><i data-lucide="x"></i></button>
-    </div>
-    <div class="p-4 space-y-4 overflow-y-auto scrollbar-thin" style="max-height:60vh">
-      <div><label class="block text-sm mb-1">Title</label><input id="gpt-editTitle" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/></div>
-      <div class="grid grid-cols-2 gap-3">
-        <div><label class="block text-sm mb-1">Category</label><select id="gpt-editCategory" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
-        <div><label class="block text-sm mb-1">Model</label><select id="gpt-editModel" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"><option>GPT-4</option><option>GPT-4-Turbo</option><option>GPT-3.5</option></select></div>
-      </div>
-      <div><label class="block text-sm mb-1">System Role (optional)</label><textarea id="gpt-editSystemRole" rows="3" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="You are a helpful assistant..."></textarea></div>
-      <div><label class="block text-sm mb-1">Prompt</label><textarea id="gpt-editPrompt" rows="6" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></textarea></div>
-      <div><label class="block text-sm mb-1">Tags (comma separated)</label><input id="gpt-editTags" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/></div>
-    </div>
-    <div class="p-4 border-t border-[var(--border)] flex justify-end gap-2">
-      <button id="gpt-editCancel" class="btn">Cancel</button>
-      <button id="gpt-editSave" class="btn btn-brand"><span id="gpt-editSaveText">Save changes</span></button>
-    </div>
-  </div>
-</div>
-
-<!-- GPT Add Modal -->
-<div id="gpt-addModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
-  <div class="card w-full max-w-3xl rounded-xl shadow-soft flex flex-col max-h-[90vh]">
-    <div class="flex items-center justify-between p-4 border-b border-[var(--border)]">
-      <h2 class="text-xl font-semibold">Add New Prompt</h2>
-      <button id="gpt-addClose" class="btn"><i data-lucide="x"></i></button>
-    </div>
-    <div class="p-4 space-y-4 overflow-y-auto scrollbar-thin" style="max-height:60vh">
-      <div><label class="block text-sm mb-1">Title</label><input id="gpt-titleInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="Prompt title..."/></div>
-      <div class="grid grid-cols-2 gap-3">
-        <div><label class="block text-sm mb-1">Category</label><select id="gpt-categoryInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
-        <div><label class="block text-sm mb-1">Model</label><select id="gpt-modelInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"><option>GPT-4</option><option>GPT-4-Turbo</option><option>GPT-3.5</option></select></div>
-      </div>
-      <div><label class="block text-sm mb-1">System Role (optional)</label><textarea id="gpt-systemRoleInput" rows="3" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="You are a helpful assistant..."></textarea></div>
-      <div><label class="block text-sm mb-1">Prompt</label><textarea id="gpt-promptInput" rows="6" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="Enter your GPT prompt..."></textarea></div>
-      <div><label class="block text-sm mb-1">Tags (comma separated)</label><input id="gpt-tagsInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="sales, email, marketing"/></div>
-    </div>
-    <div class="p-4 border-t border-[var(--border)] flex justify-end gap-2">
-      <button id="gpt-clearAdd" class="btn"><i data-lucide="eraser"></i> Clear</button>
-      <button id="gpt-cancelAdd" class="btn">Cancel</button>
-      <button id="gpt-saveAdd" class="btn btn-brand" disabled><span id="gpt-saveAddText">Save</span></button>
-    </div>
-  </div>
-</div>
-
-<!-- ==================== TOAST NOTIFICATIONS ==================== -->
-<div id="toastContainer" class="toast-container"></div>
-
-<!-- ==================== PREVIEW MODAL ==================== -->
-<div id="previewModal" class="preview-modal">
-  <div class="preview-content">
-    <div class="preview-header">
-      <h2 class="text-xl font-bold" id="previewTitle"></h2>
-      <button id="previewClose" class="btn btn-sm"><i data-lucide="x"></i></button>
-    </div>
-    <div class="preview-body" id="previewBody"></div>
-    <div class="preview-footer">
-      <button id="previewShareBtn" class="btn btn-sm"><i data-lucide="share-2"></i> Share Link</button>
-      <button id="previewSendBtn" class="btn btn-sm" style="display:none;"><i data-lucide="send"></i> Send via WhatsApp</button>
-      <button id="previewCopyWABtn" class="btn btn-sm"><i data-lucide="message-circle"></i> Copy for WhatsApp</button>
-      <button id="previewCopyEmailBtn" class="btn btn-sm"><i data-lucide="mail"></i> Copy for Email</button>
-      <button id="previewCloseBtn" class="btn btn-sm btn-brand">Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- ==================== CATEGORY MANAGEMENT MODAL ==================== -->
-<div id="categoryManageModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
-  <div class="card rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-2xl font-bold">
-        Manage <span id="cat-modal-type">WhatsApp</span> Categories
-      </h2>
-      <button id="cat-closeBtn" class="btn btn-sm">
-        <i data-lucide="x"></i>
-      </button>
-    </div>
-
-    <!-- Add New Category -->
-    <div class="mb-6 p-4 rounded-lg border border-[var(--border)] bg-[var(--accent-bg)]">
-      <label class="block font-semibold mb-2">Add New Category</label>
-      <div class="flex gap-2">
-        <input
-          id="cat-newName"
-          type="text"
-          placeholder="Enter category name..."
-          class="flex-1 p-3 rounded-lg border border-[var(--border)] bg-[var(--card)]"
-        />
-        <button id="cat-addBtn" class="btn btn-brand">
-          <i data-lucide="plus"></i> Add
+  <!-- ==================== MEDIA LIGHTBOX ==================== -->
+  <div id="mediaLightbox" class="media-lightbox">
+    <button class="media-lightbox-close" id="mediaLightboxClose">
+      <i data-lucide="x"></i>
+    </button>
+    <div class="media-lightbox-content">
+      <div id="mediaLightboxContainer"></div>
+      <div class="media-lightbox-title" id="mediaLightboxTitle"></div>
+      <div class="media-lightbox-actions">
+        <button class="media-lightbox-btn" id="mediaLightboxDownload">
+          <i data-lucide="download"></i>
+          <span>Download</span>
+        </button>
+        <button class="media-lightbox-btn" id="mediaLightboxCopy" style="display:none;">
+          <i data-lucide="copy"></i>
+          <span>Copy Image</span>
+        </button>
+        <button class="media-lightbox-btn" id="mediaLightboxOpen">
+          <i data-lucide="external-link"></i>
+          <span>Open in New Tab</span>
         </button>
       </div>
     </div>
-
-    <!-- Existing Categories -->
-    <div class="mb-4">
-      <div class="flex justify-between items-center mb-2">
-        <label class="block font-semibold">Existing Categories</label>
-        <button id="cat-refreshBtn" class="btn btn-sm">
-          <i data-lucide="refresh-cw"></i> Refresh
-        </button>
-      </div>
-      <div id="cat-list" class="space-y-2 max-h-96 overflow-y-auto">
-        <!-- Dynamically populated -->
-      </div>
-    </div>
-
-    <div class="flex justify-end gap-2 mt-4">
-      <button id="cat-cancelBtn" class="btn">Close</button>
-    </div>
   </div>
-</div>
 
-<!-- ==================== MEDIA LIGHTBOX ==================== -->
-<div id="mediaLightbox" class="media-lightbox">
-  <button class="media-lightbox-close" id="mediaLightboxClose">
-    <i data-lucide="x"></i>
-  </button>
-  <div class="media-lightbox-content">
-    <div id="mediaLightboxContainer"></div>
-    <div class="media-lightbox-title" id="mediaLightboxTitle"></div>
-    <div class="media-lightbox-actions">
-      <button class="media-lightbox-btn" id="mediaLightboxDownload">
-        <i data-lucide="download"></i>
-        <span>Download</span>
-      </button>
-      <button class="media-lightbox-btn" id="mediaLightboxCopy" style="display:none;">
-        <i data-lucide="copy"></i>
-        <span>Copy Image</span>
-      </button>
-      <button class="media-lightbox-btn" id="mediaLightboxOpen">
-        <i data-lucide="external-link"></i>
-        <span>Open in New Tab</span>
-      </button>
+  <!-- ==================== CUSTOM CONTEXT MENU ==================== -->
+  <div id="customContextMenu" class="custom-context-menu">
+    <div class="context-menu-item" id="contextCopyImage">
+      <i data-lucide="copy"></i>
+      <span>Copy Image</span>
+    </div>
+    <div class="context-menu-item" id="contextOpenImage">
+      <i data-lucide="external-link"></i>
+      <span>Open in New Tab</span>
+    </div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item" id="contextDownloadImage">
+      <i data-lucide="download"></i>
+      <span>Download</span>
     </div>
   </div>
-</div>
 
-<!-- ==================== CUSTOM CONTEXT MENU ==================== -->
-<div id="customContextMenu" class="custom-context-menu">
-  <div class="context-menu-item" id="contextCopyImage">
-    <i data-lucide="copy"></i>
-    <span>Copy Image</span>
-  </div>
-  <div class="context-menu-item" id="contextOpenImage">
-    <i data-lucide="external-link"></i>
-    <span>Open in New Tab</span>
-  </div>
-  <div class="context-menu-divider"></div>
-  <div class="context-menu-item" id="contextDownloadImage">
-    <i data-lucide="download"></i>
-    <span>Download</span>
-  </div>
-</div>
-
-<!-- ==================== TUTORIAL ==================== -->
-<div id="tutorialOverlay" class="tutorial-overlay">
-  <div id="tutorialHighlight" class="tutorial-highlight"></div>
-  <div id="tutorialTooltip" class="tutorial-tooltip">
-    <div id="tutorialArrow" class="tutorial-arrow"></div>
-    <h3 class="text-lg font-bold mb-2" id="tutorialTitle"></h3>
-    <p class="text-sm mb-4" id="tutorialText"></p>
-    <div class="flex items-center justify-between">
-      <div class="text-xs text-[var(--muted-ink)]">
-        Step <span id="tutorialStep">1</span> of <span id="tutorialTotal">10</span>
-      </div>
-      <div class="flex gap-2">
-        <button id="tutorialSkip" class="btn btn-sm">Skip</button>
-        <button id="tutorialPrev" class="btn btn-sm" disabled>Previous</button>
-        <button id="tutorialNext" class="btn btn-sm btn-brand">Next</button>
+  <!-- ==================== TUTORIAL ==================== -->
+  <div id="tutorialOverlay" class="tutorial-overlay">
+    <div id="tutorialHighlight" class="tutorial-highlight"></div>
+    <div id="tutorialTooltip" class="tutorial-tooltip">
+      <div id="tutorialArrow" class="tutorial-arrow"></div>
+      <h3 class="text-lg font-bold mb-2" id="tutorialTitle"></h3>
+      <p class="text-sm mb-4" id="tutorialText"></p>
+      <div class="flex items-center justify-between">
+        <div class="text-xs text-[var(--muted-ink)]">
+          Step <span id="tutorialStep">1</span> of <span id="tutorialTotal">10</span>
+        </div>
+        <div class="flex gap-2">
+          <button id="tutorialSkip" class="btn btn-sm">Skip</button>
+          <button id="tutorialPrev" class="btn btn-sm" disabled>Previous</button>
+          <button id="tutorialNext" class="btn btn-sm btn-brand">Next</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<script>
+  <script>
 /* ====== CONFIG ====== */
 const WA_API = '/api/contents';
 const GPT_API = '/api/prompts';
@@ -3685,68 +4793,70 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   syncWAContents();
   syncGPTPrompts();
 });
-</script>
+  </script>
 
-<!-- Command Palette -->
-<script src="ai-search.js"></script>
-<script src="command-palette.js"></script>
-<script>
-// Initialize Command Palette
-window.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => {
-    window.commandPalette = new CommandPalette({
-      // Get content arrays
-      getWAContents: () => waContents || [],
-      getGPTPrompts: () => gptPrompts || [],
-      
-      // Open content callback
-      onOpenContent: (type, id) => {
-        if (type === 'whatsapp') {
-          openWAPreview(id);
-        } else if (type === 'prompt') {
-          openGPTPreview(id);
-        }
-      },
-      
-      // Add content callback
-      onAddContent: (type) => {
-        if (type === 'whatsapp') {
-          // Switch to WhatsApp tab if needed
-          const waTab = document.querySelector('.tab[data-tab="whatsapp"]');
-          if (waTab && !waTab.classList.contains('active')) {
-            waTab.click();
+  <!-- Command Palette & Chat Widget -->
+  <script src="ai-search.js"></script>
+  <script src="command-palette.js"></script>
+  <script src="ai-chat-widget.js"></script>
+  <script>
+    // Initialize Command Palette (Hidden power user feature)
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        window.commandPalette = new CommandPalette({
+          // Get content arrays
+          getWAContents: () => waContents || [],
+          getGPTPrompts: () => gptPrompts || [],
+
+          // Open content callback
+          onOpenContent: (type, id) => {
+            if (type === 'whatsapp') {
+              openWAPreview(id);
+            } else if (type === 'prompt') {
+              openGPTPreview(id);
+            }
+          },
+
+          // Add content callback
+          onAddContent: (type) => {
+            if (type === 'whatsapp') {
+              // Switch to WhatsApp tab if needed
+              const waTab = document.querySelector('.tab[data-tab="whatsapp"]');
+              if (waTab && !waTab.classList.contains('active')) {
+                waTab.click();
+              }
+              openWAAdd();
+            } else if (type === 'prompt') {
+              // Switch to Prompts tab if needed
+              const gptTab = document.querySelector('.tab[data-tab="prompts"]');
+              if (gptTab && !gptTab.classList.contains('active')) {
+                gptTab.click();
+              }
+              openGPTAdd();
+            }
+          },
+
+          // Theme toggle callback
+          onToggleTheme: () => {
+            theme = (theme === 'dark' ? 'light' : 'dark');
+            setTheme(theme);
           }
-          openWAAdd();
-        } else if (type === 'prompt') {
-          // Switch to Prompts tab if needed
-          const gptTab = document.querySelector('.tab[data-tab="prompts"]');
-          if (gptTab && !gptTab.classList.contains('active')) {
-            gptTab.click();
-          }
-          openGPTAdd();
+        });
+
+        // Also bind the Cmd+K button in header
+        const cmdKBtn = document.getElementById('cmdKBtn');
+        if (cmdKBtn) {
+          cmdKBtn.addEventListener('click', () => {
+            if (window.commandPalette) {
+              window.commandPalette.open();
+            }
+          });
         }
-      },
-      
-      // Theme toggle callback
-      onToggleTheme: () => {
-        theme = (theme === 'dark' ? 'light' : 'dark');
-        setTheme(theme);
-      }
+
+        console.log('✅ Command Palette ready (press Cmd+K or Ctrl+K)');
+      }, 500); // Wait for content to load
     });
-    
-    // Also bind the Cmd+K button in header
-    const cmdKBtn = document.getElementById('cmdKBtn');
-    if (cmdKBtn) {
-      cmdKBtn.addEventListener('click', () => {
-        if (window.commandPalette) {
-          window.commandPalette.open();
-        }
-      });
-    }
-    
-    console.log('✅ Command Palette ready (press Cmd+K or Ctrl+K)');
-  }, 500); // Wait for content to load
-});
-</script>
+  </script>
 </body>
+
 </html>
