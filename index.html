@@ -1,0 +1,3752 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>InvestMenter – Content Library</title>
+  <link rel="icon" href="https://onecdn.io/media/ffb500c6-8305-4802-8cf9-6b55e6bd5ed5/md2x" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="command-palette.css">
+  <style>
+    /* ---------- THEME ---------- */
+    :root{
+      --ink:#0b0b0c; --fg:#0b0b0c; --muted:#f4f5f7; --muted-ink:#6b7280;
+      --brand:#d6b160; --brand-ink:#000; --chip:#0f766e; --chip-ink:#ecfeff;
+      --card:#ffffff; --border:rgba(0,0,0,.08); --bg:#ffffff; --canvas:#f9fafb;
+      --wa:#e7f1e9; --wa-ink:#0b0b0c;
+      --prompt:#f0f4ff; --prompt-ink:#0b0b0c;
+    }
+    [data-theme="dark"]{
+      --ink:#e5e7eb; --fg:#e5e7eb; --muted:#16181b; --muted-ink:#9ca3af;
+      --brand:#d6b160; --brand-ink:#000; --chip:#0d9488; --chip-ink:#ecfeff;
+      --card:#0f1114; --border:rgba(255,255,255,.10); --bg:#0b0b0c; --canvas:#1a1d21;
+      --wa:#0f1a13; --wa-ink:#e5e7eb;
+      --prompt:#1a1f2e; --prompt-ink:#e5e7eb;
+    }
+    body{ background:var(--bg); color:var(--fg); }
+    .card{ background:var(--card); border:1px solid var(--border); transition:all .3s ease; }
+    .card:hover{ transform:translateY(-4px); box-shadow:0 12px 40px rgba(0,0,0,.15); }
+    [data-theme="dark"] .card:hover{ box-shadow:0 12px 40px rgba(0,0,0,.4); }
+    .chip{ border-radius:9999px; padding:2px 8px; font-size:12px; transition:all .2s ease; }
+    .chip:hover{ transform:scale(1.05); }
+    .chip-folder{ background:var(--muted); color:var(--fg); border:1px solid var(--border); display:inline-flex; align-items:center; gap:6px; }
+    .btn{ display:inline-flex; align-items:center; gap:.5rem; border:1px solid var(--border); padding:.55rem .8rem; border-radius:.75rem; cursor:pointer; position:relative; overflow:hidden; transition:all .2s ease; }
+    .btn:hover:not([disabled]){ background:rgba(255,255,255,.06); transform:translateY(-1px); }
+    [data-theme="light"] .btn:hover:not([disabled]){ background:rgba(0,0,0,.04) }
+    .btn:active:not([disabled]){ transform:translateY(0); }
+    .btn-brand{ background:var(--brand); color:var(--brand-ink); border-color:transparent; }
+    .btn-brand:hover:not([disabled]){ filter:brightness(.95); box-shadow:0 4px 12px rgba(214,177,96,.3); }
+    .btn[disabled]{ opacity:.6; cursor:not-allowed; }
+    @keyframes ripple{ 0%{transform:scale(0);opacity:1} 100%{transform:scale(4);opacity:0} }
+    .btn::after{ content:''; position:absolute; width:100%; height:100%; background:rgba(255,255,255,.3); border-radius:50%; transform:scale(0); pointer-events:none; }
+    .btn:active::after{ animation:ripple .6s ease-out; }
+    .shadow-soft{ box-shadow:0 8px 30px rgba(0,0,0,.12) }
+    [data-theme="dark"] .shadow-soft{ box-shadow:0 8px 30px rgba(0,0,0,.35) }
+    .scrollbar-thin{ scrollbar-width: thin; }
+    .scrollbar-thin::-webkit-scrollbar{ height:6px; width:6px;}
+    .scrollbar-thin::-webkit-scrollbar-thumb{ background:rgba(127,127,127,.35); border-radius:999px;}
+    .wa-bubble { background:var(--wa); color:var(--wa-ink); border:1px solid var(--border); border-radius:12px; padding:12px; }
+    .wa-bubble strong{ font-weight:700; }
+    .wa-bubble em{ font-style:italic; }
+    .wa-bubble s{ text-decoration:line-through; }
+    .wa-bubble code{
+      background:transparent; border:1px solid var(--border); border-radius:6px; padding:1px 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:.875em;
+    }
+    .prompt-bubble { background:var(--prompt); color:var(--prompt-ink); border:1px solid var(--border); border-radius:12px; padding:12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:.875em; white-space: pre-wrap; }
+    /* ---------- compact buttons ---------- */
+    .btn-sm{ padding:.35rem .55rem; border-radius:.6rem; font-size:12px; gap:.35rem; line-height:1; }
+    .btn-xs{ padding:.25rem .45rem; border-radius:.5rem; font-size:11px; gap:.3rem; line-height:1; }
+    .btn-sm .lucide, .btn-xs .lucide{ width:16px; height:16px; }
+    /* ---------- FORMAT TOOLBAR ---------- */
+    .formatting-toolbar{ display:flex; align-items:center; gap:.25rem; }
+    .format-btn{ display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:.5rem; border:1px solid var(--border); background:transparent; cursor:pointer; transition:all .2s ease; }
+    .format-btn:hover{ background:var(--brand); color:var(--brand-ink); border-color:var(--brand); transform:scale(1.05); }
+    .format-btn:active{ transform:scale(.95); }
+    .format-btn i{ width:16px; height:16px; }
+    /* ---------- FILE PREVIEW CARDS ---------- */
+    .file-preview-card{ position:relative; transition:all .2s ease; }
+    .file-preview-card:hover{ transform:translateY(-2px); box-shadow:0 4px 16px rgba(214,177,96,.4); border-color:var(--brand); }
+    [data-theme="dark"] .file-preview-card:hover{ box-shadow:0 4px 16px rgba(214,177,96,.3); }
+    .file-preview-thumbnail{ transition:all .2s ease; }
+    .file-preview-remove{ opacity:0; transition:all .2s ease; }
+    .file-preview-card:hover .file-preview-remove{ opacity:1; }
+    .file-preview-remove:hover{ transform:scale(1.1); filter:brightness(.9); }
+    /* ---------- TABS ---------- */
+    .tab{ padding:.75rem 1.5rem; border-bottom:2px solid transparent; cursor:pointer; transition:all .2s; }
+    .tab:hover{ background:rgba(0,0,0,.04); }
+    [data-theme="dark"] .tab:hover{ background:rgba(255,255,255,.06); }
+    .tab.active{ border-bottom-color:var(--brand); font-weight:600; }
+    .hidden{ display:none !important; }
+    /* ---------- TUTORIAL ---------- */
+    .tutorial-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:9999; display:none; }
+    .tutorial-overlay.active{ display:block; }
+    .tutorial-highlight{ position:absolute; box-shadow:0 0 0 9999px rgba(0,0,0,.65); border:3px solid var(--brand); border-radius:12px; z-index:10000; transition:all .3s ease; pointer-events:none; }
+    .tutorial-tooltip{ position:absolute; background:var(--card); border:2px solid var(--brand); border-radius:12px; padding:20px; max-width:400px; z-index:10001; box-shadow:0 10px 40px rgba(0,0,0,.3); }
+    .tutorial-arrow{ position:absolute; width:0; height:0; border:12px solid transparent; }
+    .tutorial-arrow.top{ border-bottom-color:var(--brand); top:-24px; left:50%; transform:translateX(-50%); }
+    .tutorial-arrow.bottom{ border-top-color:var(--brand); bottom:-24px; left:50%; transform:translateX(-50%); }
+    .tutorial-arrow.left{ border-right-color:var(--brand); left:-24px; top:50%; transform:translateY(-50%); }
+    .tutorial-arrow.right{ border-left-color:var(--brand); right:-24px; top:50%; transform:translateY(-50%); }
+    /* ---------- TOAST NOTIFICATIONS ---------- */
+    .toast-container{ position:fixed; top:20px; right:20px; z-index:99999; display:flex; flex-direction:column; gap:10px; pointer-events:none; }
+    .toast{ background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 20px; box-shadow:0 8px 30px rgba(0,0,0,.2); display:flex; align-items:center; gap:12px; min-width:300px; max-width:400px; pointer-events:auto; transform:translateX(500px); animation:slideIn .3s ease forwards; }
+    @keyframes slideIn{ to{transform:translateX(0)} }
+    @keyframes slideOut{ to{transform:translateX(500px);opacity:0} }
+    .toast.hiding{ animation:slideOut .3s ease forwards; }
+    .toast-success{ border-left:4px solid #10b981; }
+    .toast-error{ border-left:4px solid #ef4444; }
+    .toast-info{ border-left:4px solid #3b82f6; }
+    .toast-icon{ width:24px; height:24px; flex-shrink:0; }
+    .toast-success .toast-icon{ color:#10b981; }
+    .toast-error .toast-icon{ color:#ef4444; }
+    .toast-info .toast-icon{ color:#3b82f6; }
+    .toast-content{ flex:1; }
+    .toast-title{ font-weight:600; margin-bottom:2px; }
+    .toast-message{ font-size:14px; opacity:.8; }
+    .toast-close{ cursor:pointer; opacity:.5; transition:opacity .2s; }
+    .toast-close:hover{ opacity:1; }
+    /* ---------- LOADING SKELETON ---------- */
+    .skeleton{ background:linear-gradient(90deg,var(--muted) 25%,var(--border) 50%,var(--muted) 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:8px; }
+    @keyframes shimmer{ 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    .skeleton-card{ height:420px; }
+    .skeleton-line{ height:16px; margin:8px 0; }
+    .skeleton-circle{ border-radius:50%; width:40px; height:40px; }
+    /* ---------- EMPTY STATE ---------- */
+    .empty-state{ text-align:center; padding:60px 20px; opacity:.6; }
+    .empty-state-icon{ font-size:64px; margin-bottom:20px; opacity:.3; }
+    .empty-state-title{ font-size:20px; font-weight:600; margin-bottom:8px; }
+    .empty-state-text{ font-size:14px; margin-bottom:20px; }
+    /* ---------- CATEGORY COLORS ---------- */
+    .category-general{ background:#8b5cf6 !important; color:#fff !important; }
+    .category-motivation{ background:#f59e0b !important; color:#fff !important; }
+    .category-tech-tips{ background:#3b82f6 !important; color:#fff !important; }
+    .category-fun-facts{ background:#ec4899 !important; color:#fff !important; }
+    .category-announcements{ background:#ef4444 !important; color:#fff !important; }
+    .category-events{ background:#10b981 !important; color:#fff !important; }
+    .category-educational{ background:#06b6d4 !important; color:#fff !important; }
+    .category-sales{ background:#8b5cf6 !important; color:#fff !important; }
+    .category-marketing{ background:#f59e0b !important; color:#fff !important; }
+    .category-support{ background:#10b981 !important; color:#fff !important; }
+    .category-technical{ background:#3b82f6 !important; color:#fff !important; }
+    .category-creative{ background:#ec4899 !important; color:#fff !important; }
+    .category-analysis{ background:#06b6d4 !important; color:#fff !important; }
+    .card-border-general{ border-left:4px solid #8b5cf6 !important; }
+    .card-border-motivation{ border-left:4px solid #f59e0b !important; }
+    .card-border-tech-tips{ border-left:4px solid #3b82f6 !important; }
+    .card-border-fun-facts{ border-left:4px solid #ec4899 !important; }
+    .card-border-announcements{ border-left:4px solid #ef4444 !important; }
+    .card-border-events{ border-left:4px solid #10b981 !important; }
+    .card-border-educational{ border-left:4px solid #06b6d4 !important; }
+    .card-border-sales{ border-left:4px solid #8b5cf6 !important; }
+    .card-border-marketing{ border-left:4px solid #f59e0b !important; }
+    .card-border-support{ border-left:4px solid #10b981 !important; }
+    .card-border-technical{ border-left:4px solid #3b82f6 !important; }
+    .card-border-creative{ border-left:4px solid #ec4899 !important; }
+    .card-border-analysis{ border-left:4px solid #06b6d4 !important; }
+    /* ---------- BADGES ---------- */
+    .badge{ display:inline-flex; align-items:center; gap:4px; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:600; }
+    .badge-new{ background:#10b981; color:#fff; }
+    .badge-trending{ background:#ef4444; color:#fff; animation:pulse 2s infinite; }
+    @keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.7} }
+    /* ---------- SEARCH ENHANCEMENTS ---------- */
+    .search-wrapper{ position:relative; }
+    .search-wrapper input{ padding-left:40px; }
+    .search-icon{ position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:.5; pointer-events:none; }
+    .search-clear{ position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; opacity:.5; transition:opacity .2s; }
+    .search-clear:hover{ opacity:1; }
+    /* ---------- ICON ANIMATIONS ---------- */
+    @keyframes spin{ from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    .spin{ animation:spin 1s linear infinite; }
+    @keyframes bounce{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+    .bounce{ animation:bounce .5s ease; }
+    /* ---------- STATS ANIMATIONS ---------- */
+    .stat-value{ font-size:2rem; font-weight:700; transition:all .3s ease; }
+    .stat-value:hover{ transform:scale(1.1); color:var(--brand); }
+    /* ---------- PREVIEW MODAL ---------- */
+    .preview-modal{ position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:9998; display:none; align-items:center; justify-content:center; padding:20px; }
+    .preview-modal.active{ display:flex; }
+    .preview-content{ background:var(--card); border-radius:16px; max-width:800px; width:100%; max-height:90vh; overflow:hidden; display:flex; flex-direction:column; animation:modalIn .3s ease; }
+    @keyframes modalIn{ from{transform:scale(.9);opacity:0} to{transform:scale(1);opacity:1} }
+    .preview-header{ padding:20px; border-bottom:1px solid var(--border); display:flex; justify-content:between; align-items:center; }
+    .preview-body{ padding:20px; overflow-y:auto; flex:1; }
+    .preview-footer{ padding:20px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:10px; }
+    /* ---------- ATTACHMENT THUMBNAILS ---------- */
+    .attachment-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+    .attachment-card{ display:flex; flex-direction:column; border-radius:12px; overflow:hidden; border:1px solid var(--border); background:var(--muted); transition:all .3s ease; text-decoration:none; color:inherit; }
+    .attachment-card:hover{ transform:translateY(-4px); box-shadow:0 8px 24px rgba(0,0,0,.15); border-color:var(--brand); }
+    .attachment-thumbnail{ width:100%; height:150px; background:var(--card); position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+    .attachment-thumbnail img{ width:100%; height:100%; object-fit:cover; }
+    .attachment-thumbnail video{ width:100%; height:100%; object-fit:cover; }
+    .attachment-thumbnail iframe{ width:100%; height:100%; border:none; pointer-events:none; }
+    .attachment-icon{ display:flex; align-items:center; justify-content:center; width:100%; height:100%; font-size:48px; color:var(--brand); opacity:.5; }
+    .attachment-play-icon{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:48px; color:white; opacity:.9; pointer-events:none; }
+    .attachment-info{ padding:8px 12px; display:flex; flex-direction:column; gap:4px; }
+    .attachment-name{ font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .attachment-type{ font-size:10px; color:var(--muted-ink); font-weight:600; text-transform:uppercase; }
+    /* ---------- FADE IN ANIMATION ---------- */
+    @keyframes fadeIn{ from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    /* ---------- FOLDER SIDEBAR ---------- */
+    .sidebar-layout{ display:flex; gap:20px; }
+    .folder-sidebar{ width:240px; min-width:240px; }
+    .folder-tabs{ display:flex; flex-direction:column; gap:8px; }
+    .folder-tab{ display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:8px; cursor:pointer; transition:all .2s ease; background:var(--card); border:1px solid var(--border); }
+    .folder-tab:hover{ background:var(--accent-bg); border-color:var(--brand); }
+    .folder-tab.active{ background:var(--brand); color:#fff; border-color:var(--brand); }
+    .folder-icon{ width:20px; height:20px; opacity:.7; }
+    .folder-tab.active .folder-icon{ opacity:1; }
+    .folder-name{ flex:1; font-weight:500; font-size:14px; }
+    .folder-count{ font-size:12px; opacity:.7; background:rgba(0,0,0,.1); padding:2px 8px; border-radius:12px; }
+    .folder-tab.active .folder-count{ background:rgba(255,255,255,.2); }
+    .sidebar-header{ display:flex; align-items:center; justify-content:between; margin-bottom:16px; }
+    .sidebar-title{ font-weight:600; font-size:14px; text-transform:uppercase; opacity:.6; letter-spacing:.5px; }
+    .sidebar-manage-btn{ padding:6px 12px; font-size:12px; }
+    .main-content-area{ flex:1; min-width:0; }
+    @media (max-width:768px){ .sidebar-layout{ flex-direction:column; } .folder-sidebar{ width:100%; min-width:auto; } }
+    .fade-in{ animation:fadeIn .4s ease forwards; }
+    /* ---------- MEDIA LIGHTBOX ---------- */
+    .media-lightbox{ position:fixed; inset:0; background:rgba(0,0,0,.95); z-index:99999; display:none; align-items:center; justify-content:center; padding:20px; }
+    .media-lightbox.active{ display:flex; }
+    .media-lightbox-content{ max-width:95vw; max-height:95vh; display:flex; flex-direction:column; align-items:center; position:relative; }
+    .media-lightbox-close{ position:absolute; top:20px; right:20px; width:48px; height:48px; background:rgba(255,255,255,.1); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.2); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:100001; transition:all .2s; }
+    .media-lightbox-close:hover{ background:rgba(255,255,255,.2); transform:scale(1.1); }
+    .media-lightbox-close i{ color:#fff; width:24px; height:24px; }
+    .media-lightbox-media{ max-width:100%; max-height:85vh; object-fit:contain; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+    .media-lightbox-video{ max-width:100%; max-height:85vh; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+    .media-lightbox-pdf{ width:90vw; height:85vh; border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,.5); background:#fff; }
+    .media-lightbox-title{ color:#fff; margin-top:20px; font-size:18px; font-weight:600; text-align:center; max-width:800px; }
+    .media-lightbox-actions{ margin-top:16px; display:flex; gap:12px; }
+    .media-lightbox-btn{ padding:12px 24px; background:rgba(255,255,255,.1); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.2); border-radius:8px; color:#fff; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all .2s; }
+    .media-lightbox-btn:hover{ background:rgba(255,255,255,.2); transform:translateY(-2px); }
+    .media-lightbox-btn i{ width:20px; height:20px; }
+    /* ---------- CUSTOM CONTEXT MENU ---------- */
+    .custom-context-menu{ position:fixed; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:4px; min-width:180px; box-shadow:0 8px 24px rgba(0,0,0,.2); z-index:100000; display:none; }
+    .custom-context-menu.active{ display:block; }
+    .context-menu-item{ padding:10px 14px; cursor:pointer; border-radius:6px; display:flex; align-items:center; gap:10px; transition:all .2s; font-size:14px; }
+    .context-menu-item:hover{ background:var(--muted); }
+    .context-menu-item i{ width:18px; height:18px; opacity:.7; }
+    .context-menu-divider{ height:1px; background:var(--border); margin:4px 0; }
+    /* Make attachment cards clickable */
+    .attachment-card{ cursor:pointer; }
+  </style>
+</head>
+<body class="min-h-screen p-6">
+<div class="max-w-7xl mx-auto space-y-6">
+
+  <!-- Header -->
+  <header class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <div class="flex items-center gap-3">
+      <button id="tutorialBtn" class="btn btn-brand"><i data-lucide="help-circle"></i><span class="hidden md:inline">Tutorial</span></button>
+      <h1 class="text-3xl font-bold flex items-center gap-2 tracking-tight">
+        <i data-lucide="library"></i> Content Library
+      </h1>
+    </div>
+    <div class="flex gap-2">
+      <button id="cmdKBtn" class="btn" title="Quick search (Cmd+K)"><i data-lucide="command"></i><span class="hidden md:inline">Cmd+K</span></button>
+      <button id="supportBtn" class="btn"><i data-lucide="life-buoy"></i><span class="hidden md:inline">Support</span></button>
+      <button id="themeBtn" class="btn"><i data-lucide="moon"></i><span class="hidden md:inline">Dark</span></button>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="card rounded-xl shadow-soft flex border-b-0">
+    <div class="tab active" data-tab="whatsapp">
+      <i data-lucide="message-circle"></i> WhatsApp Content
+    </div>
+    <div class="tab" data-tab="prompts">
+      <i data-lucide="cpu"></i> GPT Prompts
+    </div>
+  </div>
+
+  <!-- ==================== WHATSAPP SECTION ==================== -->
+  <div id="whatsapp-section" class="tab-content">
+    <div class="sidebar-layout">
+
+      <!-- Left Folder Sidebar -->
+      <aside class="folder-sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title">Folders</div>
+          <button id="wa-manageCategoriesBtn" class="btn btn-sm sidebar-manage-btn" title="Manage Categories">
+            <i data-lucide="settings"></i>
+          </button>
+        </div>
+        <div id="wa-folderTabs" class="folder-tabs">
+          <!-- Dynamically populated folder tabs -->
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <div class="main-content-area">
+        <!-- Toolbar -->
+        <section class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div class="flex gap-2 w-full md:w-auto">
+            <div class="search-wrapper flex-1">
+              <i data-lucide="search" class="search-icon"></i>
+              <input id="wa-searchInput" placeholder="Search content..." class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent"/>
+              <i data-lucide="x" class="search-clear hidden" id="wa-searchClear"></i>
+            </div>
+          </div>
+          <div class="flex gap-2 items-center">
+            <button id="wa-syncBtn" class="btn"><i data-lucide="refresh-cw"></i><span class="hidden md:inline">Sync</span></button>
+            <button id="wa-addBtn" class="btn btn-brand"><i data-lucide="plus"></i><span class="hidden md:inline">Add Content</span></button>
+          </div>
+        </section>
+
+        <!-- Grid -->
+        <section>
+          <div id="wa-contentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch"></div>
+          <div class="flex items-center justify-between mt-4">
+            <button id="wa-prevPage" class="btn" disabled><i data-lucide="chevron-left"></i> Prev</button>
+            <div class="text-sm text-[var(--muted-ink)]">Page <span id="wa-pageNum">1</span> of <span id="wa-pageCount">1</span></div>
+            <button id="wa-nextPage" class="btn">Next <i data-lucide="chevron-right"></i></button>
+          </div>
+        </section>
+
+        <!-- Stats -->
+        <section class="card rounded-xl p-4 shadow-soft">
+          <h2 class="font-semibold mb-2">Content Statistics</h2>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div><div id="wa-statTotal" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Total Content</div></div>
+            <div><div id="wa-statUses" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Total Uses</div></div>
+            <div><div id="wa-statCategories" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Categories</div></div>
+            <div><div id="wa-statRecent" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Recently Used</div></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== GPT PROMPTS SECTION ==================== -->
+  <div id="prompts-section" class="tab-content hidden">
+
+    <!-- Toolbar -->
+    <section class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div class="flex gap-2 w-full md:w-auto">
+        <div class="search-wrapper flex-1">
+          <i data-lucide="search" class="search-icon"></i>
+          <input id="gpt-searchInput" placeholder="Search prompts..." class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent"/>
+          <i data-lucide="x" class="search-clear hidden" id="gpt-searchClear"></i>
+        </div>
+        <select id="gpt-categorySelect" class="p-3 rounded-lg border border-[var(--border)] bg-transparent">
+          <option value="all">All Categories</option>
+        </select>
+        <button id="gpt-manageCategoriesBtn" class="btn" title="Manage Categories">
+          <i data-lucide="settings"></i><span class="hidden md:inline">Manage</span>
+        </button>
+      </div>
+      <div class="flex gap-2 items-center">
+        <button id="gpt-syncBtn" class="btn"><i data-lucide="refresh-cw"></i><span class="hidden md:inline">Sync</span></button>
+        <button id="gpt-addBtn" class="btn btn-brand"><i data-lucide="plus"></i><span class="hidden md:inline">Add Prompt</span></button>
+      </div>
+    </section>
+
+    <!-- Grid -->
+    <section>
+      <div id="gpt-contentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch"></div>
+      <div class="flex items-center justify-between mt-4">
+        <button id="gpt-prevPage" class="btn" disabled><i data-lucide="chevron-left"></i> Prev</button>
+        <div class="text-sm text-[var(--muted-ink)]">Page <span id="gpt-pageNum">1</span> of <span id="gpt-pageCount">1</span></div>
+        <button id="gpt-nextPage" class="btn">Next <i data-lucide="chevron-right"></i></button>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="card rounded-xl p-4 shadow-soft">
+      <h2 class="font-semibold mb-2">Prompts Statistics</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div><div id="gpt-statTotal" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Total Prompts</div></div>
+        <div><div id="gpt-statUses" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Total Uses</div></div>
+        <div><div id="gpt-statCategories" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Categories</div></div>
+        <div><div id="gpt-statRecent" class="stat-value">0</div><div class="text-sm text-[var(--muted-ink)]">Recently Used</div></div>
+      </div>
+    </section>
+  </div>
+
+</div>
+
+<!-- ==================== WHATSAPP MODALS ==================== -->
+
+<!-- WA Edit Modal -->
+<div id="wa-editModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+  <div class="card w-full max-w-2xl rounded-xl shadow-soft flex flex-col max-h-[90vh]">
+    <div class="flex items-center justify-between p-4 border-b border-[var(--border)]">
+      <h2 class="text-xl font-semibold">Edit Content</h2>
+      <button id="wa-editClose" class="btn"><i data-lucide="x"></i></button>
+    </div>
+    <div class="p-4 space-y-4 overflow-y-auto scrollbar-thin" style="max-height:60vh">
+      <div><label class="block text-sm mb-1">Title</label><input id="wa-editTitle" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/></div>
+      <div><label class="block text-sm mb-1">Category</label><select id="wa-editCategory" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
+      <div><label class="block text-sm mb-1">Folder</label><select id="wa-editFolder" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
+      <div>
+        <label class="block text-sm mb-1">Content</label>
+        <div class="formatting-toolbar flex items-center gap-1 p-2 rounded-t-lg border border-b-0 border-[var(--border)] bg-[var(--muted)]">
+          <button type="button" class="format-btn" data-format="bold" data-target="wa-editContent" title="Bold (*text*)">
+            <i data-lucide="bold"></i>
+          </button>
+          <button type="button" class="format-btn" data-format="italic" data-target="wa-editContent" title="Italic (_text_)">
+            <i data-lucide="italic"></i>
+          </button>
+          <button type="button" class="format-btn" data-format="strikethrough" data-target="wa-editContent" title="Strikethrough (~text~)">
+            <i data-lucide="strikethrough"></i>
+          </button>
+          <button type="button" class="format-btn" data-format="code" data-target="wa-editContent" title="Code (`text`)">
+            <i data-lucide="code"></i>
+          </button>
+          <button type="button" class="format-btn" data-format="monospace" data-target="wa-editContent" title="Monospace (```text```)">
+            <i data-lucide="file-code"></i>
+          </button>
+        </div>
+        <textarea id="wa-editContent" rows="8" class="w-full p-2 rounded-b-lg border border-t-0 border-[var(--border)] bg-transparent" style="border-top-left-radius: 0; border-top-right-radius: 0;"></textarea>
+      </div>
+      <div><label class="block text-sm mb-1">Tags (comma separated)</label><input id="wa-editTags" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/></div>
+      <div>
+        <label class="block text-sm mb-1">Attachments</label>
+        <input id="wa-editFileUpload" type="file" multiple class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/>
+        <div id="wa-editUploadStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div>
+        <div id="wa-editFilePreview" class="mt-3 grid grid-cols-2 gap-2"></div>
+        <div id="wa-editExistingFiles" class="mt-2 text-sm"></div>
+      </div>
+      <div><label class="block text-sm mb-1">WhatsApp Preview</label><div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-2"><div id="wa-editPreview" class="wa-bubble text-sm max-h-48 overflow-auto whitespace-pre-wrap scrollbar-thin"></div></div></div>
+    </div>
+    <div class="p-4 border-t border-[var(--border)] flex justify-end gap-2">
+      <button id="wa-editCancel" class="btn">Cancel</button>
+      <button id="wa-editSave" class="btn btn-brand"><span id="wa-editSaveText">Save changes</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- WA Add Modal -->
+<div id="wa-addModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+  <div class="card w-full max-w-2xl rounded-xl shadow-soft flex flex-col max-h-[90vh]">
+    <div class="flex items-center justify-between p-4 border-b border-[var(--border)]">
+      <h2 class="text-xl font-semibold">Add New Content</h2>
+      <button id="wa-addClose" class="btn"><i data-lucide="x"></i></button>
+    </div>
+    <div class="p-4 space-y-4 overflow-y-auto scrollbar-thin" style="max-height:60vh">
+      <div><label class="block text-sm mb-1">Title</label><input id="wa-titleInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="Content title..."/></div>
+      <div><label class="block text-sm mb-1">Category</label><select id="wa-categoryInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
+      <div><label class="block text-sm mb-1">Folder</label><select id="wa-folderInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
+      <div>
+        <label class="block text-sm mb-1">Content</label>
+        <div class="formatting-toolbar flex items-center gap-1 p-2 rounded-t-lg border border-b-0 border-[var(--border)] bg-[var(--muted)]">
+          <button type="button" class="format-btn" data-format="bold" data-target="wa-contentInput" title="Bold (*text*)">
+            <i data-lucide="bold"></i>
+          </button>
+          <button type="button" class="format-btn" data-format="italic" data-target="wa-contentInput" title="Italic (_text_)">
+            <i data-lucide="italic"></i>
+          </button>
+          <button type="button" class="format-btn" data-format="strikethrough" data-target="wa-contentInput" title="Strikethrough (~text~)">
+            <i data-lucide="strikethrough"></i>
+          </button>
+          <button type="button" class="format-btn" data-format="code" data-target="wa-contentInput" title="Code (`text`)">
+            <i data-lucide="code"></i>
+          </button>
+          <button type="button" class="format-btn" data-format="monospace" data-target="wa-contentInput" title="Monospace (```text```)">
+            <i data-lucide="file-code"></i>
+          </button>
+        </div>
+        <textarea id="wa-contentInput" rows="8" class="w-full p-2 rounded-b-lg border border-t-0 border-[var(--border)] bg-transparent" placeholder="Use the toolbar above or type manually..." style="border-top-left-radius: 0; border-top-right-radius: 0;"></textarea>
+      </div>
+      <div><label class="block text-sm mb-1">Tags (comma separated)</label><input id="wa-tagsInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="motivation, weekly, inspiration"/></div>
+      <div>
+        <label class="block text-sm mb-1">Attachments</label>
+        <input id="wa-fileUpload" type="file" multiple class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/>
+        <div id="wa-uploadStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div>
+        <div id="wa-filePreview" class="mt-3 grid grid-cols-2 gap-2"></div>
+      </div>
+      <div><label class="block text-sm mb-1">WhatsApp Preview</label><div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-2"><div id="wa-waPreview" class="wa-bubble text-sm max-h-48 overflow-auto whitespace-pre-wrap scrollbar-thin">(start typing above)</div></div></div>
+    </div>
+    <div class="p-4 border-t border-[var(--border)] flex justify-end gap-2">
+      <button id="wa-clearAdd" class="btn"><i data-lucide="eraser"></i> Clear</button>
+      <button id="wa-cancelAdd" class="btn">Cancel</button>
+      <button id="wa-saveAdd" class="btn btn-brand" disabled><span id="wa-saveAddText">Save</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- WA Send Modal -->
+<div id="wa-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+  <div class="card w-full max-w-md rounded-xl shadow-soft p-4">
+    <h3 class="text-xl font-semibold mb-4">Send via WhatsApp</h3>
+    <div id="wa-send-attachments-info" class="hidden mb-4 p-3 rounded-lg bg-[var(--brand)]/10 border-2 border-[var(--brand)]">
+      <div class="flex items-center gap-2 text-sm text-[var(--fg)]">
+        <i data-lucide="paperclip" class="text-[var(--brand)]"></i>
+        <span id="wa-send-attachments-text"></span>
+      </div>
+    </div>
+    <label class="block text-sm mb-2">Phone number (international, digits only)</label>
+    <input id="wa-phone" type="tel" placeholder="9715XXXXXXXX" class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent mb-4"/>
+    <label class="block text-sm mb-2">Message</label>
+    <textarea id="wa-text" rows="6" class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent resize-vertical mb-4"></textarea>
+    <div id="wa-send-info-text" class="hidden text-xs text-[var(--muted-ink)] mb-4 flex items-center gap-1">
+      <i data-lucide="info"></i> <span>Links will be sent first, then the text message</span>
+    </div>
+    <div class="flex gap-2 justify-end">
+      <button id="wa-cancel" class="btn">Cancel</button>
+      <button id="wa-send" class="btn btn-brand">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== GPT PROMPTS MODALS ==================== -->
+
+<!-- GPT Edit Modal -->
+<div id="gpt-editModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+  <div class="card w-full max-w-3xl rounded-xl shadow-soft flex flex-col max-h-[90vh]">
+    <div class="flex items-center justify-between p-4 border-b border-[var(--border)]">
+      <h2 class="text-xl font-semibold">Edit Prompt</h2>
+      <button id="gpt-editClose" class="btn"><i data-lucide="x"></i></button>
+    </div>
+    <div class="p-4 space-y-4 overflow-y-auto scrollbar-thin" style="max-height:60vh">
+      <div><label class="block text-sm mb-1">Title</label><input id="gpt-editTitle" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="block text-sm mb-1">Category</label><select id="gpt-editCategory" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
+        <div><label class="block text-sm mb-1">Model</label><select id="gpt-editModel" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"><option>GPT-4</option><option>GPT-4-Turbo</option><option>GPT-3.5</option></select></div>
+      </div>
+      <div><label class="block text-sm mb-1">System Role (optional)</label><textarea id="gpt-editSystemRole" rows="3" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="You are a helpful assistant..."></textarea></div>
+      <div><label class="block text-sm mb-1">Prompt</label><textarea id="gpt-editPrompt" rows="6" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></textarea></div>
+      <div><label class="block text-sm mb-1">Tags (comma separated)</label><input id="gpt-editTags" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"/></div>
+    </div>
+    <div class="p-4 border-t border-[var(--border)] flex justify-end gap-2">
+      <button id="gpt-editCancel" class="btn">Cancel</button>
+      <button id="gpt-editSave" class="btn btn-brand"><span id="gpt-editSaveText">Save changes</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- GPT Add Modal -->
+<div id="gpt-addModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+  <div class="card w-full max-w-3xl rounded-xl shadow-soft flex flex-col max-h-[90vh]">
+    <div class="flex items-center justify-between p-4 border-b border-[var(--border)]">
+      <h2 class="text-xl font-semibold">Add New Prompt</h2>
+      <button id="gpt-addClose" class="btn"><i data-lucide="x"></i></button>
+    </div>
+    <div class="p-4 space-y-4 overflow-y-auto scrollbar-thin" style="max-height:60vh">
+      <div><label class="block text-sm mb-1">Title</label><input id="gpt-titleInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="Prompt title..."/></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="block text-sm mb-1">Category</label><select id="gpt-categoryInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"></select></div>
+        <div><label class="block text-sm mb-1">Model</label><select id="gpt-modelInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"><option>GPT-4</option><option>GPT-4-Turbo</option><option>GPT-3.5</option></select></div>
+      </div>
+      <div><label class="block text-sm mb-1">System Role (optional)</label><textarea id="gpt-systemRoleInput" rows="3" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="You are a helpful assistant..."></textarea></div>
+      <div><label class="block text-sm mb-1">Prompt</label><textarea id="gpt-promptInput" rows="6" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="Enter your GPT prompt..."></textarea></div>
+      <div><label class="block text-sm mb-1">Tags (comma separated)</label><input id="gpt-tagsInput" class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" placeholder="sales, email, marketing"/></div>
+    </div>
+    <div class="p-4 border-t border-[var(--border)] flex justify-end gap-2">
+      <button id="gpt-clearAdd" class="btn"><i data-lucide="eraser"></i> Clear</button>
+      <button id="gpt-cancelAdd" class="btn">Cancel</button>
+      <button id="gpt-saveAdd" class="btn btn-brand" disabled><span id="gpt-saveAddText">Save</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TOAST NOTIFICATIONS ==================== -->
+<div id="toastContainer" class="toast-container"></div>
+
+<!-- ==================== PREVIEW MODAL ==================== -->
+<div id="previewModal" class="preview-modal">
+  <div class="preview-content">
+    <div class="preview-header">
+      <h2 class="text-xl font-bold" id="previewTitle"></h2>
+      <button id="previewClose" class="btn btn-sm"><i data-lucide="x"></i></button>
+    </div>
+    <div class="preview-body" id="previewBody"></div>
+    <div class="preview-footer">
+      <button id="previewShareBtn" class="btn btn-sm"><i data-lucide="share-2"></i> Share Link</button>
+      <button id="previewSendBtn" class="btn btn-sm" style="display:none;"><i data-lucide="send"></i> Send via WhatsApp</button>
+      <button id="previewCopyWABtn" class="btn btn-sm"><i data-lucide="message-circle"></i> Copy for WhatsApp</button>
+      <button id="previewCopyEmailBtn" class="btn btn-sm"><i data-lucide="mail"></i> Copy for Email</button>
+      <button id="previewCloseBtn" class="btn btn-sm btn-brand">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CATEGORY MANAGEMENT MODAL ==================== -->
+<div id="categoryManageModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+  <div class="card rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-2xl font-bold">
+        Manage <span id="cat-modal-type">WhatsApp</span> Categories
+      </h2>
+      <button id="cat-closeBtn" class="btn btn-sm">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+
+    <!-- Add New Category -->
+    <div class="mb-6 p-4 rounded-lg border border-[var(--border)] bg-[var(--accent-bg)]">
+      <label class="block font-semibold mb-2">Add New Category</label>
+      <div class="flex gap-2">
+        <input
+          id="cat-newName"
+          type="text"
+          placeholder="Enter category name..."
+          class="flex-1 p-3 rounded-lg border border-[var(--border)] bg-[var(--card)]"
+        />
+        <button id="cat-addBtn" class="btn btn-brand">
+          <i data-lucide="plus"></i> Add
+        </button>
+      </div>
+    </div>
+
+    <!-- Existing Categories -->
+    <div class="mb-4">
+      <div class="flex justify-between items-center mb-2">
+        <label class="block font-semibold">Existing Categories</label>
+        <button id="cat-refreshBtn" class="btn btn-sm">
+          <i data-lucide="refresh-cw"></i> Refresh
+        </button>
+      </div>
+      <div id="cat-list" class="space-y-2 max-h-96 overflow-y-auto">
+        <!-- Dynamically populated -->
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-2 mt-4">
+      <button id="cat-cancelBtn" class="btn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MEDIA LIGHTBOX ==================== -->
+<div id="mediaLightbox" class="media-lightbox">
+  <button class="media-lightbox-close" id="mediaLightboxClose">
+    <i data-lucide="x"></i>
+  </button>
+  <div class="media-lightbox-content">
+    <div id="mediaLightboxContainer"></div>
+    <div class="media-lightbox-title" id="mediaLightboxTitle"></div>
+    <div class="media-lightbox-actions">
+      <button class="media-lightbox-btn" id="mediaLightboxDownload">
+        <i data-lucide="download"></i>
+        <span>Download</span>
+      </button>
+      <button class="media-lightbox-btn" id="mediaLightboxCopy" style="display:none;">
+        <i data-lucide="copy"></i>
+        <span>Copy Image</span>
+      </button>
+      <button class="media-lightbox-btn" id="mediaLightboxOpen">
+        <i data-lucide="external-link"></i>
+        <span>Open in New Tab</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CUSTOM CONTEXT MENU ==================== -->
+<div id="customContextMenu" class="custom-context-menu">
+  <div class="context-menu-item" id="contextCopyImage">
+    <i data-lucide="copy"></i>
+    <span>Copy Image</span>
+  </div>
+  <div class="context-menu-item" id="contextOpenImage">
+    <i data-lucide="external-link"></i>
+    <span>Open in New Tab</span>
+  </div>
+  <div class="context-menu-divider"></div>
+  <div class="context-menu-item" id="contextDownloadImage">
+    <i data-lucide="download"></i>
+    <span>Download</span>
+  </div>
+</div>
+
+<!-- ==================== TUTORIAL ==================== -->
+<div id="tutorialOverlay" class="tutorial-overlay">
+  <div id="tutorialHighlight" class="tutorial-highlight"></div>
+  <div id="tutorialTooltip" class="tutorial-tooltip">
+    <div id="tutorialArrow" class="tutorial-arrow"></div>
+    <h3 class="text-lg font-bold mb-2" id="tutorialTitle"></h3>
+    <p class="text-sm mb-4" id="tutorialText"></p>
+    <div class="flex items-center justify-between">
+      <div class="text-xs text-[var(--muted-ink)]">
+        Step <span id="tutorialStep">1</span> of <span id="tutorialTotal">10</span>
+      </div>
+      <div class="flex gap-2">
+        <button id="tutorialSkip" class="btn btn-sm">Skip</button>
+        <button id="tutorialPrev" class="btn btn-sm" disabled>Previous</button>
+        <button id="tutorialNext" class="btn btn-sm btn-brand">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ====== CONFIG ====== */
+const WA_API = '/api/contents';
+const GPT_API = '/api/prompts';
+const BLOB_UPLOAD_API = '/api/upload-blob';
+const DRIVE_APP_SCRIPT = 'https://script.google.com/macros/s/AKfycbwWgZ3B3vcN4flFQo1-Ul-AVjVGZozfoe8RDcbr8ez2d_d7r9XvQ7tnePY5q8ZC4w7Ziw/exec';
+const UNASSIGNED_FOLDER = 'Unassigned';
+const defaultWAFolders = ['Construction Updates','Investors Reach Out','Resell','Conveyance'];
+const USE_DUAL_STORAGE = true; // Set to false to use Google Drive only
+
+// Dynamic category data loaded from Notion
+let waCategoriesData = []; // [{name, color, count}]
+let gptCategoriesData = [];
+let waFolderOptions = [...defaultWAFolders];
+
+// Load categories from API
+async function loadWACategories(force = false) {
+  try {
+    const response = await fetch('/api/categories?db=contents');
+    const data = await response.json();
+    waCategoriesData = data.categories || [];
+    return waCategoriesData;
+  } catch (e) {
+    console.error('Failed to load WA categories:', e);
+    waCategoriesData = [{name: 'General', color: 'default', count: 0}];
+    return waCategoriesData;
+  }
+}
+
+async function loadGPTCategories(force = false) {
+  try {
+    const response = await fetch('/api/categories?db=prompts');
+    const data = await response.json();
+    gptCategoriesData = data.categories || [];
+    return gptCategoriesData;
+  } catch (e) {
+    console.error('Failed to load GPT categories:', e);
+    gptCategoriesData = [{name: 'General', color: 'default', count: 0}];
+    return gptCategoriesData;
+  }
+}
+
+/* ====== STATE ====== */
+lucide.createIcons();
+let currentTab = 'whatsapp';
+let waContents = [];
+let gptPrompts = [];
+let waPage = 1, gptPage = 1;
+const pageSize = 24;
+let theme = localStorage.getItem('theme') || 'light';
+let activeWAFolder = 'all'; // Track active folder for WhatsApp section
+document.documentElement.setAttribute('data-theme', theme);
+
+/* ====== HASH ROUTING ====== */
+function parseHash(){
+  const hash = window.location.hash.slice(1); // Remove '#'
+  if(!hash || hash === '/') return { tab: 'whatsapp', id: null };
+
+  const parts = hash.split('/').filter(p => p);
+  if(parts.length === 0) return { tab: 'whatsapp', id: null };
+  if(parts.length === 1) return { tab: parts[0], id: null };
+  return { tab: parts[0], id: parts[1] };
+}
+
+function updateHash(tab, id = null){
+  const newHash = id ? `#/${tab}/${id}` : `#/${tab}`;
+  if(window.location.hash !== newHash){
+    window.location.hash = newHash;
+  }
+}
+
+function navigateToHash(){
+  const { tab, id } = parseHash();
+
+  // Switch to the correct tab
+  if(tab === 'whatsapp' || tab === 'prompts'){
+    const tabElement = document.querySelector(`.tab[data-tab="${tab}"]`);
+    if(tabElement && !tabElement.classList.contains('active')){
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tabElement.classList.add('active');
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+      document.getElementById(`${tab}-section`).classList.remove('hidden');
+      currentTab = tab;
+      lucide.createIcons();
+    }
+  }
+
+  // Open specific content item if ID is provided
+  if(id){
+    // Wait a bit for content to load if needed
+    setTimeout(() => {
+      if(tab === 'whatsapp'){
+        openWAPreview(id);
+      } else if(tab === 'prompts'){
+        openGPTPreview(id);
+      }
+    }, 100);
+  }
+}
+
+// Listen for hash changes
+window.addEventListener('hashchange', navigateToHash);
+
+/* ====== UTILS ====== */
+const escapeHtml = (s='') => s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+const toWhatsApp = (text='') => text
+  .replace(/\*\*(.*?)\*\*/g,'*$1*').replace(/_(.*?)_/g,'_$1_')
+  .replace(/~(.*?)~/g,'~$1~').replace(/`(.*?)`/g,'$1');
+
+function whatsappPreviewHTML(text=''){
+  const safe = escapeHtml(text);
+  return safe
+    .replace(/\*(.*?)\*/g,'<strong>$1</strong>')
+    .replace(/_(.*?)_/g,'<em>$1</em>')
+    .replace(/~(.*?)~/g,'<s>$1</s>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\n/g,'<br/>');
+}
+
+/* ====== TAB SWITCHING ====== */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const tabName = tab.getAttribute('data-tab');
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+    document.getElementById(`${tabName}-section`).classList.remove('hidden');
+    currentTab = tabName;
+    updateHash(tabName); // Update URL hash when tab changes
+    lucide.createIcons();
+  });
+});
+
+/* ====== THEME ====== */
+const themeBtn = document.getElementById('themeBtn');
+function setTheme(next){
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  themeBtn.innerHTML = next==='dark'
+    ? `<i data-lucide="sun"></i><span class="hidden md:inline">Light</span>`
+    : `<i data-lucide="moon"></i><span class="hidden md:inline">Dark</span>`;
+  lucide.createIcons();
+}
+setTheme(theme);
+themeBtn.addEventListener('click',()=>{ theme=(theme==='dark'?'light':'dark'); setTheme(theme); });
+
+/* ====== CATEGORY MANAGEMENT ====== */
+let currentCategoryModalType = 'whatsapp'; // 'whatsapp' or 'prompts'
+
+function getCategoryColorHex(notionColor) {
+  const colorMap = {
+    'blue': '#0070f3', 'green': '#16a34a', 'red': '#dc2626',
+    'yellow': '#facc15', 'purple': '#9333ea', 'pink': '#ec4899',
+    'gray': '#6b7280', 'brown': '#92400e', 'orange': '#ea580c',
+    'default': '#3b82f6'
+  };
+  return colorMap[notionColor] || colorMap.default;
+}
+
+function openCategoryManageModal(type) {
+  currentCategoryModalType = type;
+  document.getElementById('cat-modal-type').textContent =
+    type === 'whatsapp' ? 'WhatsApp' : 'GPT Prompts';
+
+  const categories = type === 'whatsapp' ? waCategoriesData : gptCategoriesData;
+  renderCategoryList(categories);
+
+  document.getElementById('categoryManageModal').classList.remove('hidden');
+  document.getElementById('categoryManageModal').classList.add('flex');
+  document.getElementById('cat-newName').value = '';
+  lucide.createIcons();
+}
+
+function closeCategoryManageModal() {
+  document.getElementById('categoryManageModal').classList.add('hidden');
+  document.getElementById('categoryManageModal').classList.remove('flex');
+}
+
+function renderCategoryList(categories) {
+  const container = document.getElementById('cat-list');
+  if (!categories || !categories.length) {
+    container.innerHTML = `
+      <div class="text-center py-8">
+        <i data-lucide="folder-x" class="mx-auto mb-2" style="width:48px;height:48px;color:var(--muted-ink)"></i>
+        <p class="text-[var(--muted-ink)]">No categories yet. Add your first category above!</p>
+      </div>
+    `;
+    lucide.createIcons();
+    return;
+  }
+
+  container.innerHTML = categories.map(cat => {
+    const isProtected = cat.name === 'General';
+    return `
+      <div class="flex items-center justify-between p-3 rounded-lg border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--accent-bg)] transition-colors">
+        <div class="flex items-center gap-3 flex-1">
+          <div style="width:12px;height:12px;border-radius:50%;background-color:${getCategoryColorHex(cat.color)}"></div>
+          <span class="font-medium">${escapeHtml(cat.name)}</span>
+          <span class="text-sm text-[var(--muted-ink)]">(${cat.count || 0} items)</span>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn btn-sm" onclick="renameCategoryPrompt('${escapeHtml(cat.name).replace(/'/g, "\\'")}')" ${isProtected ? 'disabled title="Cannot rename General"' : ''}>
+            <i data-lucide="edit-2"></i>
+          </button>
+          <button class="btn btn-sm" onclick="deleteCategoryPrompt('${escapeHtml(cat.name).replace(/'/g, "\\'")}', ${cat.count || 0})" ${isProtected ? 'disabled title="Cannot delete General"' : ''}>
+            <i data-lucide="trash-2"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+  lucide.createIcons();
+}
+
+function validateCategoryName(name, existingCategories) {
+  const trimmed = (name || '').trim();
+  if (!trimmed) return {valid: false, error: 'Category name is required'};
+  if (trimmed.length > 100) return {valid: false, error: 'Category name too long (max 100 characters)'};
+  if (existingCategories.some(c => c.name.toLowerCase() === trimmed.toLowerCase())) {
+    return {valid: false, error: 'Category already exists'};
+  }
+  return {valid: true, name: trimmed};
+}
+
+async function addCategory() {
+  const input = document.getElementById('cat-newName');
+  const name = (input.value || '').trim();
+
+  const categories = currentCategoryModalType === 'whatsapp' ? waCategoriesData : gptCategoriesData;
+  const validation = validateCategoryName(name, categories);
+
+  if (!validation.valid) {
+    showToast('Validation Error', validation.error, 'error');
+    return;
+  }
+
+  const btn = document.getElementById('cat-addBtn');
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader" class="animate-spin"></i> Adding...';
+  lucide.createIcons();
+
+  try {
+    const db = currentCategoryModalType === 'whatsapp' ? 'contents' : 'prompts';
+    const response = await fetch('/api/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ db, name: validation.name })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Failed to add category');
+
+    // Update local state
+    const newCat = { name: validation.name, color: data.category?.color || 'blue', count: 0 };
+    if (currentCategoryModalType === 'whatsapp') {
+      waCategoriesData.push(newCat);
+      renderWACategories(); // Updates folder tabs
+    } else {
+      gptCategoriesData.push(newCat);
+      renderGPTCategories();
+    }
+
+    renderCategoryList(currentCategoryModalType === 'whatsapp' ? waCategoriesData : gptCategoriesData);
+    input.value = '';
+    showToast('Success', `Category "${validation.name}" added`, 'success');
+  } catch (e) {
+    showToast('Error', e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHTML;
+    lucide.createIcons();
+  }
+}
+
+async function renameCategoryPrompt(oldName) {
+  const newName = prompt(`Rename "${oldName}" to:`, oldName);
+  if (!newName || newName === oldName) return;
+
+  const categories = currentCategoryModalType === 'whatsapp' ? waCategoriesData : gptCategoriesData;
+  const validation = validateCategoryName(newName, categories.filter(c => c.name !== oldName));
+
+  if (!validation.valid) {
+    showToast('Validation Error', validation.error, 'error');
+    return;
+  }
+
+  showToast('Renaming', `Renaming "${oldName}" to "${validation.name}"...`, 'info');
+
+  try {
+    const db = currentCategoryModalType === 'whatsapp' ? 'contents' : 'prompts';
+    const response = await fetch('/api/categories', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ db, oldName, newName: validation.name })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Failed to rename');
+
+    // Update local state
+    if (currentCategoryModalType === 'whatsapp') {
+      const cat = waCategoriesData.find(c => c.name === oldName);
+      if (cat) cat.name = validation.name;
+
+      // Update active folder if it was selected
+      if (activeWAFolder === oldName) activeWAFolder = validation.name;
+
+      renderWACategories(); // Updates folder tabs
+
+      // Update content items
+      waContents.forEach(item => {
+        if (item.category === oldName) item.category = validation.name;
+      });
+      renderWA();
+    } else {
+      const cat = gptCategoriesData.find(c => c.name === oldName);
+      if (cat) cat.name = validation.name;
+      renderGPTCategories();
+
+      gptPrompts.forEach(item => {
+        if (item.category === oldName) item.category = validation.name;
+      });
+      renderGPT();
+    }
+
+    renderCategoryList(currentCategoryModalType === 'whatsapp' ? waCategoriesData : gptCategoriesData);
+    showToast('Success', `Renamed to "${validation.name}" (${data.updatedCount} items updated)`, 'success');
+  } catch (e) {
+    showToast('Error', e.message, 'error');
+  }
+}
+
+async function deleteCategoryPrompt(name, count) {
+  if (name === 'General') {
+    showToast('Error', 'Cannot delete default category', 'error');
+    return;
+  }
+
+  const message = count > 0
+    ? `Delete "${name}"? ${count} items will be moved to "General".`
+    : `Delete "${name}"?`;
+
+  if (!confirm(message)) return;
+
+  showToast('Deleting', `Deleting "${name}"...`, 'info');
+
+  try {
+    const db = currentCategoryModalType === 'whatsapp' ? 'contents' : 'prompts';
+    const response = await fetch('/api/categories', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ db, name, force: count > 0 })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Failed to delete');
+
+    // Update local state
+    if (currentCategoryModalType === 'whatsapp') {
+      waCategoriesData = waCategoriesData.filter(c => c.name !== name);
+
+      // Reset active folder if it was the deleted one
+      if (activeWAFolder === name) activeWAFolder = 'all';
+
+      renderWACategories(); // Updates folder tabs
+
+      // Update migrated items
+      waContents.forEach(item => {
+        if (item.category === name) item.category = 'General';
+      });
+      renderWA();
+    } else {
+      gptCategoriesData = gptCategoriesData.filter(c => c.name !== name);
+      renderGPTCategories();
+
+      gptPrompts.forEach(item => {
+        if (item.category === name) item.category = 'General';
+      });
+      renderGPT();
+    }
+
+    renderCategoryList(currentCategoryModalType === 'whatsapp' ? waCategoriesData : gptCategoriesData);
+    showToast('Success', `Deleted "${name}" (${data.migratedCount || 0} items migrated to General)`, 'success');
+  } catch (e) {
+    showToast('Error', e.message, 'error');
+  }
+}
+
+async function refreshCategoryData() {
+  showToast('Refreshing', 'Refreshing categories...', 'info');
+  if (currentCategoryModalType === 'whatsapp') {
+    await loadWACategories(true);
+    renderWACategories(); // Updates folder tabs
+    renderCategoryList(waCategoriesData);
+  } else {
+    await loadGPTCategories(true);
+    renderGPTCategories();
+    renderCategoryList(gptCategoriesData);
+  }
+  showToast('Success', 'Categories refreshed', 'success');
+}
+
+/* ====== SUPPORT ====== */
+document.getElementById('supportBtn').addEventListener('click', () => {
+  window.open('https://forms.monday.com/forms/96d88197ad68bc429cdab62007568aad?r=use1', '_blank');
+});
+
+/* ====== TOAST NOTIFICATIONS ====== */
+function showToast(title, message, type='info'){
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+
+  const iconMap = {
+    success: 'check-circle',
+    error: 'alert-circle',
+    info: 'info'
+  };
+
+  toast.innerHTML = `
+    <i data-lucide="${iconMap[type]}" class="toast-icon"></i>
+    <div class="toast-content">
+      <div class="toast-title">${title}</div>
+      ${message ? `<div class="toast-message">${message}</div>` : ''}
+    </div>
+    <i data-lucide="x" class="toast-close"></i>
+  `;
+
+  container.appendChild(toast);
+  lucide.createIcons();
+
+  // Close button
+  toast.querySelector('.toast-close').addEventListener('click', () => removeToast(toast));
+
+  // Auto remove after 5 seconds
+  setTimeout(() => removeToast(toast), 5000);
+}
+
+function removeToast(toast){
+  toast.classList.add('hiding');
+  setTimeout(() => toast.remove(), 300);
+}
+
+/* ====== PREVIEW MODAL ====== */
+let previewModalContent = null;
+let previewModalItemId = null;
+let previewModalType = null; // 'whatsapp' or 'gpt'
+
+/* ====== FORMAT CONVERSION ====== */
+function convertWhatsAppToHTML(text){
+  if(!text) return '';
+
+  let html = text;
+
+  // Convert bold: *text* to <strong>text</strong>
+  html = html.replace(/\*(.+?)\*/g, '<strong>$1</strong>');
+
+  // Convert italic: _text_ to <em>text</em>
+  html = html.replace(/\_(.+?)\_/g, '<em>$1</em>');
+
+  // Convert strikethrough: ~text~ to <s>text</s>
+  html = html.replace(/\~(.+?)\~/g, '<s>$1</s>');
+
+  // Convert inline code: `text` to <code>text</code>
+  html = html.replace(/\`(.+?)\`/g, '<code>$1</code>');
+
+  // Convert line breaks to <br>
+  html = html.replace(/\n/g, '<br>');
+
+  return html;
+}
+
+/* ====== TEXT FORMATTING ====== */
+function applyTextFormat(textareaId, format){
+  const textarea = document.getElementById(textareaId);
+  if(!textarea) return;
+
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const selectedText = textarea.value.substring(start, end);
+  const beforeText = textarea.value.substring(0, start);
+  const afterText = textarea.value.substring(end);
+
+  let formattedText = '';
+  let cursorOffset = 0;
+
+  switch(format){
+    case 'bold':
+      formattedText = `*${selectedText || 'bold text'}*`;
+      cursorOffset = selectedText ? formattedText.length : 1;
+      break;
+    case 'italic':
+      formattedText = `_${selectedText || 'italic text'}_`;
+      cursorOffset = selectedText ? formattedText.length : 1;
+      break;
+    case 'strikethrough':
+      formattedText = `~${selectedText || 'strikethrough text'}~`;
+      cursorOffset = selectedText ? formattedText.length : 1;
+      break;
+    case 'code':
+      formattedText = `\`${selectedText || 'code'}\``;
+      cursorOffset = selectedText ? formattedText.length : 1;
+      break;
+    case 'monospace':
+      formattedText = `\`\`\`${selectedText || 'monospace text'}\`\`\``;
+      cursorOffset = selectedText ? formattedText.length : 3;
+      break;
+    default:
+      return;
+  }
+
+  // Insert formatted text
+  textarea.value = beforeText + formattedText + afterText;
+
+  // Set cursor position
+  if(selectedText){
+    textarea.setSelectionRange(start + formattedText.length, start + formattedText.length);
+  } else {
+    textarea.setSelectionRange(start + cursorOffset, start + formattedText.length - cursorOffset);
+  }
+
+  // Focus textarea and trigger input event for preview update
+  textarea.focus();
+  textarea.dispatchEvent(new Event('input'));
+}
+
+/* ====== HTML TO WHATSAPP FORMAT CONVERTER ====== */
+function htmlToWhatsApp(html) {
+  // Create a temporary div to parse HTML
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+
+  // Helper function to get computed formatting for a node
+  function getFormatting(node) {
+    const formatting = { bold: false, italic: false, strikethrough: false };
+
+    let current = node;
+    while (current && current !== tempDiv) {
+      if (current.nodeType === Node.ELEMENT_NODE) {
+        const tagName = current.tagName.toLowerCase();
+
+        // Check tag names
+        if (!formatting.bold && (tagName === 'strong' || tagName === 'b')) {
+          formatting.bold = true;
+        }
+        if (!formatting.italic && (tagName === 'em' || tagName === 'i')) {
+          formatting.italic = true;
+        }
+        if (!formatting.strikethrough && (tagName === 's' || tagName === 'strike' || tagName === 'del')) {
+          formatting.strikethrough = true;
+        }
+
+        // Check inline styles
+        if (current.style) {
+          if (!formatting.bold) {
+            const fontWeight = current.style.fontWeight;
+            if (fontWeight === 'bold' || fontWeight === '700' || parseInt(fontWeight) >= 600) {
+              formatting.bold = true;
+            }
+          }
+          if (!formatting.italic && current.style.fontStyle === 'italic') {
+            formatting.italic = true;
+          }
+          if (!formatting.strikethrough) {
+            const textDecor = current.style.textDecoration || current.style.textDecorationLine;
+            if (textDecor && textDecor.includes('line-through')) {
+              formatting.strikethrough = true;
+            }
+          }
+        }
+      }
+      current = current.parentNode;
+    }
+
+    return formatting;
+  }
+
+  // Check if element is a block-level element
+  function isBlockElement(node) {
+    if (node.nodeType !== Node.ELEMENT_NODE) return false;
+    const tagName = node.tagName.toLowerCase();
+    return ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote'].includes(tagName);
+  }
+
+  // Collect text segments with their formatting
+  const segments = [];
+
+  function collectSegments(node, inList = false) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent;
+      if (text) {
+        const formatting = getFormatting(node);
+        segments.push({ text, formatting, type: 'text' });
+      }
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      const tagName = node.tagName.toLowerCase();
+
+      // Handle line breaks
+      if (tagName === 'br') {
+        segments.push({ text: '\n', formatting: { bold: false, italic: false, strikethrough: false }, type: 'br' });
+        return;
+      }
+
+      // Handle code blocks and inline code
+      if (tagName === 'code') {
+        // Check if it's inside a <pre> (block code) or standalone (inline code)
+        let parent = node.parentNode;
+        let isInPre = false;
+        while (parent && parent !== tempDiv) {
+          if (parent.tagName && parent.tagName.toLowerCase() === 'pre') {
+            isInPre = true;
+            break;
+          }
+          parent = parent.parentNode;
+        }
+
+        if (!isInPre) {
+          // Inline code
+          let text = node.textContent;
+          segments.push({ text: '`' + text + '`', formatting: { bold: false, italic: false, strikethrough: false }, type: 'code' });
+          return;
+        }
+      }
+
+      if (tagName === 'pre') {
+        // Block code
+        let text = node.textContent;
+        segments.push({ text: '```\n' + text + '\n```', formatting: { bold: false, italic: false, strikethrough: false }, type: 'pre' });
+        return;
+      }
+
+      // Handle list items
+      if (tagName === 'li') {
+        segments.push({ text: '• ', formatting: { bold: false, italic: false, strikethrough: false }, type: 'bullet' });
+        for (let child of node.childNodes) {
+          collectSegments(child, true);
+        }
+        segments.push({ text: '\n', formatting: { bold: false, italic: false, strikethrough: false }, type: 'li-end' });
+        return;
+      }
+
+      // Handle lists (ul/ol)
+      if (tagName === 'ul' || tagName === 'ol') {
+        for (let child of node.childNodes) {
+          collectSegments(child, true);
+        }
+        // Add extra line break after list
+        if (segments.length > 0 && segments[segments.length - 1].text !== '\n') {
+          segments.push({ text: '\n', formatting: { bold: false, italic: false, strikethrough: false }, type: 'list-end' });
+        }
+        return;
+      }
+
+      // Process children for other elements
+      for (let child of node.childNodes) {
+        collectSegments(child, inList);
+      }
+
+      // Add line break after block elements
+      if (isBlockElement(node) && segments.length > 0) {
+        const lastSeg = segments[segments.length - 1];
+        if (lastSeg && !lastSeg.text.endsWith('\n')) {
+          segments.push({ text: '\n', formatting: { bold: false, italic: false, strikethrough: false }, type: 'block-end' });
+        }
+      }
+    }
+  }
+
+  collectSegments(tempDiv);
+
+  // Convert segments to WhatsApp format
+  let result = '';
+  let currentFormatting = { bold: false, italic: false, strikethrough: false };
+
+  for (let i = 0; i < segments.length; i++) {
+    const segment = segments[i];
+    const nextFormatting = segment.formatting;
+
+    // Skip formatting changes for special segments (code, bullets, line breaks)
+    if (segment.type === 'code' || segment.type === 'pre' || segment.type === 'bullet' || segment.type === 'br' || segment.type === 'li-end' || segment.type === 'list-end' || segment.type === 'block-end') {
+      result += segment.text;
+      continue;
+    }
+
+    // Close formatting that's ending
+    if (currentFormatting.strikethrough && !nextFormatting.strikethrough) {
+      result += '~';
+    }
+    if (currentFormatting.italic && !nextFormatting.italic) {
+      result += '_';
+    }
+    if (currentFormatting.bold && !nextFormatting.bold) {
+      result += '*';
+    }
+
+    // Open formatting that's starting
+    if (!currentFormatting.bold && nextFormatting.bold) {
+      result += '*';
+    }
+    if (!currentFormatting.italic && nextFormatting.italic) {
+      result += '_';
+    }
+    if (!currentFormatting.strikethrough && nextFormatting.strikethrough) {
+      result += '~';
+    }
+
+    // Add the text
+    result += segment.text;
+
+    // Update current formatting
+    currentFormatting = nextFormatting;
+  }
+
+  // Close any remaining formatting
+  if (currentFormatting.strikethrough) result += '~';
+  if (currentFormatting.italic) result += '_';
+  if (currentFormatting.bold) result += '*';
+
+  // Normalize whitespace
+  // 1. Strip trailing spaces from each line
+  result = result.split('\n').map(line => line.trimEnd()).join('\n');
+
+  // 2. Collapse 3+ consecutive newlines into at most 2 (leaving 1 blank line)
+  result = result.replace(/\n{3,}/g, '\n\n');
+
+  // 3. Trim leading/trailing whitespace from entire result
+  result = result.trim();
+
+  return result;
+}
+
+/* ====== PASTE HANDLER FOR FORMATTED TEXT ====== */
+function handleFormattedPaste(textarea) {
+  textarea.addEventListener('paste', (e) => {
+    // Check if clipboard has HTML content
+    const clipboardData = e.clipboardData || window.clipboardData;
+
+    // Try to get HTML data from clipboard
+    let htmlData = clipboardData.getData('text/html');
+
+    // Fallback: some applications might use different MIME types
+    if (!htmlData) {
+      htmlData = clipboardData.getData('text/x-moz-html');
+    }
+    if (!htmlData) {
+      htmlData = clipboardData.getData('text/_moz_htmlcontext');
+    }
+
+    // Debug: log what we received (remove in production)
+    console.log('Paste event detected');
+    console.log('HTML data:', htmlData ? 'Found' : 'Not found');
+    console.log('Available types:', Array.from(clipboardData.types));
+
+    if (htmlData && htmlData.trim()) {
+      // Prevent default paste
+      e.preventDefault();
+
+      console.log('Converting HTML to WhatsApp format...');
+
+      // Convert HTML to WhatsApp format
+      const whatsappText = htmlToWhatsApp(htmlData);
+
+      console.log('Converted text:', whatsappText);
+
+      // Insert converted text at cursor position
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const beforeText = textarea.value.substring(0, start);
+      const afterText = textarea.value.substring(end);
+
+      textarea.value = beforeText + whatsappText + afterText;
+
+      // Set cursor position after inserted text
+      const newCursorPos = start + whatsappText.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+
+      // Trigger input event to update preview
+      textarea.dispatchEvent(new Event('input'));
+
+      console.log('Paste conversion complete!');
+    } else {
+      console.log('No HTML data found, allowing default paste behavior');
+    }
+    // If no HTML data, let default paste behavior happen (plain text)
+  });
+}
+
+// Add event listeners for all format buttons
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.format-btn');
+  if(!btn) return;
+
+  e.preventDefault();
+  const format = btn.getAttribute('data-format');
+  const target = btn.getAttribute('data-target');
+
+  if(format && target){
+    applyTextFormat(target, format);
+  }
+});
+
+function getFileType(filename){
+  const ext = (filename || '').split('.').pop().toLowerCase();
+  if(['jpg','jpeg','png','gif','webp','svg','bmp'].includes(ext)) return 'image';
+  if(['mp4','webm','mov','avi','mkv'].includes(ext)) return 'video';
+  if(['pdf'].includes(ext)) return 'pdf';
+  if(['doc','docx','txt','rtf'].includes(ext)) return 'document';
+  if(['xls','xlsx','csv'].includes(ext)) return 'spreadsheet';
+  if(['ppt','pptx'].includes(ext)) return 'presentation';
+  if(['zip','rar','7z','tar','gz'].includes(ext)) return 'archive';
+  return 'file';
+}
+
+function getFileIcon(type){
+  const icons = {
+    image: 'image',
+    video: 'video',
+    pdf: 'file-text',
+    document: 'file-text',
+    spreadsheet: 'table',
+    presentation: 'presentation',
+    archive: 'archive',
+    file: 'file'
+  };
+  return icons[type] || 'file';
+}
+
+// Helper to fix Google Drive URLs for embedding
+function fixGoogleDriveUrl(url) {
+  if (!url) return url;
+
+  // Check if it's a Google Drive URL
+  if (url.includes('drive.google.com')) {
+    // Extract file ID from various Google Drive URL formats
+    let fileId = null;
+
+    // Format 1: https://drive.google.com/file/d/FILE_ID/view
+    const match1 = url.match(/\/file\/d\/([^\/]+)/);
+    if (match1) fileId = match1[1];
+
+    // Format 2: https://drive.google.com/open?id=FILE_ID
+    const match2 = url.match(/[?&]id=([^&]+)/);
+    if (match2) fileId = match2[1];
+
+    // Format 3: https://drive.google.com/uc?export=view&id=FILE_ID
+    const match3 = url.match(/uc\?.*id=([^&]+)/);
+    if (match3) fileId = match3[1];
+
+    // If we found a file ID, return the proper embed URL
+    if (fileId) {
+      return `https://drive.google.com/uc?export=view&id=${fileId}`;
+    }
+  }
+
+  return url;
+}
+
+// Helper to get primary and backup URLs from attachment
+function getAttachmentUrls(attachment) {
+  // New structure: attachment can have url + backupUrl
+  const primaryUrl = fixGoogleDriveUrl(attachment.url || attachment.blobUrl);
+  const backupUrl = fixGoogleDriveUrl(attachment.backupUrl || attachment.driveUrl);
+
+  return {
+    primary: primaryUrl,
+    backup: backupUrl,
+    hasBackup: !!backupUrl
+  };
+}
+
+function renderAttachmentThumbnail(attachment){
+  const type = getFileType(attachment.name);
+  const icon = getFileIcon(type);
+  const urls = getAttachmentUrls(attachment);
+
+  if(type === 'image'){
+    return `
+      <div class="attachment-card"
+           data-media-url="${escapeHtml(urls.primary)}"
+           data-media-backup="${escapeHtml(urls.backup || '')}"
+           data-media-name="${escapeHtml(attachment.name)}"
+           data-media-type="image">
+        <div class="attachment-thumbnail">
+          <img src="${urls.primary}"
+               alt="${escapeHtml(attachment.name)}"
+               loading="lazy"
+               onerror="handleImageError(this, '${escapeHtml(urls.backup || '')}')">
+          <div class="attachment-icon" style="display:none;">
+            <i data-lucide="${icon}"></i>
+          </div>
+        </div>
+        <div class="attachment-info">
+          <div class="attachment-name">${escapeHtml(attachment.name)}</div>
+          <div class="attachment-type">${type.toUpperCase()}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  if(type === 'video'){
+    return `
+      <div class="attachment-card"
+           data-media-url="${escapeHtml(urls.primary)}"
+           data-media-backup="${escapeHtml(urls.backup || '')}"
+           data-media-name="${escapeHtml(attachment.name)}"
+           data-media-type="video">
+        <div class="attachment-thumbnail">
+          <video src="${urls.primary}"
+                 preload="metadata"
+                 style="width:100%; height:100%; object-fit:cover;"
+                 onerror="handleVideoError(this, '${escapeHtml(urls.backup || '')}')"></video>
+          <div class="attachment-icon" style="display:none;">
+            <i data-lucide="${icon}"></i>
+          </div>
+          <div class="attachment-play-icon">
+            <i data-lucide="play-circle"></i>
+          </div>
+        </div>
+        <div class="attachment-info">
+          <div class="attachment-name">${escapeHtml(attachment.name)}</div>
+          <div class="attachment-type">${type.toUpperCase()}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  if(type === 'pdf'){
+    return `
+      <div class="attachment-card"
+           data-media-url="${escapeHtml(urls.primary)}"
+           data-media-backup="${escapeHtml(urls.backup || '')}"
+           data-media-name="${escapeHtml(attachment.name)}"
+           data-media-type="pdf">
+        <div class="attachment-thumbnail">
+          <iframe src="${urls.primary}#page=1&view=FitH"
+                  style="width:100%; height:100%; border:none; pointer-events:none;"
+                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"></iframe>
+          <div class="attachment-icon">
+            <i data-lucide="${icon}"></i>
+          </div>
+        </div>
+        <div class="attachment-info">
+          <div class="attachment-name">${escapeHtml(attachment.name)}</div>
+          <div class="attachment-type">PDF</div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Default for other file types
+  return `
+    <a href="${urls.primary}" target="_blank" class="attachment-card">
+      <div class="attachment-thumbnail">
+        <div class="attachment-icon">
+          <i data-lucide="${icon}"></i>
+        </div>
+      </div>
+      <div class="attachment-info">
+        <div class="attachment-name">${escapeHtml(attachment.name)}</div>
+        <div class="attachment-type">${type.toUpperCase()}</div>
+      </div>
+    </a>
+  `;
+}
+
+// Smart fallback handlers for thumbnails
+function handleImageError(img, backupUrl) {
+  if (backupUrl && backupUrl !== '' && !img.dataset.triedBackup) {
+    img.dataset.triedBackup = 'true';
+    img.src = backupUrl;
+  } else {
+    img.style.display = 'none';
+    if (img.nextElementSibling) {
+      img.nextElementSibling.style.display = 'flex';
+    }
+  }
+}
+
+function handleVideoError(video, backupUrl) {
+  if (backupUrl && backupUrl !== '' && !video.dataset.triedBackup) {
+    video.dataset.triedBackup = 'true';
+    video.src = backupUrl;
+  } else {
+    video.style.display = 'none';
+    if (video.nextElementSibling) {
+      video.nextElementSibling.style.display = 'flex';
+    }
+  }
+}
+
+function openPreviewModal(title, content, rawText, attachments = [], itemId = null, type = null){
+  console.log('openPreviewModal called with:', { title, attachments, itemId, type });
+  document.getElementById('previewTitle').textContent = title;
+
+  // Store item info for send button
+  previewModalItemId = itemId;
+  previewModalType = type;
+
+  // Show send button only for WhatsApp content
+  const sendBtn = document.getElementById('previewSendBtn');
+  if(type === 'whatsapp' && itemId){
+    sendBtn.style.display = 'inline-flex';
+  } else {
+    sendBtn.style.display = 'none';
+  }
+
+  // Build content with attachments
+  let fullContent = content;
+  if(attachments && attachments.length){
+    console.log('Rendering attachments:', attachments);
+    fullContent += `
+      <div class="mt-4 pt-4 border-t border-[var(--border)]">
+        <div class="font-semibold mb-3 text-sm">Attachments (${attachments.length})</div>
+        <div class="attachment-grid">
+          ${attachments.map(a => renderAttachmentThumbnail(a)).join('')}
+        </div>
+      </div>
+    `;
+  } else {
+    console.log('No attachments to display');
+  }
+
+  document.getElementById('previewBody').innerHTML = fullContent;
+  document.getElementById('previewModal').classList.add('active');
+  previewModalContent = rawText;
+  lucide.createIcons();
+}
+
+function closePreviewModal(){
+  document.getElementById('previewModal').classList.remove('active');
+  previewModalContent = null;
+  previewModalItemId = null;
+  previewModalType = null;
+  // Reset hash to just the tab when closing preview
+  updateHash(currentTab);
+}
+
+document.getElementById('previewClose').addEventListener('click', closePreviewModal);
+document.getElementById('previewCloseBtn').addEventListener('click', closePreviewModal);
+
+// Copy for WhatsApp (original format)
+document.getElementById('previewCopyWABtn').addEventListener('click', async () => {
+  if(previewModalContent){
+    try{
+      await navigator.clipboard.writeText(previewModalContent);
+      showToast('Copied!', 'Content copied for WhatsApp', 'success');
+    }catch(e){
+      showToast('Copy Failed', 'Could not copy to clipboard', 'error');
+    }
+  }
+});
+
+// Copy for Email (HTML format)
+document.getElementById('previewCopyEmailBtn').addEventListener('click', async () => {
+  if(previewModalContent){
+    try{
+      const htmlContent = convertWhatsAppToHTML(previewModalContent);
+      const plainText = previewModalContent;
+
+      // Copy both plain text and HTML to clipboard
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/plain': new Blob([plainText], { type: 'text/plain' }),
+          'text/html': new Blob([htmlContent], { type: 'text/html' })
+        })
+      ]);
+
+      showToast('Copied!', 'Content copied for Email with formatting', 'success');
+    }catch(e){
+      console.error('Copy error:', e);
+      showToast('Copy Failed', 'Could not copy to clipboard', 'error');
+    }
+  }
+});
+
+document.getElementById('previewSendBtn').addEventListener('click', () => {
+  if(previewModalType === 'whatsapp' && previewModalItemId){
+    closePreviewModal();
+    openWASendModal(previewModalItemId);
+  }
+});
+
+document.getElementById('previewShareBtn').addEventListener('click', async () => {
+  if(previewModalItemId && previewModalType){
+    const shareUrl = `${window.location.origin}${window.location.pathname}#/${previewModalType}/${previewModalItemId}`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      showToast('Link Copied!', 'Shareable link copied to clipboard', 'success');
+    } catch(err) {
+      console.error('Failed to copy link:', err);
+      showToast('Copy Failed', 'Could not copy link to clipboard', 'error');
+    }
+  }
+});
+
+document.getElementById('previewModal').addEventListener('click', (e) => {
+  if(e.target.id === 'previewModal') closePreviewModal();
+});
+
+/* ====== UTILITY FUNCTIONS ====== */
+function getCategoryClass(category){
+  return 'category-' + category.toLowerCase().replace(/\s+/g, '-');
+}
+
+function getCardBorderClass(category){
+  return 'card-border-' + category.toLowerCase().replace(/\s+/g, '-');
+}
+
+function isNew(dateCreated){
+  if(!dateCreated) return false;
+  const created = new Date(dateCreated);
+  const now = new Date();
+  const daysDiff = (now - created) / (1000 * 60 * 60 * 24);
+  return daysDiff <= 7;
+}
+
+function isTrending(useCount){
+  return Number(useCount || 0) >= 10;
+}
+
+function showSkeletonLoaders(containerId, count=6){
+  const grid = document.getElementById(containerId);
+  grid.innerHTML = '';
+  for(let i=0; i<count; i++){
+    const skeleton = document.createElement('div');
+    skeleton.className = 'skeleton skeleton-card';
+    grid.appendChild(skeleton);
+  }
+}
+
+function showEmptyState(containerId, icon, title, text, buttonText, buttonAction){
+  const grid = document.getElementById(containerId);
+  grid.innerHTML = `
+    <div class="empty-state col-span-full">
+      <div class="empty-state-icon"><i data-lucide="${icon}"></i></div>
+      <div class="empty-state-title">${title}</div>
+      <div class="empty-state-text">${text}</div>
+      ${buttonText ? `<button class="btn btn-brand" onclick="${buttonAction}"><i data-lucide="plus"></i> ${buttonText}</button>` : ''}
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+/* ====== SEARCH CLEAR BUTTONS ====== */
+const waSearchInput = document.getElementById('wa-searchInput');
+const waSearchClear = document.getElementById('wa-searchClear');
+const gptSearchInput = document.getElementById('gpt-searchInput');
+const gptSearchClear = document.getElementById('gpt-searchClear');
+
+waSearchInput.addEventListener('input', () => {
+  waSearchClear.classList.toggle('hidden', !waSearchInput.value);
+});
+waSearchClear.addEventListener('click', () => {
+  waSearchInput.value = '';
+  waSearchClear.classList.add('hidden');
+  waPage = 1;
+  renderWA();
+});
+
+gptSearchInput.addEventListener('input', () => {
+  gptSearchClear.classList.toggle('hidden', !gptSearchInput.value);
+});
+gptSearchClear.addEventListener('click', () => {
+  gptSearchInput.value = '';
+  gptSearchClear.classList.add('hidden');
+  gptPage = 1;
+  renderGPT();
+});
+
+/* ================================================== */
+/* ============== WHATSAPP CONTENT ================== */
+/* ================================================== */
+
+/* FILE UPLOAD */
+let addAttachments = [];
+let inflightUploads = 0;
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(',')[1] || '');
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+function fileToDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+/**
+ * Dual upload: Uploads to Vercel Blob (primary) + Google Drive (backup)
+ * Returns: { name, url, backupUrl, id }
+ */
+async function uploadFileDual(file) {
+  let blobUrl = null;
+  let driveUrl = null;
+  let driveId = null;
+
+  // Step 1: Upload to Vercel Blob (primary)
+  if (USE_DUAL_STORAGE) {
+    try {
+      const dataURL = await fileToDataURL(file);
+      const blobRes = await fetch(BLOB_UPLOAD_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          file: dataURL,
+          filename: file.name,
+          contentType: file.type || 'application/octet-stream'
+        })
+      });
+
+      if (blobRes.ok) {
+        const blobData = await blobRes.json();
+        blobUrl = blobData.url;
+        console.log('✓ Uploaded to Vercel Blob:', blobUrl);
+      } else {
+        const error = await blobRes.json();
+        console.warn('Blob upload failed, will use Drive only:', error.message);
+      }
+    } catch (err) {
+      console.warn('Blob upload error, falling back to Drive only:', err.message);
+    }
+  }
+
+  // Step 2: Upload to Google Drive (backup or primary if Blob failed)
+  try {
+    const base64 = await fileToBase64(file);
+    const driveRes = await fetch(DRIVE_APP_SCRIPT, {
+      method: 'POST',
+      body: JSON.stringify({
+        files: [{
+          name: file.name,
+          mimeType: file.type || 'application/octet-stream',
+          dataBase64: base64
+        }]
+      })
+    });
+
+    const driveData = await driveRes.json();
+    if (!driveRes.ok || !driveData.success) {
+      throw new Error(driveData.error || 'Drive upload failed');
+    }
+
+    const driveFile = driveData.files[0];
+    driveUrl = driveFile.url;
+    driveId = driveFile.id;
+    console.log('✓ Uploaded to Google Drive:', driveUrl);
+  } catch (err) {
+    // If both failed, throw error
+    if (!blobUrl) {
+      throw new Error(`Both uploads failed: ${err.message}`);
+    }
+    console.warn('Drive upload failed, using Blob only:', err.message);
+  }
+
+  // Return with primary and backup URLs
+  return {
+    name: file.name,
+    url: blobUrl || driveUrl, // Primary URL (prefer Blob)
+    backupUrl: blobUrl ? driveUrl : null, // Backup URL (Drive if we have Blob)
+    id: driveId // Keep Drive ID for compatibility
+  };
+}
+
+async function syncWAContents(){
+  showSkeletonLoaders('wa-contentGrid', 6);
+  const syncBtn = document.getElementById('wa-syncBtn');
+  const syncIcon = syncBtn ? syncBtn.querySelector('i') : null;
+  if(syncIcon) syncIcon.classList.add('spin');
+
+  try{
+    const res = await fetch(WA_API);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    waContents = Array.isArray(data.items)?data.items:[];
+    renderWACategories();
+    renderWA();
+    showToast('Synced!', 'WhatsApp content updated successfully', 'success');
+  }catch(e){
+    console.error(e);
+    showToast('Sync Failed', 'Could not sync WhatsApp content: '+e.message, 'error');
+    renderWA();
+  }finally{
+    if(syncIcon) syncIcon.classList.remove('spin');
+    // Navigate to hash after data is loaded
+    navigateToHash();
+  }
+}
+
+async function createWAItem(payload){
+  const r = await fetch(WA_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const j = await r.json().catch(()=>({})); if(!r.ok||j.error) throw new Error(j.message||j.error||('HTTP '+r.status)); return j;
+}
+
+async function updateWAItem(payload){
+  const r = await fetch(WA_API,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const j = await r.json().catch(()=>({})); if(!r.ok||j.error) throw new Error(j.message||j.error||('HTTP '+r.status)); return j;
+}
+
+function computeWAFolderOptions(){
+  const set = new Set(defaultWAFolders.map(f => (f || '').trim()).filter(Boolean));
+  waContents.forEach(item => {
+    const name = (item.folder || '').trim();
+    if(name) set.add(name);
+  });
+  waFolderOptions = Array.from(set);
+  return waFolderOptions;
+}
+
+function renderWAFolderDropdowns(){
+  const folders = computeWAFolderOptions();
+  const optionHTML = [
+    `<option value="">${UNASSIGNED_FOLDER}</option>`,
+    ...folders.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`)
+  ].join('');
+
+  const selects = [document.getElementById('wa-folderInput'), document.getElementById('wa-editFolder')];
+  selects.forEach(sel => {
+    if(!sel) return;
+    const previous = sel.value;
+    sel.innerHTML = optionHTML;
+    if(previous && folders.some(f => f === previous)){
+      sel.value = previous;
+    } else {
+      sel.value = sel.querySelector('option')?.value || '';
+    }
+  });
+}
+
+function renderWACategories(){
+  // Update edit and add modal dropdowns
+  const categoryNames = waCategoriesData.map(c => c.name);
+  const editSel = document.getElementById('wa-editCategory');
+  editSel.innerHTML = categoryNames.map(c=>`<option value="${c}">${c}</option>`).join('');
+  const addSel = document.getElementById('wa-categoryInput');
+  addSel.innerHTML = categoryNames.map(c=>`<option value="${c}">${c}</option>`).join('');
+
+  // Render folder tabs in sidebar
+  renderWAFolderTabs();
+}
+
+function renderWAFolderTabs(){
+  const container = document.getElementById('wa-folderTabs');
+  if (!container) return;
+
+  const folders = computeWAFolderOptions();
+  const counts = {};
+  waContents.forEach(item => {
+    const name = (item.folder || '').trim() || UNASSIGNED_FOLDER;
+    counts[name] = (counts[name] || 0) + 1;
+  });
+
+  // Add Unassigned tab if there are items without a folder
+  if (counts[UNASSIGNED_FOLDER] && !folders.includes(UNASSIGNED_FOLDER)) {
+    folders.push(UNASSIGNED_FOLDER);
+  }
+
+  // Reset active folder if it no longer exists
+  if (activeWAFolder !== 'all' && !folders.includes(activeWAFolder)) {
+    activeWAFolder = 'all';
+  }
+
+  // Add "All" tab first
+  const allCount = waContents.length;
+  let tabsHTML = `
+    <div class="folder-tab ${activeWAFolder === 'all' ? 'active' : ''}" onclick="selectWAFolder('all')">
+      <i data-lucide="folder" class="folder-icon"></i>
+      <span class="folder-name">All Content</span>
+      <span class="folder-count">${allCount}</span>
+    </div>
+  `;
+
+  // Add folder tabs
+  folders.forEach(folderName => {
+    const count = counts[folderName] || 0;
+    const isActive = activeWAFolder === folderName;
+    tabsHTML += `
+      <div class="folder-tab ${isActive ? 'active' : ''}" onclick="selectWAFolder('${escapeHtml(folderName).replace(/'/g, "\\'")}')">
+        <i data-lucide="folder" class="folder-icon"></i>
+        <span class="folder-name">${escapeHtml(folderName)}</span>
+        <span class="folder-count">${count}</span>
+      </div>
+    `;
+  });
+
+  container.innerHTML = tabsHTML;
+  lucide.createIcons();
+
+  // Keep folder dropdowns in sync with available folders
+  renderWAFolderDropdowns();
+}
+
+function selectWAFolder(folderName) {
+  activeWAFolder = folderName;
+  waPage = 1;
+  renderWAFolderTabs();
+  renderWA();
+}
+
+function renderWA(){
+  const grid = document.getElementById('wa-contentGrid');
+  const search = (waSearchInput.value||'').toLowerCase();
+
+  const filtered = waContents.filter(c =>
+    (!search || (c.title||'').toLowerCase().includes(search) || (c.content||'').toLowerCase().includes(search) || (c.tags||[]).some(t=> (t||'').toLowerCase().includes(search))) &&
+    (activeWAFolder==='all' || ((c.folder || '').trim() || UNASSIGNED_FOLDER) === activeWAFolder)
+  );
+
+  const total = filtered.length;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  if(waPage>pageCount) waPage = pageCount;
+
+  const start = (waPage-1)*pageSize;
+  const slice = filtered.slice(start,start+pageSize);
+
+  if(!slice.length){
+    showEmptyState('wa-contentGrid', 'inbox', 'No Content Found',
+      search ? 'Try adjusting your search or filters' : 'Start by adding your first WhatsApp content',
+      !search ? 'Add Content' : '',
+      'document.getElementById("wa-addBtn").click()');
+    return;
+  }
+
+  grid.innerHTML = slice.map((c,idx)=>{
+    const waText = c.formattedContent || toWhatsApp(c.content||'');
+    const waHTML = whatsappPreviewHTML(waText);
+    const bubbleId = `wa-text-${escapeHtml(c.id ?? `${start + idx}`)}`;
+    const categoryClass = getCategoryClass(c.category||'general');
+    const borderClass = getCardBorderClass(c.category||'general');
+    const showNew = isNew(c.dateCreated);
+    const showTrending = isTrending(c.useCount);
+    const folderLabel = (c.folder || '').trim() || UNASSIGNED_FOLDER;
+
+    return `
+    <div class="h-full fade-in" style="animation-delay:${idx*50}ms">
+      <div class="card rounded-xl shadow-soft flex flex-col p-4 h-[420px] ${borderClass}" data-card-id="${escapeHtml(c.id||'')}">
+        <div class="flex justify-between items-start">
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold cursor-pointer hover:text-[var(--brand)] transition-colors" onclick="openWAPreview('${escapeHtml(c.id||'')}')">${escapeHtml(c.title||'')}</h3>
+            <div class="flex items-center gap-2 mt-1 flex-wrap">
+              <span class="chip chip-folder"><i data-lucide="folder"></i>${escapeHtml(folderLabel)}</span>
+              <span class="chip ${categoryClass}">${escapeHtml(c.category||'')}</span>
+              ${showNew ? '<span class="badge badge-new"><i data-lucide="sparkles"></i>NEW</span>' : ''}
+              ${showTrending ? '<span class="badge badge-trending"><i data-lucide="flame"></i>TRENDING</span>' : ''}
+              <span class="text-xs text-[var(--muted-ink)]">Used ${Number(c.useCount||0)} times</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3 flex-1 min-h-0 rounded-lg border border-[var(--border)] bg-[var(--muted)] overflow-hidden cursor-pointer hover:border-[var(--brand)] transition-colors" onclick="openWAPreview('${escapeHtml(c.id||'')}')">
+          <div class="h-full overflow-auto p-3 text-sm scrollbar-thin">
+            <div id="${bubbleId}" class="wa-bubble whitespace-pre-wrap w-full" data-wa-text data-wa-raw="${escapeHtml(waText).replaceAll('"','&quot;')}">
+              ${waHTML}
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-1 mt-3">
+          ${(c.tags||[]).map(t=>`<span class="chip bg-black/5 dark:bg-white/5">${escapeHtml('#'+t)}</span>`).join('')}
+        </div>
+
+        ${(c.attachments && c.attachments.length) ? `<div class="mt-2 flex flex-wrap gap-2 text-xs">
+          ${c.attachments.map(a=>`<a href="${a.url}" target="_blank" class="flex items-center gap-1 text-[var(--muted-ink)] hover:text-[var(--brand)] transition-colors"><i data-lucide="paperclip"></i>${escapeHtml(a.name)}</a>`).join('')}
+        </div>` : ''}
+
+        <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <span class="text-xs text-[var(--muted-ink)]">Created: ${escapeHtml(c.dateCreated||'')}</span>
+          <div class="flex flex-wrap items-center gap-1">
+            <button class="btn btn-sm wa-share-btn" data-id="${escapeHtml(c.id||'')}" title="Copy shareable link">
+              <i data-lucide="share-2" class="lucide"></i><span class="hidden md:inline">Share</span>
+            </button>
+            <button class="btn btn-sm wa-editBtn" data-id="${escapeHtml(c.id||'')}">
+              <i data-lucide="edit-3" class="lucide"></i><span class="hidden md:inline">Edit</span>
+            </button>
+            <div class="relative inline-block">
+              <button class="btn btn-sm wa-copy-dropdown-btn" data-id="${escapeHtml(c.id||'')}">
+                <i data-lucide="copy" class="lucide"></i><span class="hidden md:inline">Copy</span><i data-lucide="chevron-down" class="lucide ml-1" style="width:14px;height:14px;"></i>
+              </button>
+              <div class="wa-copy-dropdown hidden absolute bottom-full mb-1 right-0 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg z-10 min-w-[160px]">
+                <button class="wa-copy-wa-btn w-full text-left px-3 py-2 hover:bg-[var(--muted)] flex items-center gap-2 text-sm" data-id="${escapeHtml(c.id||'')}">
+                  <i data-lucide="message-circle" style="width:16px;height:16px;"></i>WhatsApp
+                </button>
+                <button class="wa-copy-email-btn w-full text-left px-3 py-2 hover:bg-[var(--muted)] flex items-center gap-2 text-sm rounded-b-lg" data-id="${escapeHtml(c.id||'')}">
+                  <i data-lucide="mail" style="width:16px;height:16px;"></i>Email
+                </button>
+              </div>
+            </div>
+            <button class="btn btn-sm wa-send-btn" data-item-id="${escapeHtml(c.id||'')}">
+              <i data-lucide="send" class="lucide"></i><span class="hidden md:inline">Send</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Handle copy dropdown toggle
+  document.querySelectorAll('.wa-copy-dropdown-btn').forEach(btn=>{
+    btn.addEventListener('click',(e)=> {
+      e.stopPropagation();
+      const dropdown = btn.nextElementSibling;
+      // Close all other dropdowns
+      document.querySelectorAll('.wa-copy-dropdown').forEach(d => {
+        if(d !== dropdown) d.classList.add('hidden');
+      });
+      dropdown.classList.toggle('hidden');
+    });
+  });
+
+  // Handle copy for WhatsApp
+  document.querySelectorAll('.wa-copy-wa-btn').forEach(btn=>{
+    btn.addEventListener('click',(e)=> {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-id');
+      copyWAToClipboard(id, 'whatsapp');
+      btn.closest('.wa-copy-dropdown').classList.add('hidden');
+    });
+  });
+
+  // Handle copy for Email
+  document.querySelectorAll('.wa-copy-email-btn').forEach(btn=>{
+    btn.addEventListener('click',(e)=> {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-id');
+      copyWAToClipboard(id, 'email');
+      btn.closest('.wa-copy-dropdown').classList.add('hidden');
+    });
+  });
+
+  document.querySelectorAll('.wa-editBtn').forEach(btn=>{
+    btn.addEventListener('click',()=> openWAEditModal(btn.getAttribute('data-id')));
+  });
+
+  // Handle share link button
+  document.querySelectorAll('.wa-share-btn').forEach(btn=>{
+    btn.addEventListener('click', async (e)=> {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-id');
+      const shareUrl = `${window.location.origin}${window.location.pathname}#/whatsapp/${id}`;
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        showToast('Link Copied!', 'Shareable link copied to clipboard', 'success');
+      } catch(err) {
+        console.error('Failed to copy link:', err);
+        showToast('Copy Failed', 'Could not copy link to clipboard', 'error');
+      }
+    });
+  });
+
+  // Close dropdowns when clicking outside
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.wa-copy-dropdown').forEach(d => d.classList.add('hidden'));
+  });
+
+  lucide.createIcons();
+
+  animateStatValue('wa-statTotal', waContents.length);
+  animateStatValue('wa-statUses', waContents.reduce((a,c)=>a+(c.useCount||0),0));
+  animateStatValue('wa-statCategories', new Set(waContents.map(c=>c.category)).size);
+  animateStatValue('wa-statRecent', waContents.filter(c=>c.lastUsed).length);
+
+  document.getElementById('wa-pageNum').textContent = waPage;
+  document.getElementById('wa-pageCount').textContent = pageCount;
+  document.getElementById('wa-prevPage').disabled = waPage<=1;
+  document.getElementById('wa-nextPage').disabled = waPage>=pageCount;
+}
+
+function animateStatValue(id, target){
+  const el = document.getElementById(id);
+  const current = parseInt(el.textContent) || 0;
+  if(current === target) return;
+
+  const duration = 500;
+  const steps = 20;
+  const increment = (target - current) / steps;
+  let step = 0;
+
+  const interval = setInterval(() => {
+    step++;
+    if(step >= steps){
+      el.textContent = target;
+      clearInterval(interval);
+    } else {
+      el.textContent = Math.round(current + (increment * step));
+    }
+  }, duration / steps);
+}
+
+function openWAPreview(id){
+  const item = waContents.find(x=>String(x.id)===String(id));
+  if(!item) return;
+  console.log('Opening preview for item:', item);
+  console.log('Attachments:', item.attachments);
+  const waText = item.formattedContent || toWhatsApp(item.content||'');
+  const waHTML = `<div class="wa-bubble text-base">${whatsappPreviewHTML(waText)}</div>`;
+  updateHash('whatsapp', id); // Update URL hash when opening preview
+  openPreviewModal(item.title, waHTML, waText, item.attachments || [], id, 'whatsapp');
+}
+
+async function copyWAToClipboard(id, format = 'whatsapp'){
+  try{
+    const item = waContents.find(x=>String(x.id)===String(id));
+    if(!item) return showToast('Not Found', 'Item not found', 'error');
+
+    const content = item.formattedContent || item.content || '';
+
+    if(format === 'email'){
+      // Copy as HTML for email
+      const htmlContent = convertWhatsAppToHTML(content);
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/plain': new Blob([content], { type: 'text/plain' }),
+          'text/html': new Blob([htmlContent], { type: 'text/html' })
+        })
+      ]);
+      showToast('Copied!', 'Content copied for Email with formatting', 'success');
+    } else {
+      // Copy as plain text for WhatsApp
+      await navigator.clipboard.writeText(content);
+      showToast('Copied!', 'Content copied for WhatsApp', 'success');
+    }
+
+    item.useCount = Number(item.useCount||0) + 1;
+    item.lastUsed = new Date().toISOString().slice(0,10);
+    renderWA();
+  }catch(e){
+    console.error(e);
+    showToast('Copy Failed', 'Could not copy to clipboard', 'error');
+  }
+}
+
+/* WA EDIT */
+const waEditModal = document.getElementById('wa-editModal');
+const waEditTitle = document.getElementById('wa-editTitle');
+const waEditCategory = document.getElementById('wa-editCategory');
+const waEditFolder = document.getElementById('wa-editFolder');
+const waEditContent = document.getElementById('wa-editContent');
+const waEditTags = document.getElementById('wa-editTags');
+const waEditPreview = document.getElementById('wa-editPreview');
+let waEditItem = null;
+
+function openWAEditModal(id){
+  waEditItem = waContents.find(x=> String(x.id) === String(id));
+  if(!waEditItem) return showToast('Not Found', 'Item not found', 'error');
+  waEditTitle.value = waEditItem.title || '';
+  waEditCategory.value = waEditItem.category || waCategoriesData[0]?.name || 'General';
+  waEditFolder.value = (waEditItem.folder || '').trim() || '';
+  waEditContent.value = waEditItem.content || '';
+  waEditTags.value = (waEditItem.tags || []).join(', ');
+
+  // Display existing attachments
+  const existingFilesEl = document.getElementById('wa-editExistingFiles');
+  const attachments = waEditItem.attachments || [];
+  if(attachments.length){
+    existingFilesEl.innerHTML = '<div class="font-semibold mb-1">Current Attachments:</div>' +
+      attachments.map(a => `<div class="flex items-center gap-2 text-[var(--muted-ink)]"><i data-lucide="paperclip"></i><a href="${a.url}" target="_blank" class="hover:text-[var(--brand)]">${a.name}</a></div>`).join('');
+    lucide.createIcons();
+  } else {
+    existingFilesEl.innerHTML = '';
+  }
+
+  // Clear file input and status
+  document.getElementById('wa-editFileUpload').value = '';
+  document.getElementById('wa-editUploadStatus').textContent = '';
+  waEditNewAttachments = [];
+  waEditInflightUploads = 0;
+  renderEditFilePreview(); // Clear preview
+
+  updateWAEditPreview();
+  waEditModal.classList.remove('hidden'); waEditModal.classList.add('flex');
+  lucide.createIcons();
+}
+function closeWAEditModal(){ waEditModal.classList.add('hidden'); waEditModal.classList.remove('flex'); }
+document.getElementById('wa-editClose').addEventListener('click', closeWAEditModal);
+document.getElementById('wa-editCancel').addEventListener('click', closeWAEditModal);
+function updateWAEditPreview(){ waEditPreview.innerHTML = whatsappPreviewHTML(toWhatsApp(waEditContent.value||'')); }
+waEditContent.addEventListener('input', updateWAEditPreview);
+// Enable formatted paste for edit textarea
+handleFormattedPaste(waEditContent);
+
+/* ==================== FILE PREVIEW HELPERS ==================== */
+
+// Format file size in human-readable format
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+// Get file type icon based on mime type or extension
+function getFileIcon(file) {
+  const type = file.type || '';
+  const name = file.name || '';
+
+  if (type.startsWith('image/')) return 'image';
+  if (type.startsWith('video/')) return 'video';
+  if (type.startsWith('audio/')) return 'music';
+  if (type.includes('pdf')) return 'file-text';
+  if (type.includes('word') || name.endsWith('.doc') || name.endsWith('.docx')) return 'file-text';
+  if (type.includes('sheet') || name.endsWith('.xls') || name.endsWith('.xlsx') || name.endsWith('.csv')) return 'table';
+  if (type.includes('presentation') || name.endsWith('.ppt') || name.endsWith('.pptx')) return 'presentation';
+  if (type.includes('zip') || type.includes('rar') || type.includes('7z')) return 'archive';
+
+  return 'file';
+}
+
+// Check if file is an image
+function isImageFile(file) {
+  return file.type && file.type.startsWith('image/');
+}
+
+// Create file preview card HTML
+function createFilePreviewCard(file, index, onRemove) {
+  const isImage = isImageFile(file);
+  const fileSize = file.size ? formatFileSize(file.size) : '';
+  const icon = getFileIcon(file);
+
+  return `
+    <div class="file-preview-card relative rounded-lg border-2 border-[var(--brand)] bg-[var(--card)] overflow-hidden flex flex-col" data-file-index="${index}">
+      ${isImage && file.url ? `
+        <div class="file-preview-thumbnail w-full h-32 bg-[var(--canvas)] flex items-center justify-center">
+          <img src="${file.url}" alt="${file.name}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i data-lucide=\\'image-off\\' class=\\'text-[var(--muted-ink)]\\'></i>';" />
+        </div>
+      ` : `
+        <div class="file-preview-thumbnail w-full h-32 bg-[var(--canvas)] flex items-center justify-center">
+          <i data-lucide="${icon}" class="w-12 h-12 text-[var(--brand)]"></i>
+        </div>
+      `}
+      <div class="flex-1 min-w-0 p-2">
+        <div class="text-sm font-medium truncate" title="${file.name}">${file.name}</div>
+        ${fileSize ? `<div class="text-xs text-[var(--muted-ink)] mt-1">${fileSize}</div>` : ''}
+      </div>
+      <button type="button" class="file-preview-remove absolute top-1 right-1 w-6 h-6 rounded-full bg-[var(--brand)] hover:brightness-90 text-[var(--brand-ink)] flex items-center justify-center shadow-lg transition-all" onclick="${onRemove}" title="Remove file">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+  `;
+}
+
+// Render file previews for Edit modal
+function renderEditFilePreview() {
+  const previewContainer = document.getElementById('wa-editFilePreview');
+  if (!previewContainer) return;
+
+  if (waEditNewAttachments.length === 0) {
+    previewContainer.innerHTML = '';
+    return;
+  }
+
+  previewContainer.innerHTML = waEditNewAttachments.map((file, index) =>
+    createFilePreviewCard(file, index, `removeEditFile(${index})`)
+  ).join('');
+
+  lucide.createIcons();
+}
+
+// Render file previews for Add modal
+function renderAddFilePreview() {
+  const previewContainer = document.getElementById('wa-filePreview');
+  if (!previewContainer) return;
+
+  if (addAttachments.length === 0) {
+    previewContainer.innerHTML = '';
+    return;
+  }
+
+  previewContainer.innerHTML = addAttachments.map((file, index) =>
+    createFilePreviewCard(file, index, `removeAddFile(${index})`)
+  ).join('');
+
+  lucide.createIcons();
+}
+
+// Remove file from Edit modal
+function removeEditFile(index) {
+  if (index >= 0 && index < waEditNewAttachments.length) {
+    const removedFile = waEditNewAttachments.splice(index, 1)[0];
+    renderEditFilePreview();
+
+    // Update status text
+    const statusEl = document.getElementById('wa-editUploadStatus');
+    if (statusEl) {
+      statusEl.textContent = waEditNewAttachments.length > 0
+        ? `${waEditNewAttachments.length} file(s) ready`
+        : '';
+    }
+
+    showToast('File Removed', `${removedFile.name} removed from attachments`, 'info');
+  }
+}
+
+// Remove file from Add modal
+function removeAddFile(index) {
+  if (index >= 0 && index < addAttachments.length) {
+    const removedFile = addAttachments.splice(index, 1)[0];
+    renderAddFilePreview();
+
+    // Update status text
+    const statusEl = document.getElementById('wa-uploadStatus');
+    if (statusEl) {
+      statusEl.textContent = addAttachments.length > 0
+        ? `${addAttachments.length} file(s) ready`
+        : '';
+    }
+
+    showToast('File Removed', `${removedFile.name} removed from attachments`, 'info');
+    updateWASaveDisabled();
+  }
+}
+
+/* ==================== END FILE PREVIEW HELPERS ==================== */
+
+// File upload for Edit modal
+let waEditNewAttachments = [];
+let waEditInflightUploads = 0;
+
+document.getElementById('wa-editFileUpload').addEventListener('change', async function(e) {
+  const files = Array.from(e.target.files || []);
+  if(!files.length) return;
+
+  const statusEl = document.getElementById('wa-editUploadStatus');
+  const saveBtn = document.getElementById('wa-editSave');
+
+  waEditInflightUploads += files.length;
+  saveBtn.disabled = true;
+  statusEl.textContent = `Uploading ${waEditInflightUploads} file(s) to ${USE_DUAL_STORAGE ? 'Blob + Drive' : 'Drive'}…`;
+
+  for(const file of files) {
+    try {
+      // Try real upload first, fallback to mock for testing
+      let uploadedFile;
+      try {
+        uploadedFile = await uploadFileDual(file);
+      } catch(uploadErr) {
+        console.warn('Real upload failed, using mock URL for preview:', uploadErr.message);
+        // Mock upload for testing preview without backend
+        uploadedFile = {
+          name: file.name,
+          url: isImageFile(file) ? URL.createObjectURL(file) : '#',
+          backupUrl: null,
+          id: 'mock-' + Date.now()
+        };
+      }
+      // Store file metadata for preview
+      uploadedFile.size = file.size;
+      uploadedFile.type = file.type;
+      waEditNewAttachments.push(uploadedFile);
+      statusEl.textContent = `${waEditNewAttachments.length} file(s) uploaded${USE_DUAL_STORAGE ? ' (with backup)' : ''}`;
+      // Update preview after each successful upload
+      renderEditFilePreview();
+    } catch(err) {
+      console.error(err);
+      showToast('Upload Error', `Failed to upload ${file.name}: ${err.message}`, 'error');
+    } finally {
+      waEditInflightUploads--;
+      statusEl.textContent = waEditInflightUploads ? `Uploading ${waEditInflightUploads}…` : `${waEditNewAttachments.length} file(s) ready`;
+      if(waEditInflightUploads === 0) saveBtn.disabled = false;
+    }
+  }
+  this.value = '';
+});
+
+document.getElementById('wa-editSave').addEventListener('click', async ()=>{
+  if(!waEditItem) return;
+  if(waEditInflightUploads > 0) return;
+
+  try{
+    const saveBtn = document.getElementById('wa-editSave');
+    saveBtn.disabled = true;
+
+    // Merge with existing attachments
+    const existingAttachments = waEditItem.attachments || [];
+    const allAttachments = [...existingAttachments, ...waEditNewAttachments];
+
+    const payload = {
+      id: waEditItem.id,
+      title: (waEditTitle.value||'').trim(),
+      category: waEditCategory.value || 'General',
+      folder: (waEditFolder.value || '').trim(),
+      content: (waEditContent.value||'').trim(),
+      formattedContent: toWhatsApp(waEditContent.value||''),
+      tags: (waEditTags.value||'').split(',').map(t=>t.trim()).filter(Boolean),
+      attachments: allAttachments
+    };
+    await updateWAItem(payload);
+    Object.assign(waEditItem,payload);
+    waEditNewAttachments = []; // Reset after successful save
+    waEditInflightUploads = 0;
+    renderWAFolderTabs();
+    closeWAEditModal(); renderWA();
+    showToast('Saved!', 'Content updated successfully', 'success');
+  }catch(e){
+    console.error(e);
+    showToast('Save Failed', 'Could not save changes: '+e.message, 'error');
+  } finally {
+    document.getElementById('wa-editSave').disabled = false;
+  }
+});
+
+/* WA ADD */
+const waAddModal = document.getElementById('wa-addModal');
+const waTitleInput = document.getElementById('wa-titleInput');
+const waCategoryInput = document.getElementById('wa-categoryInput');
+const waFolderInput = document.getElementById('wa-folderInput');
+const waContentInput = document.getElementById('wa-contentInput');
+const waTagsInput = document.getElementById('wa-tagsInput');
+const waWaPreview = document.getElementById('wa-waPreview');
+const waSaveAdd = document.getElementById('wa-saveAdd');
+
+function openWAAdd(){ resetWAAdd(); waAddModal.classList.remove('hidden'); waAddModal.classList.add('flex'); lucide.createIcons(); setTimeout(() => waTitleInput.focus(), 0); }
+function closeWAAdd(){ waAddModal.classList.add('hidden'); waAddModal.classList.remove('flex'); }
+document.getElementById('wa-addBtn').addEventListener('click',openWAAdd);
+document.getElementById('wa-addClose').addEventListener('click',closeWAAdd);
+document.getElementById('wa-cancelAdd').addEventListener('click',closeWAAdd);
+document.getElementById('wa-clearAdd').addEventListener('click',resetWAAdd);
+
+function resetWAAdd(){
+  waTitleInput.value='';
+  waCategoryInput.value = waCategoriesData[0]?.name || 'General';
+  waFolderInput.value = waFolderInput.querySelector('option')?.value || '';
+  waContentInput.value='';
+  waTagsInput.value='';
+  document.getElementById('wa-fileUpload').value = '';
+  document.getElementById('wa-uploadStatus').textContent = '';
+  addAttachments = [];
+  inflightUploads = 0;
+  renderAddFilePreview(); // Clear preview
+  waWaPreview.innerHTML='(start typing above)'; updateWASaveDisabled();
+}
+
+function updateWASaveDisabled(){
+  const valid=(waTitleInput.value||'').trim() && (waContentInput.value||'').trim();
+  waSaveAdd.disabled = inflightUploads > 0 || !valid;
+}
+
+waContentInput.addEventListener('input',()=>{ waWaPreview.innerHTML=whatsappPreviewHTML(toWhatsApp(waContentInput.value||'')); updateWASaveDisabled(); });
+// Enable formatted paste for add textarea
+handleFormattedPaste(waContentInput);
+waTitleInput.addEventListener('input',updateWASaveDisabled);
+
+// File upload for Add modal
+document.getElementById('wa-fileUpload').addEventListener('change', async function(e) {
+  const files = Array.from(e.target.files || []);
+  if(!files.length) return;
+
+  const statusEl = document.getElementById('wa-uploadStatus');
+  inflightUploads += files.length;
+  updateWASaveDisabled();
+  statusEl.textContent = `Uploading ${inflightUploads} file(s) to ${USE_DUAL_STORAGE ? 'Blob + Drive' : 'Drive'}…`;
+
+  for(const file of files) {
+    try {
+      // Try real upload first, fallback to mock for testing
+      let uploadedFile;
+      try {
+        uploadedFile = await uploadFileDual(file);
+      } catch(uploadErr) {
+        console.warn('Real upload failed, using mock URL for preview:', uploadErr.message);
+        // Mock upload for testing preview without backend
+        uploadedFile = {
+          name: file.name,
+          url: isImageFile(file) ? URL.createObjectURL(file) : '#',
+          backupUrl: null,
+          id: 'mock-' + Date.now()
+        };
+      }
+      // Store file metadata for preview
+      uploadedFile.size = file.size;
+      uploadedFile.type = file.type;
+      addAttachments.push(uploadedFile);
+      statusEl.textContent = `${addAttachments.length} file(s) uploaded${USE_DUAL_STORAGE ? ' (with backup)' : ''}`;
+      // Update preview after each successful upload
+      renderAddFilePreview();
+    } catch(err) {
+      console.error(err);
+      showToast('Upload Error', `Failed to upload ${file.name}: ${err.message}`, 'error');
+    } finally {
+      inflightUploads--;
+      statusEl.textContent = inflightUploads ? `Uploading ${inflightUploads}…` : `${addAttachments.length} file(s) ready`;
+      updateWASaveDisabled();
+    }
+  }
+  this.value = '';
+});
+
+waSaveAdd.addEventListener('click', async ()=>{
+  if(inflightUploads > 0) return;
+
+  try{
+    waSaveAdd.disabled=true;
+
+    const payload = {
+      title:(waTitleInput.value||'').trim(),
+      category: waCategoryInput.value || 'General',
+      folder: (waFolderInput.value || '').trim(),
+      content:(waContentInput.value||'').trim(),
+      formattedContent: toWhatsApp(waContentInput.value||''),
+      tags:(waTagsInput.value||'').split(',').map(t=>t.trim()).filter(Boolean),
+      dateCreated:new Date().toISOString().slice(0,10),
+      useCount:0,
+      attachments: addAttachments.slice()
+    };
+    await createWAItem(payload); closeWAAdd(); await syncWAContents();
+    showToast('Added!', 'Content created successfully', 'success');
+  }catch(e){
+    console.error(e);
+    showToast('Add Failed', 'Could not create content: '+e.message, 'error');
+  }
+  finally{ waSaveAdd.disabled=false; }
+});
+
+/* WA SEND */
+const waModal = document.getElementById('wa-modal');
+const waPhoneInput = document.getElementById('wa-phone');
+const waTextArea = document.getElementById('wa-text');
+let currentSendItem = null;
+
+function openWASendModal(itemId){
+  const item = waContents.find(x=>String(x.id)===String(itemId));
+  if(!item) return showToast('Not Found', 'Item not found', 'error');
+
+  currentSendItem = item;
+  const text = item.formattedContent || item.content || '';
+  waTextArea.value = text;
+  waPhoneInput.value='';
+
+  // Show attachment info if present
+  const attachments = item.attachments || [];
+  const attachmentInfo = document.getElementById('wa-send-attachments-info');
+  const attachmentText = document.getElementById('wa-send-attachments-text');
+  const infoText = document.getElementById('wa-send-info-text');
+
+  if(attachments.length > 0){
+    attachmentText.textContent = `${attachments.length} link(s) will be sent first`;
+    attachmentInfo.classList.remove('hidden');
+    infoText.classList.remove('hidden');
+  } else {
+    attachmentInfo.classList.add('hidden');
+    infoText.classList.add('hidden');
+  }
+
+  waModal.classList.remove('hidden');
+  waModal.classList.add('flex');
+  lucide.createIcons();
+  setTimeout(()=>waPhoneInput.focus(),0);
+}
+
+function closeWASendModal(){
+  waModal.classList.add('hidden');
+  waModal.classList.remove('flex');
+  currentSendItem = null;
+}
+
+document.getElementById('wa-cancel').addEventListener('click', closeWASendModal);
+waModal.addEventListener('click', (e)=>{ if(e.target===waModal) closeWASendModal(); });
+
+document.getElementById('wa-contentGrid').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.wa-send-btn');
+  if(!btn) return;
+  const itemId = btn.getAttribute('data-item-id');
+  openWASendModal(itemId);
+});
+
+document.getElementById('wa-send').addEventListener('click', async ()=>{
+  const digits = waPhoneInput.value.replace(/\D/g,'');
+  const text = waTextArea.value.trim();
+  const sendBtn = document.getElementById('wa-send');
+
+  if(!digits){
+    showToast('Invalid Number', 'Enter phone number in international format (digits only)', 'error');
+    return;
+  }
+  if(!text){
+    showToast('Empty Message', 'Message cannot be empty', 'error');
+    return;
+  }
+
+  try{
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<i data-lucide="loader" class="spin"></i> Sending...';
+    lucide.createIcons();
+
+    const attachments = currentSendItem?.attachments || [];
+
+    // Send attachments first (if any)
+    if(attachments.length > 0){
+      showToast('Sending...', `Sending ${attachments.length} link(s) first`, 'info');
+
+      for(let i = 0; i < attachments.length; i++){
+        const attachment = attachments[i];
+        const linkText = attachment.url;
+
+        const r = await fetch('/api/send-whatsapp',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            to: digits,
+            text: linkText
+          })
+        });
+
+        if(!r.ok) {
+          const errorData = await r.json().catch(() => ({}));
+          console.error('WAHA Error Details:', errorData);
+          const errorMsg = errorData.details?.message || errorData.details?.error || errorData.error || `HTTP ${r.status}`;
+          throw new Error(`Failed to send link ${i+1}: ${errorMsg}\n\nFull error: ${JSON.stringify(errorData.details || errorData)}`);
+        }
+
+        // Small delay between messages to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+
+    // Then send the text content
+    const r = await fetch('/api/send-whatsapp',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({to:digits,text})
+    });
+
+    if(!r.ok) {
+      const errorData = await r.json().catch(() => ({}));
+      console.error('WAHA Error Details:', errorData);
+      const errorMsg = errorData.details?.message || errorData.details?.error || errorData.error || `HTTP ${r.status}`;
+      throw new Error(`Failed to send message: ${errorMsg}\n\nFull error: ${JSON.stringify(errorData.details || errorData)}`);
+    }
+
+    if(attachments.length > 0){
+      showToast('Sent!', `${attachments.length} link(s) + message sent via WhatsApp successfully`, 'success');
+    } else {
+      showToast('Sent!', 'Message sent via WhatsApp successfully', 'success');
+    }
+    closeWASendModal();
+  }catch(err){
+    console.error(err);
+    showToast('Send Failed', 'Could not send via WhatsApp: '+String(err?.message||err), 'error');
+  }finally{
+    sendBtn.disabled = false;
+    sendBtn.innerHTML = 'Send';
+  }
+});
+
+/* WA Controls */
+document.getElementById('wa-syncBtn').addEventListener('click', syncWAContents);
+document.getElementById('wa-searchInput').addEventListener('input',()=>{ waPage=1; renderWA(); });
+document.getElementById('wa-prevPage').addEventListener('click',()=>{ if(waPage>1){ waPage--; renderWA(); }});
+document.getElementById('wa-nextPage').addEventListener('click',()=>{ waPage++; renderWA(); });
+document.getElementById('wa-manageCategoriesBtn').addEventListener('click', () => openCategoryManageModal('whatsapp'));
+
+/* Category Management Modal Controls */
+document.getElementById('cat-closeBtn').addEventListener('click', closeCategoryManageModal);
+document.getElementById('cat-cancelBtn').addEventListener('click', closeCategoryManageModal);
+document.getElementById('cat-addBtn').addEventListener('click', addCategory);
+document.getElementById('cat-refreshBtn').addEventListener('click', refreshCategoryData);
+document.getElementById('cat-newName').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    addCategory();
+  }
+});
+
+/* ================================================== */
+/* ================ GPT PROMPTS ===================== */
+/* ================================================== */
+
+async function syncGPTPrompts(){
+  showSkeletonLoaders('gpt-contentGrid', 6);
+  const syncBtn = document.getElementById('gpt-syncBtn');
+  const syncIcon = syncBtn ? syncBtn.querySelector('i') : null;
+  if(syncIcon) syncIcon.classList.add('spin');
+
+  try{
+    const res = await fetch(GPT_API);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    gptPrompts = Array.isArray(data.items)?data.items:[];
+    renderGPTCategories();
+    renderGPT();
+    showToast('Synced!', 'GPT prompts updated successfully', 'success');
+  }catch(e){
+    console.error(e);
+    showToast('Sync Failed', 'Could not sync GPT prompts: '+e.message, 'error');
+    renderGPT();
+  }finally{
+    if(syncIcon) syncIcon.classList.remove('spin');
+    // Navigate to hash after data is loaded
+    navigateToHash();
+  }
+}
+
+async function createGPTItem(payload){
+  const r = await fetch(GPT_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const j = await r.json().catch(()=>({})); if(!r.ok||j.error) throw new Error(j.message||j.error||('HTTP '+r.status)); return j;
+}
+
+async function updateGPTItem(payload){
+  const r = await fetch(GPT_API,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const j = await r.json().catch(()=>({})); if(!r.ok||j.error) throw new Error(j.message||j.error||('HTTP '+r.status)); return j;
+}
+
+function renderGPTCategories(){
+  const sel = document.getElementById('gpt-categorySelect');
+  const current = sel.value || 'all';
+  const categoryNames = gptCategoriesData.map(c => c.name);
+  sel.innerHTML = '<option value="all">All Categories</option>' + categoryNames.map(c=>`<option value="${c}">${c}</option>`).join('');
+  sel.value = current;
+  const editSel = document.getElementById('gpt-editCategory');
+  editSel.innerHTML = categoryNames.map(c=>`<option value="${c}">${c}</option>`).join('');
+  const addSel = document.getElementById('gpt-categoryInput');
+  addSel.innerHTML = categoryNames.map(c=>`<option value="${c}">${c}</option>`).join('');
+}
+
+function renderGPT(){
+  const grid = document.getElementById('gpt-contentGrid');
+  const search = (gptSearchInput.value||'').toLowerCase();
+  const cat = document.getElementById('gpt-categorySelect').value;
+
+  const filtered = gptPrompts.filter(c =>
+    (!search || (c.title||'').toLowerCase().includes(search) || (c.prompt||'').toLowerCase().includes(search) || (c.tags||[]).some(t=> (t||'').toLowerCase().includes(search))) &&
+    (cat==='all' || c.category===cat)
+  );
+
+  const total = filtered.length;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  if(gptPage>pageCount) gptPage = pageCount;
+
+  const start = (gptPage-1)*pageSize;
+  const slice = filtered.slice(start,start+pageSize);
+
+  if(!slice.length){
+    showEmptyState('gpt-contentGrid', 'brain', 'No Prompts Found',
+      search ? 'Try adjusting your search or filters' : 'Start by adding your first GPT prompt',
+      !search ? 'Add Prompt' : '',
+      'document.getElementById("gpt-addBtn").click()');
+    return;
+  }
+
+  grid.innerHTML = slice.map((c,idx)=>{
+    const promptText = escapeHtml(c.prompt||'');
+    const categoryClass = getCategoryClass(c.category||'general');
+    const borderClass = getCardBorderClass(c.category||'general');
+    const showNew = isNew(c.dateCreated);
+    const showTrending = isTrending(c.useCount);
+
+    return `
+    <div class="h-full fade-in" style="animation-delay:${idx*50}ms">
+      <div class="card rounded-xl shadow-soft flex flex-col p-4 h-[420px] ${borderClass}">
+        <div class="flex justify-between items-start">
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold cursor-pointer hover:text-[var(--brand)] transition-colors" onclick="openGPTPreview('${escapeHtml(c.id||'')}')">${escapeHtml(c.title||'')}</h3>
+            <div class="flex items-center gap-2 mt-1 flex-wrap">
+              <span class="chip ${categoryClass}">${escapeHtml(c.category||'')}</span>
+              <span class="chip bg-[var(--chip)] text-[var(--chip-ink)]">${escapeHtml(c.model||'GPT-4')}</span>
+              ${showNew ? '<span class="badge badge-new"><i data-lucide="sparkles"></i>NEW</span>' : ''}
+              ${showTrending ? '<span class="badge badge-trending"><i data-lucide="flame"></i>TRENDING</span>' : ''}
+              <span class="text-xs text-[var(--muted-ink)]">Used ${Number(c.useCount||0)} times</span>
+            </div>
+          </div>
+        </div>
+
+        ${c.systemRole?`<div class="mt-2 text-xs text-[var(--muted-ink)] italic">System: ${escapeHtml(c.systemRole.slice(0,100))}${c.systemRole.length>100?'...':''}</div>`:''}
+
+        <div class="mt-3 flex-1 min-h-0 rounded-lg border border-[var(--border)] bg-[var(--muted)] overflow-hidden cursor-pointer hover:border-[var(--brand)] transition-colors" onclick="openGPTPreview('${escapeHtml(c.id||'')}')">
+          <div class="h-full overflow-auto p-3 text-sm scrollbar-thin">
+            <div class="prompt-bubble whitespace-pre-wrap w-full" data-prompt-id="${escapeHtml(c.id||'')}">${promptText}</div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-1 mt-3">
+          ${(c.tags||[]).map(t=>`<span class="chip bg-black/5 dark:bg-white/5">${escapeHtml('#'+t)}</span>`).join('')}
+        </div>
+
+        <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <span class="text-xs text-[var(--muted-ink)]">Created: ${escapeHtml(c.dateCreated||'')}</span>
+          <div class="flex flex-wrap items-center gap-1">
+            <button class="btn btn-sm gpt-share-btn" data-id="${escapeHtml(c.id||'')}" title="Copy shareable link">
+              <i data-lucide="share-2" class="lucide"></i><span class="hidden md:inline">Share</span>
+            </button>
+            <button class="btn btn-sm gpt-editBtn" data-id="${escapeHtml(c.id||'')}">
+              <i data-lucide="edit-3" class="lucide"></i><span class="hidden md:inline">Edit</span>
+            </button>
+            <button class="btn btn-sm gpt-copyBtn" data-id="${escapeHtml(c.id||'')}">
+              <i data-lucide="copy" class="lucide"></i><span class="hidden md:inline">Copy</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Handle share link button
+  document.querySelectorAll('.gpt-share-btn').forEach(btn=>{
+    btn.addEventListener('click', async (e)=> {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-id');
+      const shareUrl = `${window.location.origin}${window.location.pathname}#/prompts/${id}`;
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        showToast('Link Copied!', 'Shareable link copied to clipboard', 'success');
+      } catch(err) {
+        console.error('Failed to copy link:', err);
+        showToast('Copy Failed', 'Could not copy link to clipboard', 'error');
+      }
+    });
+  });
+
+  document.querySelectorAll('.gpt-copyBtn').forEach(btn=>{
+    btn.addEventListener('click',()=> copyGPTToClipboard(btn.getAttribute('data-id')));
+  });
+  document.querySelectorAll('.gpt-editBtn').forEach(btn=>{
+    btn.addEventListener('click',()=> openGPTEditModal(btn.getAttribute('data-id')));
+  });
+
+  lucide.createIcons();
+
+  animateStatValue('gpt-statTotal', gptPrompts.length);
+  animateStatValue('gpt-statUses', gptPrompts.reduce((a,c)=>a+(c.useCount||0),0));
+  animateStatValue('gpt-statCategories', new Set(gptPrompts.map(c=>c.category)).size);
+  animateStatValue('gpt-statRecent', gptPrompts.filter(c=>c.lastUsed).length);
+
+  document.getElementById('gpt-pageNum').textContent = gptPage;
+  document.getElementById('gpt-pageCount').textContent = pageCount;
+  document.getElementById('gpt-prevPage').disabled = gptPage<=1;
+  document.getElementById('gpt-nextPage').disabled = gptPage>=pageCount;
+}
+
+function openGPTPreview(id){
+  const item = gptPrompts.find(x=>String(x.id)===String(id));
+  if(!item) return;
+  const fullText = (item.systemRole ? `System: ${item.systemRole}\n\n` : '') + (item.prompt || '');
+  const promptHTML = `<div class="prompt-bubble text-base">${escapeHtml(item.prompt||'')}</div>`;
+  updateHash('prompts', id); // Update URL hash when opening preview
+  openPreviewModal(item.title, promptHTML, fullText, [], id, 'gpt');
+}
+
+async function copyGPTToClipboard(id){
+  try{
+    const item = gptPrompts.find(x=>String(x.id)===String(id));
+    if(!item) return showToast('Not Found', 'Prompt not found', 'error');
+    const fullText = (item.systemRole ? `System: ${item.systemRole}\n\n` : '') + (item.prompt || '');
+    await navigator.clipboard.writeText(fullText);
+    item.useCount = Number(item.useCount||0) + 1;
+    item.lastUsed = new Date().toISOString().slice(0,10);
+    renderGPT(); showToast('Copied!', 'Prompt copied to clipboard', 'success');
+  }catch(e){ console.error(e); showToast('Copy Failed', 'Could not copy: ' + e.message, 'error'); }
+}
+
+/* GPT EDIT */
+const gptEditModal = document.getElementById('gpt-editModal');
+const gptEditTitle = document.getElementById('gpt-editTitle');
+const gptEditCategory = document.getElementById('gpt-editCategory');
+const gptEditModel = document.getElementById('gpt-editModel');
+const gptEditSystemRole = document.getElementById('gpt-editSystemRole');
+const gptEditPrompt = document.getElementById('gpt-editPrompt');
+const gptEditTags = document.getElementById('gpt-editTags');
+let gptEditItem = null;
+
+function openGPTEditModal(id){
+  gptEditItem = gptPrompts.find(x=> String(x.id) === String(id));
+  if(!gptEditItem) return showToast('Not Found', 'Prompt not found', 'error');
+  gptEditTitle.value = gptEditItem.title || '';
+  gptEditCategory.value = gptEditItem.category || gptCategories[0];
+  gptEditModel.value = gptEditItem.model || 'GPT-4';
+  gptEditSystemRole.value = gptEditItem.systemRole || '';
+  gptEditPrompt.value = gptEditItem.prompt || '';
+  gptEditTags.value = (gptEditItem.tags || []).join(', ');
+  gptEditModal.classList.remove('hidden'); gptEditModal.classList.add('flex');
+}
+function closeGPTEditModal(){ gptEditModal.classList.add('hidden'); gptEditModal.classList.remove('flex'); }
+document.getElementById('gpt-editClose').addEventListener('click', closeGPTEditModal);
+document.getElementById('gpt-editCancel').addEventListener('click', closeGPTEditModal);
+
+document.getElementById('gpt-editSave').addEventListener('click', async ()=>{
+  if(!gptEditItem) return;
+  try{
+    const payload = {
+      id: gptEditItem.id,
+      title: (gptEditTitle.value||'').trim(),
+      category: gptEditCategory.value || 'General',
+      model: gptEditModel.value || 'GPT-4',
+      systemRole: (gptEditSystemRole.value||'').trim(),
+      prompt: (gptEditPrompt.value||'').trim(),
+      tags: (gptEditTags.value||'').split(',').map(t=>t.trim()).filter(Boolean)
+    };
+    await updateGPTItem(payload);
+    Object.assign(gptEditItem,payload);
+    closeGPTEditModal(); renderGPT(); showToast('Saved!', 'Prompt updated successfully', 'success');
+  }catch(e){ console.error(e); showToast('Save Failed', 'Could not save: ' + e.message, 'error'); }
+});
+
+/* GPT ADD */
+const gptAddModal = document.getElementById('gpt-addModal');
+const gptTitleInput = document.getElementById('gpt-titleInput');
+const gptCategoryInput = document.getElementById('gpt-categoryInput');
+const gptModelInput = document.getElementById('gpt-modelInput');
+const gptSystemRoleInput = document.getElementById('gpt-systemRoleInput');
+const gptPromptInput = document.getElementById('gpt-promptInput');
+const gptTagsInput = document.getElementById('gpt-tagsInput');
+const gptSaveAdd = document.getElementById('gpt-saveAdd');
+
+function openGPTAdd(){ resetGPTAdd(); gptAddModal.classList.remove('hidden'); gptAddModal.classList.add('flex'); gptTitleInput.focus(); }
+function closeGPTAdd(){ gptAddModal.classList.add('hidden'); gptAddModal.classList.remove('flex'); }
+document.getElementById('gpt-addBtn').addEventListener('click',openGPTAdd);
+document.getElementById('gpt-addClose').addEventListener('click',closeGPTAdd);
+document.getElementById('gpt-cancelAdd').addEventListener('click',closeGPTAdd);
+document.getElementById('gpt-clearAdd').addEventListener('click',resetGPTAdd);
+
+function resetGPTAdd(){
+  gptTitleInput.value=''; gptCategoryInput.value=gptCategories[0]; gptModelInput.value='GPT-4';
+  gptSystemRoleInput.value=''; gptPromptInput.value=''; gptTagsInput.value='';
+  updateGPTSaveDisabled();
+}
+function updateGPTSaveDisabled(){
+  const valid=(gptTitleInput.value||'').trim() && (gptPromptInput.value||'').trim();
+  gptSaveAdd.disabled = !valid;
+}
+gptPromptInput.addEventListener('input',updateGPTSaveDisabled);
+gptTitleInput.addEventListener('input',updateGPTSaveDisabled);
+
+gptSaveAdd.addEventListener('click', async ()=>{
+  try{
+    gptSaveAdd.disabled=true;
+    const payload = {
+      title:(gptTitleInput.value||'').trim(),
+      category: gptCategoryInput.value || 'General',
+      model: gptModelInput.value || 'GPT-4',
+      systemRole: (gptSystemRoleInput.value||'').trim(),
+      prompt:(gptPromptInput.value||'').trim(),
+      tags:(gptTagsInput.value||'').split(',').map(t=>t.trim()).filter(Boolean),
+      dateCreated:new Date().toISOString().slice(0,10),
+      useCount:0
+    };
+    await createGPTItem(payload); closeGPTAdd(); await syncGPTPrompts(); showToast('Added!', 'Prompt created successfully', 'success');
+  }catch(e){ console.error(e); showToast('Add Failed', 'Could not add prompt: ' + e.message, 'error'); }
+  finally{ gptSaveAdd.disabled=false; }
+});
+
+/* GPT Controls */
+document.getElementById('gpt-syncBtn').addEventListener('click', syncGPTPrompts);
+document.getElementById('gpt-searchInput').addEventListener('input',()=>{ gptPage=1; renderGPT(); });
+document.getElementById('gpt-categorySelect').addEventListener('change',()=>{ gptPage=1; renderGPT(); });
+document.getElementById('gpt-prevPage').addEventListener('click',()=>{ if(gptPage>1){ gptPage--; renderGPT(); }});
+document.getElementById('gpt-nextPage').addEventListener('click',()=>{ gptPage++; renderGPT(); });
+document.getElementById('gpt-manageCategoriesBtn').addEventListener('click', () => openCategoryManageModal('prompts'));
+
+/* ================================================== */
+/* ================== TUTORIAL ====================== */
+/* ================================================== */
+
+const tutorialSteps = [
+  {
+    title: 'Welcome to Content Library!',
+    text: 'This tutorial will guide you through all the features. You can skip it anytime and restart later by clicking the Tutorial button.',
+    target: null,
+    position: 'center'
+  },
+  {
+    title: 'Need Help?',
+    text: 'Click the Support button anytime to submit feedback, report issues, or request features via our support form.',
+    target: '#supportBtn',
+    position: 'bottom'
+  },
+  {
+    title: 'Navigation Tabs',
+    text: 'Switch between WhatsApp Content and GPT Prompts libraries using these tabs.',
+    target: '[data-tab="whatsapp"]',
+    position: 'bottom'
+  },
+  {
+    title: 'Search Content',
+    text: 'Search for content by title, keywords, or tags. Filter by category using the dropdown.',
+    target: '#wa-searchInput',
+    position: 'bottom',
+    beforeShow: () => { document.querySelector('[data-tab="whatsapp"]').click(); }
+  },
+  {
+    title: 'Add New Content',
+    text: 'Click here to add new WhatsApp content with formatting, tags, and attachments.',
+    target: '#wa-addBtn',
+    position: 'left'
+  },
+  {
+    title: 'Sync Data',
+    text: 'Click Sync to refresh content from your Notion database.',
+    target: '#wa-syncBtn',
+    position: 'left'
+  },
+  {
+    title: 'Content Cards',
+    text: 'Each card shows your content with WhatsApp preview. You can Edit, Copy, or Send via WhatsApp.',
+    target: '#wa-contentGrid',
+    position: 'top',
+    waitForElement: true
+  },
+  {
+    title: 'Usage Statistics',
+    text: 'Track how many times content is used, total items, and other statistics here.',
+    target: '.card.rounded-xl.p-4.shadow-soft',
+    position: 'top'
+  },
+  {
+    title: 'GPT Prompts Library',
+    text: 'Now let\'s explore the GPT Prompts section. Click Next to continue.',
+    target: '[data-tab="prompts"]',
+    position: 'bottom',
+    beforeShow: () => { document.querySelector('[data-tab="prompts"]').click(); }
+  },
+  {
+    title: 'Add New Prompt',
+    text: 'Create standardized prompts with system roles, model recommendations, and tags.',
+    target: '#gpt-addBtn',
+    position: 'left'
+  },
+  {
+    title: 'Copy & Use Prompts',
+    text: 'Click Copy on any prompt to copy it to clipboard, then paste it into ChatGPT, Claude, or any AI tool.',
+    target: '#gpt-contentGrid',
+    position: 'top',
+    waitForElement: true
+  },
+  {
+    title: 'Tutorial Complete!',
+    text: 'You\'re all set! Click the Tutorial button anytime to see this guide again. Happy organizing!',
+    target: null,
+    position: 'center'
+  }
+];
+
+let currentTutorialStep = 0;
+
+const tutorialOverlay = document.getElementById('tutorialOverlay');
+const tutorialHighlight = document.getElementById('tutorialHighlight');
+const tutorialTooltip = document.getElementById('tutorialTooltip');
+const tutorialArrow = document.getElementById('tutorialArrow');
+const tutorialTitle = document.getElementById('tutorialTitle');
+const tutorialText = document.getElementById('tutorialText');
+const tutorialStepSpan = document.getElementById('tutorialStep');
+const tutorialTotalSpan = document.getElementById('tutorialTotal');
+const tutorialPrevBtn = document.getElementById('tutorialPrev');
+const tutorialNextBtn = document.getElementById('tutorialNext');
+const tutorialSkipBtn = document.getElementById('tutorialSkip');
+
+function startTutorial(){
+  currentTutorialStep = 0;
+  tutorialOverlay.classList.add('active');
+  tutorialTotalSpan.textContent = tutorialSteps.length;
+  showTutorialStep(0);
+}
+
+function endTutorial(){
+  tutorialOverlay.classList.remove('active');
+  currentTutorialStep = 0;
+}
+
+function showTutorialStep(stepIndex){
+  if(stepIndex < 0 || stepIndex >= tutorialSteps.length){
+    endTutorial();
+    return;
+  }
+
+  currentTutorialStep = stepIndex;
+  const step = tutorialSteps[stepIndex];
+
+  // Run beforeShow callback if exists
+  if(step.beforeShow) step.beforeShow();
+
+  // Update content
+  tutorialTitle.textContent = step.title;
+  tutorialText.textContent = step.text;
+  tutorialStepSpan.textContent = stepIndex + 1;
+
+  // Update buttons
+  tutorialPrevBtn.disabled = stepIndex === 0;
+  tutorialNextBtn.textContent = stepIndex === tutorialSteps.length - 1 ? 'Finish' : 'Next';
+
+  // Position tooltip and highlight
+  if(step.target){
+    const targetEl = document.querySelector(step.target);
+    if(!targetEl){
+      if(step.waitForElement){
+        // Wait a bit for content to load
+        setTimeout(() => showTutorialStep(stepIndex), 500);
+        return;
+      }
+      // Skip to next step if target not found
+      showTutorialStep(stepIndex + 1);
+      return;
+    }
+
+    const rect = targetEl.getBoundingClientRect();
+
+    // Position highlight
+    tutorialHighlight.style.display = 'block';
+    tutorialHighlight.style.left = (rect.left - 10) + 'px';
+    tutorialHighlight.style.top = (rect.top - 10) + 'px';
+    tutorialHighlight.style.width = (rect.width + 20) + 'px';
+    tutorialHighlight.style.height = (rect.height + 20) + 'px';
+
+    // Position tooltip
+    positionTooltip(rect, step.position);
+  } else {
+    // Center tooltip for steps without target
+    tutorialHighlight.style.display = 'none';
+    tutorialTooltip.style.left = '50%';
+    tutorialTooltip.style.top = '50%';
+    tutorialTooltip.style.transform = 'translate(-50%, -50%)';
+    tutorialArrow.className = 'tutorial-arrow';
+    tutorialArrow.style.display = 'none';
+  }
+
+  lucide.createIcons();
+}
+
+function positionTooltip(rect, position){
+  tutorialArrow.style.display = 'block';
+  tutorialArrow.className = 'tutorial-arrow';
+  tutorialTooltip.style.transform = 'none';
+
+  const tooltipRect = tutorialTooltip.getBoundingClientRect();
+  const padding = 20;
+
+  switch(position){
+    case 'top':
+      tutorialTooltip.style.left = (rect.left + rect.width / 2 - tooltipRect.width / 2) + 'px';
+      tutorialTooltip.style.top = (rect.top - tooltipRect.height - padding) + 'px';
+      tutorialArrow.classList.add('bottom');
+      break;
+    case 'bottom':
+      tutorialTooltip.style.left = (rect.left + rect.width / 2 - tooltipRect.width / 2) + 'px';
+      tutorialTooltip.style.top = (rect.bottom + padding) + 'px';
+      tutorialArrow.classList.add('top');
+      break;
+    case 'left':
+      tutorialTooltip.style.left = (rect.left - tooltipRect.width - padding) + 'px';
+      tutorialTooltip.style.top = (rect.top + rect.height / 2 - tooltipRect.height / 2) + 'px';
+      tutorialArrow.classList.add('right');
+      break;
+    case 'right':
+      tutorialTooltip.style.left = (rect.right + padding) + 'px';
+      tutorialTooltip.style.top = (rect.top + rect.height / 2 - tooltipRect.height / 2) + 'px';
+      tutorialArrow.classList.add('left');
+      break;
+    default:
+      tutorialTooltip.style.left = '50%';
+      tutorialTooltip.style.top = '50%';
+      tutorialTooltip.style.transform = 'translate(-50%, -50%)';
+      tutorialArrow.style.display = 'none';
+  }
+
+  // Keep tooltip in viewport
+  const tooltipFinalRect = tutorialTooltip.getBoundingClientRect();
+  if(tooltipFinalRect.right > window.innerWidth - 20){
+    tutorialTooltip.style.left = (window.innerWidth - tooltipFinalRect.width - 20) + 'px';
+  }
+  if(tooltipFinalRect.left < 20){
+    tutorialTooltip.style.left = '20px';
+  }
+  if(tooltipFinalRect.top < 20){
+    tutorialTooltip.style.top = '20px';
+  }
+}
+
+// Tutorial button events
+document.getElementById('tutorialBtn').addEventListener('click', startTutorial);
+tutorialPrevBtn.addEventListener('click', () => showTutorialStep(currentTutorialStep - 1));
+tutorialNextBtn.addEventListener('click', () => {
+  if(currentTutorialStep === tutorialSteps.length - 1){
+    endTutorial();
+  } else {
+    showTutorialStep(currentTutorialStep + 1);
+  }
+});
+tutorialSkipBtn.addEventListener('click', endTutorial);
+
+// Close tutorial on overlay click (outside tooltip)
+tutorialOverlay.addEventListener('click', (e) => {
+  if(e.target === tutorialOverlay) endTutorial();
+});
+
+// Handle window resize
+window.addEventListener('resize', () => {
+  if(tutorialOverlay.classList.contains('active')){
+    showTutorialStep(currentTutorialStep);
+  }
+});
+
+/* ====== MEDIA LIGHTBOX ====== */
+let currentMediaUrl = '';
+let currentMediaBackupUrl = '';
+let currentMediaName = '';
+let currentMediaType = '';
+
+function openMediaLightbox(url, name, type, backupUrl = '') {
+  currentMediaUrl = url;
+  currentMediaBackupUrl = backupUrl;
+  currentMediaName = name;
+  currentMediaType = type;
+
+  const lightbox = document.getElementById('mediaLightbox');
+  const container = document.getElementById('mediaLightboxContainer');
+  const title = document.getElementById('mediaLightboxTitle');
+  const copyBtn = document.getElementById('mediaLightboxCopy');
+
+  title.textContent = name;
+
+  // Show copy button only for images
+  if (type === 'image') {
+    copyBtn.style.display = 'inline-flex';
+  } else {
+    copyBtn.style.display = 'none';
+  }
+
+  // Render media based on type with smart fallback
+  if (type === 'image') {
+    container.innerHTML = `
+      <img src="${url}"
+           alt="${escapeHtml(name)}"
+           class="media-lightbox-media"
+           data-backup-url="${escapeHtml(backupUrl)}"
+           onerror="handleLightboxImageError(this)">
+    `;
+  } else if (type === 'video') {
+    container.innerHTML = `
+      <video src="${url}"
+             controls
+             autoplay
+             class="media-lightbox-video"
+             data-backup-url="${escapeHtml(backupUrl)}"
+             onerror="handleLightboxVideoError(this)"></video>
+    `;
+  } else if (type === 'pdf') {
+    container.innerHTML = `
+      <iframe src="${url}"
+              class="media-lightbox-pdf"
+              data-backup-url="${escapeHtml(backupUrl)}"
+              onerror="handleLightboxPdfError(this)"></iframe>
+    `;
+  }
+
+  lightbox.classList.add('active');
+  lucide.createIcons();
+}
+
+// Smart fallback handlers for lightbox media
+function handleLightboxImageError(img) {
+  const backupUrl = img.dataset.backupUrl;
+  if (backupUrl && backupUrl !== '' && !img.dataset.triedBackup) {
+    console.log('Primary image failed, trying backup:', backupUrl);
+    img.dataset.triedBackup = 'true';
+    img.src = backupUrl;
+    currentMediaUrl = backupUrl; // Update current URL for actions
+    showToast('Using Backup', 'Loading from backup source...', 'info');
+  } else {
+    img.parentElement.innerHTML = `
+      <div style="color:white;text-align:center;padding:40px;">
+        <i data-lucide="image-off" style="width:64px;height:64px;margin:0 auto 20px;display:block;"></i>
+        <p style="font-size:18px;margin-bottom:10px;">Failed to load image</p>
+        <p style="font-size:14px;opacity:0.7;margin-top:10px;">Both primary and backup sources failed.</p>
+        <p style="font-size:12px;opacity:0.5;margin-top:20px;">Try using the 'Open in New Tab' button below.</p>
+      </div>
+    `;
+    lucide.createIcons();
+  }
+}
+
+function handleLightboxVideoError(video) {
+  const backupUrl = video.dataset.backupUrl;
+  if (backupUrl && backupUrl !== '' && !video.dataset.triedBackup) {
+    console.log('Primary video failed, trying backup:', backupUrl);
+    video.dataset.triedBackup = 'true';
+    video.src = backupUrl;
+    currentMediaUrl = backupUrl;
+    showToast('Using Backup', 'Loading from backup source...', 'info');
+  } else {
+    video.parentElement.innerHTML = `
+      <div style="color:white;text-align:center;padding:40px;">
+        <i data-lucide="video-off" style="width:64px;height:64px;margin:0 auto 20px;display:block;"></i>
+        <p style="font-size:18px;">Failed to load video</p>
+        <p style="font-size:12px;opacity:0.5;margin-top:20px;">Try using the 'Open in New Tab' button.</p>
+      </div>
+    `;
+    lucide.createIcons();
+  }
+}
+
+function handleLightboxPdfError(iframe) {
+  const backupUrl = iframe.dataset.backupUrl;
+  if (backupUrl && backupUrl !== '' && !iframe.dataset.triedBackup) {
+    console.log('Primary PDF failed, trying backup:', backupUrl);
+    iframe.dataset.triedBackup = 'true';
+    iframe.src = backupUrl;
+    currentMediaUrl = backupUrl;
+    showToast('Using Backup', 'Loading from backup source...', 'info');
+  } else {
+    iframe.parentElement.innerHTML = `
+      <div style="color:white;text-align:center;padding:40px;">
+        <i data-lucide="file-x" style="width:64px;height:64px;margin:0 auto 20px;display:block;"></i>
+        <p style="font-size:18px;">Failed to load PDF</p>
+        <p style="font-size:12px;opacity:0.5;margin-top:20px;">Try using the 'Open in New Tab' button.</p>
+      </div>
+    `;
+    lucide.createIcons();
+  }
+}
+
+function closeMediaLightbox() {
+  const lightbox = document.getElementById('mediaLightbox');
+  const container = document.getElementById('mediaLightboxContainer');
+
+  lightbox.classList.remove('active');
+
+  // Clean up video/audio to stop playback
+  setTimeout(() => {
+    container.innerHTML = '';
+  }, 300);
+}
+
+// Lightbox event listeners
+document.getElementById('mediaLightboxClose').addEventListener('click', closeMediaLightbox);
+document.getElementById('mediaLightbox').addEventListener('click', (e) => {
+  if (e.target.id === 'mediaLightbox') {
+    closeMediaLightbox();
+  }
+});
+
+document.getElementById('mediaLightboxDownload').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.href = currentMediaUrl;
+  a.download = currentMediaName;
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast('Download Started', `Downloading ${currentMediaName}`, 'success');
+});
+
+document.getElementById('mediaLightboxOpen').addEventListener('click', () => {
+  window.open(currentMediaUrl, '_blank');
+});
+
+document.getElementById('mediaLightboxCopy').addEventListener('click', () => {
+  copyImageToClipboard(currentMediaUrl, currentMediaName);
+});
+
+// ESC key to close lightbox
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const lightbox = document.getElementById('mediaLightbox');
+    if (lightbox.classList.contains('active')) {
+      closeMediaLightbox();
+    }
+    hideContextMenu();
+  }
+});
+
+// Event delegation for attachment card clicks
+document.addEventListener('click', (e) => {
+  // Don't open lightbox if clicking context menu
+  if (e.target.closest('.custom-context-menu')) return;
+
+  const card = e.target.closest('.attachment-card[data-media-url]');
+  if (card && e.button === 0) { // Only left click
+    const url = card.getAttribute('data-media-url');
+    const backupUrl = card.getAttribute('data-media-backup');
+    const name = card.getAttribute('data-media-name');
+    const type = card.getAttribute('data-media-type');
+    if (url && name && type) {
+      openMediaLightbox(url, name, type, backupUrl);
+    }
+  }
+});
+
+// Event delegation for right-click on images
+document.addEventListener('contextmenu', (e) => {
+  const card = e.target.closest('.attachment-card[data-media-type="image"]');
+  if (card) {
+    e.preventDefault();
+    const url = card.getAttribute('data-media-url');
+    const name = card.getAttribute('data-media-name');
+    showImageContextMenu(e, url, name);
+  }
+});
+
+/* ====== CUSTOM CONTEXT MENU FOR IMAGES ====== */
+let contextMenuImageUrl = '';
+let contextMenuImageName = '';
+
+function showImageContextMenu(event, url, name) {
+  if (!url || !name) return;
+
+  contextMenuImageUrl = url;
+  contextMenuImageName = name;
+
+  const menu = document.getElementById('customContextMenu');
+  menu.classList.add('active');
+
+  // Position the menu at cursor
+  const x = event.clientX;
+  const y = event.clientY;
+
+  // Adjust position if menu would go off screen
+  const menuWidth = 180;
+  const menuHeight = 140;
+  const windowWidth = window.innerWidth;
+  const windowHeight = window.innerHeight;
+
+  let left = x;
+  let top = y;
+
+  if (x + menuWidth > windowWidth) {
+    left = windowWidth - menuWidth - 10;
+  }
+
+  if (y + menuHeight > windowHeight) {
+    top = windowHeight - menuHeight - 10;
+  }
+
+  menu.style.left = `${left}px`;
+  menu.style.top = `${top}px`;
+
+  lucide.createIcons();
+
+  return false;
+}
+
+function hideContextMenu() {
+  const menu = document.getElementById('customContextMenu');
+  menu.classList.remove('active');
+}
+
+// Hide context menu on click outside
+document.addEventListener('click', () => {
+  hideContextMenu();
+});
+
+// Context menu actions
+document.getElementById('contextCopyImage').addEventListener('click', () => {
+  copyImageToClipboard(contextMenuImageUrl, contextMenuImageName);
+  hideContextMenu();
+});
+
+document.getElementById('contextOpenImage').addEventListener('click', () => {
+  window.open(contextMenuImageUrl, '_blank');
+  hideContextMenu();
+});
+
+document.getElementById('contextDownloadImage').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.href = contextMenuImageUrl;
+  a.download = contextMenuImageName;
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast('Download Started', `Downloading ${contextMenuImageName}`, 'success');
+  hideContextMenu();
+});
+
+/* ====== COPY IMAGE TO CLIPBOARD ====== */
+async function copyImageToClipboard(url, name) {
+  try {
+    showToast('Copying...', 'Copying image to clipboard', 'info');
+
+    // Fetch the image as a blob
+    const response = await fetch(url);
+    const blob = await response.blob();
+
+    // Check if the blob is an image
+    if (!blob.type.startsWith('image/')) {
+      throw new Error('Not a valid image file');
+    }
+
+    // Use Clipboard API to copy image
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        [blob.type]: blob
+      })
+    ]);
+
+    showToast('Copied!', 'Image copied to clipboard. You can now paste it in WhatsApp!', 'success');
+  } catch (error) {
+    console.error('Copy failed:', error);
+
+    // Fallback: copy the image URL as text
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast('URL Copied', 'Image URL copied to clipboard (image copy not supported)', 'info');
+    } catch (e) {
+      showToast('Copy Failed', 'Could not copy image. Try downloading instead.', 'error');
+    }
+  }
+}
+
+/* ====== BOOT ====== */
+window.addEventListener('DOMContentLoaded', async ()=>{
+  // Load categories first before rendering
+  await loadWACategories();
+  await loadGPTCategories();
+
+  // Then render dropdowns and load content
+  renderWACategories();
+  renderGPTCategories();
+  syncWAContents();
+  syncGPTPrompts();
+});
+</script>
+
+<!-- Command Palette -->
+<script src="ai-search.js"></script>
+<script src="command-palette.js"></script>
+<script>
+// Initialize Command Palette
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    window.commandPalette = new CommandPalette({
+      // Get content arrays
+      getWAContents: () => waContents || [],
+      getGPTPrompts: () => gptPrompts || [],
+      
+      // Open content callback
+      onOpenContent: (type, id) => {
+        if (type === 'whatsapp') {
+          openWAPreview(id);
+        } else if (type === 'prompt') {
+          openGPTPreview(id);
+        }
+      },
+      
+      // Add content callback
+      onAddContent: (type) => {
+        if (type === 'whatsapp') {
+          // Switch to WhatsApp tab if needed
+          const waTab = document.querySelector('.tab[data-tab="whatsapp"]');
+          if (waTab && !waTab.classList.contains('active')) {
+            waTab.click();
+          }
+          openWAAdd();
+        } else if (type === 'prompt') {
+          // Switch to Prompts tab if needed
+          const gptTab = document.querySelector('.tab[data-tab="prompts"]');
+          if (gptTab && !gptTab.classList.contains('active')) {
+            gptTab.click();
+          }
+          openGPTAdd();
+        }
+      },
+      
+      // Theme toggle callback
+      onToggleTheme: () => {
+        theme = (theme === 'dark' ? 'light' : 'dark');
+        setTheme(theme);
+      }
+    });
+    
+    // Also bind the Cmd+K button in header
+    const cmdKBtn = document.getElementById('cmdKBtn');
+    if (cmdKBtn) {
+      cmdKBtn.addEventListener('click', () => {
+        if (window.commandPalette) {
+          window.commandPalette.open();
+        }
+      });
+    }
+    
+    console.log('✅ Command Palette ready (press Cmd+K or Ctrl+K)');
+  }, 500); // Wait for content to load
+});
+</script>
+</body>
+</html>

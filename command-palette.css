@@ -1,0 +1,470 @@
+/**
+ * Command Palette Styles
+ * Notion-inspired AI-powered search modal
+ */
+
+/* ========== CSS Variables ========== */
+:root {
+  --cp-overlay-bg: rgba(0, 0, 0, 0.6);
+  --cp-modal-bg: #ffffff;
+  --cp-modal-border: rgba(0, 0, 0, 0.1);
+  --cp-input-bg: transparent;
+  --cp-section-title: #6b7280;
+  --cp-item-hover: rgba(0, 0, 0, 0.04);
+  --cp-item-selected: rgba(214, 177, 96, 0.15);
+  --cp-item-border: rgba(0, 0, 0, 0.06);
+  --cp-text-primary: #0b0b0c;
+  --cp-text-secondary: #6b7280;
+  --cp-text-muted: #9ca3af;
+  --cp-accent: #d6b160;
+  --cp-accent-text: #000;
+  --cp-kbd-bg: rgba(0, 0, 0, 0.06);
+  --cp-kbd-border: rgba(0, 0, 0, 0.1);
+  --cp-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --cp-ai-badge-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --cp-ai-badge-inactive: #9ca3af;
+}
+
+[data-theme="dark"] {
+  --cp-overlay-bg: rgba(0, 0, 0, 0.75);
+  --cp-modal-bg: #1a1d21;
+  --cp-modal-border: rgba(255, 255, 255, 0.1);
+  --cp-input-bg: transparent;
+  --cp-section-title: #9ca3af;
+  --cp-item-hover: rgba(255, 255, 255, 0.06);
+  --cp-item-selected: rgba(214, 177, 96, 0.2);
+  --cp-item-border: rgba(255, 255, 255, 0.06);
+  --cp-text-primary: #e5e7eb;
+  --cp-text-secondary: #9ca3af;
+  --cp-text-muted: #6b7280;
+  --cp-kbd-bg: rgba(255, 255, 255, 0.1);
+  --cp-kbd-border: rgba(255, 255, 255, 0.15);
+  --cp-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* ========== Overlay ========== */
+.command-palette-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--cp-overlay-bg);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 99999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+.command-palette-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ========== Modal ========== */
+.command-palette-modal {
+  width: 100%;
+  max-width: 640px;
+  background: var(--cp-modal-bg);
+  border: 1px solid var(--cp-modal-border);
+  border-radius: 16px;
+  box-shadow: var(--cp-shadow);
+  overflow: hidden;
+  transform: scale(0.96) translateY(-10px);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.command-palette-overlay.active .command-palette-modal {
+  transform: scale(1) translateY(0);
+}
+
+/* ========== Search Header ========== */
+.command-palette-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--cp-item-border);
+}
+
+.command-palette-search-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--cp-text-muted);
+  flex-shrink: 0;
+}
+
+.command-palette-input {
+  flex: 1;
+  background: var(--cp-input-bg);
+  border: none;
+  outline: none;
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--cp-text-primary);
+  caret-color: var(--cp-accent);
+}
+
+.command-palette-input::placeholder {
+  color: var(--cp-text-muted);
+}
+
+.command-palette-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.command-palette-ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--cp-ai-badge-bg);
+  color: white;
+  transition: all 0.2s ease;
+}
+
+.command-palette-ai-badge.inactive {
+  background: var(--cp-ai-badge-inactive);
+}
+
+.command-palette-ai-badge .lucide {
+  width: 12px;
+  height: 12px;
+}
+
+.command-palette-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  background: var(--cp-kbd-bg);
+  border: 1px solid var(--cp-kbd-border);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--cp-text-secondary);
+  font-family: inherit;
+}
+
+/* ========== Scrollable Content ========== */
+.command-palette-content {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.command-palette-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.command-palette-content::-webkit-scrollbar-thumb {
+  background: rgba(127, 127, 127, 0.3);
+  border-radius: 3px;
+}
+
+/* ========== Sections ========== */
+.command-palette-section {
+  padding: 8px 0;
+}
+
+.command-palette-section.hidden {
+  display: none;
+}
+
+.command-palette-section-title {
+  padding: 8px 20px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--cp-section-title);
+}
+
+/* ========== Items ========== */
+.command-palette-items {
+  display: flex;
+  flex-direction: column;
+}
+
+.command-palette-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+}
+
+.command-palette-item:hover {
+  background: var(--cp-item-hover);
+}
+
+.command-palette-item.selected {
+  background: var(--cp-item-selected);
+}
+
+.command-palette-item-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--cp-item-hover);
+  color: var(--cp-text-secondary);
+  transition: all 0.15s ease;
+}
+
+.command-palette-item:hover .command-palette-item-icon,
+.command-palette-item.selected .command-palette-item-icon {
+  background: var(--cp-accent);
+  color: var(--cp-accent-text);
+}
+
+.command-palette-item-icon .lucide {
+  width: 18px;
+  height: 18px;
+}
+
+.command-palette-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.command-palette-item-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--cp-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.command-palette-item-subtitle {
+  font-size: 12px;
+  color: var(--cp-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.command-palette-item-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--cp-item-hover);
+  color: var(--cp-text-secondary);
+  flex-shrink: 0;
+}
+
+.command-palette-item-shortcut {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* ========== Quick Action Colors ========== */
+.command-palette-item[data-action="search"] .command-palette-item-icon {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.command-palette-item[data-action="translate"] .command-palette-item-icon {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.command-palette-item[data-action="summarize"] .command-palette-item-icon {
+  background: rgba(139, 92, 246, 0.15);
+  color: #8b5cf6;
+}
+
+.command-palette-item[data-action="add-whatsapp"] .command-palette-item-icon {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.command-palette-item[data-action="add-prompt"] .command-palette-item-icon {
+  background: rgba(236, 72, 153, 0.15);
+  color: #ec4899;
+}
+
+.command-palette-item[data-action="toggle-theme"] .command-palette-item-icon {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+/* Content type badges */
+.command-palette-item-badge.whatsapp {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.command-palette-item-badge.prompt {
+  background: rgba(139, 92, 246, 0.15);
+  color: #8b5cf6;
+}
+
+/* ========== Empty State ========== */
+.command-palette-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--cp-text-muted);
+}
+
+.command-palette-empty-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 12px;
+  opacity: 0.5;
+}
+
+.command-palette-empty-title {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: var(--cp-text-secondary);
+}
+
+.command-palette-empty-text {
+  font-size: 13px;
+}
+
+/* ========== Loading State ========== */
+.command-palette-loading {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--cp-text-muted);
+  font-size: 14px;
+}
+
+.command-palette-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--cp-item-border);
+  border-top-color: var(--cp-accent);
+  border-radius: 50%;
+  animation: cp-spin 0.8s linear infinite;
+}
+
+@keyframes cp-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ========== Footer ========== */
+.command-palette-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--cp-item-border);
+  font-size: 12px;
+  color: var(--cp-text-muted);
+}
+
+.command-palette-footer span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.command-palette-footer kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  background: var(--cp-kbd-bg);
+  border: 1px solid var(--cp-kbd-border);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 680px) {
+  .command-palette-overlay {
+    padding: 8px;
+    padding-top: 8vh;
+  }
+
+  .command-palette-modal {
+    max-height: 80vh;
+    border-radius: 12px;
+  }
+
+  .command-palette-search {
+    padding: 14px 16px;
+  }
+
+  .command-palette-input {
+    font-size: 16px;
+  }
+
+  .command-palette-item {
+    padding: 10px 16px;
+  }
+
+  .command-palette-section-title {
+    padding: 8px 16px 6px;
+  }
+
+  .command-palette-footer {
+    padding: 10px 16px;
+    gap: 12px;
+  }
+}
+
+/* ========== Animation for items ========== */
+@keyframes cp-item-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.command-palette-item {
+  animation: cp-item-appear 0.15s ease forwards;
+}
+
+.command-palette-items .command-palette-item:nth-child(1) { animation-delay: 0ms; }
+.command-palette-items .command-palette-item:nth-child(2) { animation-delay: 20ms; }
+.command-palette-items .command-palette-item:nth-child(3) { animation-delay: 40ms; }
+.command-palette-items .command-palette-item:nth-child(4) { animation-delay: 60ms; }
+.command-palette-items .command-palette-item:nth-child(5) { animation-delay: 80ms; }
+.command-palette-items .command-palette-item:nth-child(6) { animation-delay: 100ms; }

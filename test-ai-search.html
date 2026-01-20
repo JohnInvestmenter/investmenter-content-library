@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Search Test Page</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #0f1114; color: #e5e7eb; }
+    .status-ok { color: #10b981; }
+    .status-error { color: #ef4444; }
+    .status-pending { color: #f59e0b; }
+    .test-box { background: #1a1d21; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 20px; }
+    pre { background: #0b0b0c; padding: 12px; border-radius: 8px; overflow-x: auto; }
+  </style>
+</head>
+<body class="p-8">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8">🤖 AI Search Test Page</h1>
+
+    <!-- Status Check -->
+    <div class="test-box mb-6">
+      <h2 class="text-xl font-semibold mb-4">1. Ollama Status Check</h2>
+      <p class="mb-2">Status: <span id="ollama-status" class="status-pending">Checking...</span></p>
+      <p class="text-sm text-gray-400">Ollama must be running on localhost:11434</p>
+      <button onclick="checkStatus()" class="mt-3 px-4 py-2 bg-blue-600 rounded hover:bg-blue-700">Recheck</button>
+    </div>
+
+    <!-- Model Test -->
+    <div class="test-box mb-6">
+      <h2 class="text-xl font-semibold mb-4">2. Translation Test</h2>
+      <div class="space-y-3">
+        <div>
+          <label class="block mb-2">Test Query:</label>
+          <input id="test-query" type="text" value="Immobilien investieren"
+                 class="w-full p-3 bg-gray-800 border border-gray-700 rounded"
+                 placeholder="Enter German or English text">
+        </div>
+        <button onclick="testTranslation()" class="px-4 py-2 bg-green-600 rounded hover:bg-green-700">
+          Test AI Translation
+        </button>
+        <button onclick="testEnhancement()" class="px-4 py-2 bg-purple-600 rounded hover:bg-purple-700 ml-2">
+          Test Search Enhancement
+        </button>
+      </div>
+      <div id="translation-result" class="mt-4 hidden">
+        <h3 class="font-semibold mb-2">Result:</h3>
+        <pre id="translation-output" class="text-sm"></pre>
+      </div>
+      <div id="translation-loading" class="mt-4 hidden">
+        <p class="status-pending">⏳ Processing... (may take 3-8 seconds)</p>
+      </div>
+    </div>
+
+    <!-- Search Enhancement Test -->
+    <div class="test-box mb-6">
+      <h2 class="text-xl font-semibold mb-4">3. Search Enhancement Test</h2>
+      <p class="text-sm text-gray-400 mb-3">This simulates how AI will enhance your searches</p>
+      <div id="enhancement-result" class="space-y-2">
+        <p class="text-gray-400">Click "Test Search Enhancement" above to see results</p>
+      </div>
+    </div>
+
+    <!-- Sample Content Search -->
+    <div class="test-box mb-6">
+      <h2 class="text-xl font-semibold mb-4">4. Mock Content Search</h2>
+      <p class="text-sm text-gray-400 mb-3">Test with sample content</p>
+      <button onclick="testMockSearch()" class="px-4 py-2 bg-indigo-600 rounded hover:bg-indigo-700">
+        Run Mock Search
+      </button>
+      <div id="mock-result" class="mt-4"></div>
+    </div>
+
+    <!-- Performance Stats -->
+    <div class="test-box">
+      <h2 class="text-xl font-semibold mb-4">5. Performance Stats</h2>
+      <div id="perf-stats" class="grid grid-cols-2 gap-4">
+        <div>
+          <p class="text-sm text-gray-400">Last Response Time</p>
+          <p id="response-time" class="text-2xl font-bold">-</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-400">Status</p>
+          <p id="perf-status" class="text-2xl font-bold">-</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="ai-search.js"></script>
+  <script>
+    const OLLAMA_API = 'http://localhost:11434/api/generate';
+    const MODEL = 'llama3.1:8b';
+
+    // Mock content for testing
+    const mockContent = [
+      { id: 1, title: "Real Estate Investment Guide", content: "Learn about property investment strategies", tags: ["investment", "property"] },
+      { id: 2, title: "Immobilien Investitionsleitfaden", content: "Strategien für Immobilieninvestitionen", tags: ["investition", "immobilien"] },
+      { id: 3, title: "Stock Market Basics", content: "Introduction to stock trading", tags: ["stocks", "trading"] },
+      { id: 4, title: "Aktienmarkt Grundlagen", content: "Einführung in den Aktienhandel", tags: ["aktien", "handel"] }
+    ];
+
+    // Check Ollama status
+    async function checkStatus() {
+      const statusEl = document.getElementById('ollama-status');
+      statusEl.textContent = 'Checking...';
+      statusEl.className = 'status-pending';
+
+      try {
+        const response = await fetch('http://localhost:11434', {
+          method: 'GET',
+          signal: AbortSignal.timeout(3000)
+        });
+
+        if (response.ok) {
+          statusEl.textContent = '✅ Running (localhost:11434)';
+          statusEl.className = 'status-ok';
+        } else {
+          throw new Error('Not responding');
+        }
+      } catch (error) {
+        statusEl.textContent = '❌ Not Running - Start Ollama first!';
+        statusEl.className = 'status-error';
+      }
+    }
+
+    // Test simple translation
+    async function testTranslation() {
+      const query = document.getElementById('test-query').value;
+      const resultDiv = document.getElementById('translation-result');
+      const outputDiv = document.getElementById('translation-output');
+      const loadingDiv = document.getElementById('translation-loading');
+
+      loadingDiv.classList.remove('hidden');
+      resultDiv.classList.add('hidden');
+
+      const startTime = Date.now();
+
+      try {
+        const response = await fetch(OLLAMA_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: MODEL,
+            prompt: `Translate this text. If it's German, translate to English. If it's English, translate to German.\n\nText: "${query}"\n\nProvide only the translation, nothing else.`,
+            stream: false
+          })
+        });
+
+        const data = await response.json();
+        const responseTime = Date.now() - startTime;
+
+        outputDiv.textContent = data.response;
+        resultDiv.classList.remove('hidden');
+        loadingDiv.classList.add('hidden');
+
+        // Update perf stats
+        document.getElementById('response-time').textContent = `${(responseTime/1000).toFixed(2)}s`;
+        document.getElementById('perf-status').textContent = responseTime < 5000 ? '🟢 Fast' : '🟡 Slow';
+
+      } catch (error) {
+        outputDiv.textContent = `Error: ${error.message}`;
+        resultDiv.classList.remove('hidden');
+        loadingDiv.classList.add('hidden');
+      }
+    }
+
+    // Test search enhancement
+    async function testEnhancement() {
+      const query = document.getElementById('test-query').value;
+      const resultDiv = document.getElementById('enhancement-result');
+      const loadingDiv = document.getElementById('translation-loading');
+
+      loadingDiv.classList.remove('hidden');
+
+      const startTime = Date.now();
+
+      try {
+        const enhancement = await enhanceSearchQuery(query);
+        const responseTime = Date.now() - startTime;
+
+        if (enhancement) {
+          resultDiv.innerHTML = `
+            <div class="space-y-2">
+              <p><strong>Detected Language:</strong> ${enhancement.detectedLanguage === 'de' ? '🇩🇪 German' : '🇬🇧 English'}</p>
+              <p><strong>Original Query:</strong> ${enhancement.originalQuery}</p>
+              <p><strong>Translated Query:</strong> ${enhancement.translatedQuery}</p>
+              <p><strong>Search Terms:</strong></p>
+              <div class="flex flex-wrap gap-2 mt-2">
+                ${enhancement.searchTerms.map(term => `
+                  <span class="px-3 py-1 bg-blue-900 rounded-full text-sm">${term}</span>
+                `).join('')}
+              </div>
+              <p class="text-sm text-gray-400 mt-3">Response time: ${(responseTime/1000).toFixed(2)}s</p>
+            </div>
+          `;
+        } else {
+          resultDiv.innerHTML = '<p class="status-error">❌ Enhancement failed</p>';
+        }
+
+        loadingDiv.classList.add('hidden');
+
+        // Update perf stats
+        document.getElementById('response-time').textContent = `${(responseTime/1000).toFixed(2)}s`;
+        document.getElementById('perf-status').textContent = responseTime < 5000 ? '🟢 Fast' : '🟡 Slow';
+
+      } catch (error) {
+        resultDiv.innerHTML = `<p class="status-error">Error: ${error.message}</p>`;
+        loadingDiv.classList.add('hidden');
+      }
+    }
+
+    // Test with mock content
+    async function testMockSearch() {
+      const query = document.getElementById('test-query').value;
+      const resultDiv = document.getElementById('mock-result');
+
+      resultDiv.innerHTML = '<p class="status-pending">⏳ Searching mock content...</p>';
+
+      try {
+        const result = await aiEnhancedSearch(query, mockContent);
+
+        if (result && result.results) {
+          resultDiv.innerHTML = `
+            <div class="mt-4">
+              <p class="font-semibold mb-2">Found ${result.results.length} results:</p>
+              <div class="space-y-2">
+                ${result.results.map(item => `
+                  <div class="bg-gray-800 p-3 rounded">
+                    <p class="font-semibold">${item.title}</p>
+                    <p class="text-sm text-gray-400">${item.content}</p>
+                    <p class="text-xs text-gray-500 mt-1">Score: ${item._searchScore}</p>
+                  </div>
+                `).join('')}
+              </div>
+              <p class="text-sm text-gray-400 mt-3">
+                Search terms used: ${result.searchTermsUsed.join(', ')}
+              </p>
+            </div>
+          `;
+        } else {
+          resultDiv.innerHTML = '<p class="status-error">No results found</p>';
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<p class="status-error">Error: ${error.message}</p>`;
+      }
+    }
+
+    // Auto-check status on load
+    window.addEventListener('load', checkStatus);
+  </script>
+</body>
+</html>

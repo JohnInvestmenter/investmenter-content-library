@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Assistant Widget - Integration Demo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="ai-widget-styles.css">
+  <style>
+    body { background: #0f1114; color: #e5e7eb; padding: 40px; }
+    .demo-content { max-width: 800px; margin: 0 auto; }
+    h1 { margin-bottom: 20px; }
+    .instructions { background: #1a1d21; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <div class="demo-content">
+    <h1 class="text-3xl font-bold">🤖 AI Assistant Widget Demo</h1>
+
+    <div class="instructions">
+      <h2 class="text-xl font-semibold mb-3">How to Use:</h2>
+      <ol class="list-decimal list-inside space-y-2">
+        <li>Make sure Ollama is running: <code>ollama serve</code></li>
+        <li>Click the ✨ floating button in the bottom-right corner</li>
+        <li>Try these commands:
+          <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+            <li>"Translate to German: Hello world"</li>
+            <li>"Search my content for: investment"</li>
+            <li>"What can you help me with?"</li>
+          </ul>
+        </li>
+      </ol>
+    </div>
+
+    <div class="instructions">
+      <h2 class="text-xl font-semibold mb-3">Integration Into index.html:</h2>
+      <pre class="bg-black p-4 rounded-lg text-sm overflow-x-auto"><code>&lt;!-- Add before closing &lt;/body&gt; tag --&gt;
+&lt;link rel="stylesheet" href="ai-widget-styles.css"&gt;
+&lt;script src="ai-assistant-widget.js"&gt;&lt;/script&gt;</code></pre>
+    </div>
+  </div>
+
+  <!-- AI Assistant Widget Script -->
+  <script>
+    class AIAssistant {
+      constructor() {
+        this.isOpen = false;
+        this.ollamaAvailable = false;
+        this.isProcessing = false;
+        this.messageCount = 0;
+        this.init();
+      }
+
+      async init() {
+        this.ollamaAvailable = await this.checkOllama();
+        this.createWidget();
+        this.bindEvents();
+        if (this.ollamaAvailable) {
+          setTimeout(() => this.showWelcomeHint(), 1000);
+        }
+      }
+
+      async checkOllama() {
+        try {
+          const response = await fetch('http://localhost:11434', { method: 'GET', signal: AbortSignal.timeout(2000) });
+          return response.ok;
+        } catch (error) {
+          console.warn('Ollama not available');
+          return false;
+        }
+      }
+
+      createWidget() {
+        const widget = document.createElement('div');
+        widget.id = 'ai-assistant-widget';
+        widget.innerHTML = `
+          <div id="ai-fab" class="ai-fab ${this.ollamaAvailable ? '' : 'ai-disabled'}">
+            <i data-lucide="sparkles"></i>
+            <span class="ai-fab-badge" style="display: none;"></span>
+          </div>
+
+          <div id="ai-chat-window" class="ai-chat-window" style="display: none;">
+            <div class="ai-chat-header">
+              <div class="flex items-center gap-2 flex-1">
+                <i data-lucide="sparkles" style="width: 20px; height: 20px;"></i>
+                <div>
+                  <div class="font-semibold">AI Assistant</div>
+                  <div class="text-xs text-[var(--muted-ink)]">
+                    ${this.ollamaAvailable ? 'Ready to help' : 'Ollama not running'}
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button id="ai-close-btn" class="ai-header-btn">
+                  <i data-lucide="x"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="ai-quick-actions">
+              <button class="ai-quick-btn" data-action="search">
+                <i data-lucide="search"></i>
+                <span>Search</span>
+              </button>
+              <button class="ai-quick-btn" data-action="translate">
+                <i data-lucide="languages"></i>
+                <span>Translate</span>
+              </button>
+              <button class="ai-quick-btn" data-action="summarize">
+                <i data-lucide="file-text"></i>
+                <span>Summarize</span>
+              </button>
+              <button class="ai-quick-btn" data-action="help">
+                <i data-lucide="help-circle"></i>
+                <span>Help</span>
+              </button>
+            </div>
+
+            <div class="ai-chat-messages" id="ai-messages"></div>
+
+            <div class="ai-chat-input-wrapper">
+              <textarea id="ai-input" class="ai-chat-input"
+                placeholder="${this.ollamaAvailable ? 'Ask me anything...' : 'Start Ollama first'}"
+                rows="1" ${!this.ollamaAvailable ? 'disabled' : ''}></textarea>
+              <button id="ai-send-btn" class="ai-send-btn" ${!this.ollamaAvailable ? 'disabled' : ''}>
+                <i data-lucide="send"></i>
+              </button>
+            </div>
+
+            <div class="ai-footer">
+              <span class="text-xs text-[var(--muted-ink)]">Powered by Llama • Running locally</span>
+            </div>
+          </div>
+        `;
+
+        document.body.appendChild(widget);
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      }
+
+      bindEvents() {
+        document.getElementById('ai-fab').addEventListener('click', () => this.openChat());
+        document.getElementById('ai-close-btn').addEventListener('click', () => this.closeChat());
+        document.getElementById('ai-send-btn').addEventListener('click', () => this.handleSend());
+
+        const input = document.getElementById('ai-input');
+        input.addEventListener('input', (e) => {
+          e.target.style.height = 'auto';
+          e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+        });
+
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            this.handleSend();
+          }
+        });
+
+        document.querySelectorAll('.ai-quick-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const action = btn.getAttribute('data-action');
+            this.handleQuickAction(action);
+          });
+        });
+      }
+
+      openChat() {
+        this.isOpen = true;
+        document.getElementById('ai-fab').style.display = 'none';
+        document.getElementById('ai-chat-window').style.display = 'flex';
+        setTimeout(() => document.getElementById('ai-input').focus(), 100);
+        document.querySelector('.ai-fab-badge').style.display = 'none';
+      }
+
+      closeChat() {
+        this.isOpen = false;
+        document.getElementById('ai-chat-window').style.display = 'none';
+        document.getElementById('ai-fab').style.display = 'flex';
+      }
+
+      showWelcomeHint() {
+        const badge = document.querySelector('.ai-fab-badge');
+        badge.textContent = '👋';
+        badge.style.display = 'flex';
+        setTimeout(() => badge.style.display = 'none', 5000);
+      }
+
+      async handleSend() {
+        const input = document.getElementById('ai-input');
+        const message = input.value.trim();
+        if (!message || this.isProcessing) return;
+
+        input.value = '';
+        input.style.height = 'auto';
+
+        this.addMessage('user', message);
+        this.isProcessing = true;
+        const typingId = this.addTypingIndicator();
+
+        try {
+          const response = await this.getAIResponse(message);
+          this.removeTypingIndicator(typingId);
+          this.addMessage('assistant', response);
+        } catch (error) {
+          this.removeTypingIndicator(typingId);
+          this.addMessage('assistant', '❌ Error: ' + error.message, 'error');
+        } finally {
+          this.isProcessing = false;
+        }
+      }
+
+      handleQuickAction(action) {
+        const prompts = {
+          search: 'Search my content for: ',
+          translate: 'Translate to German: ',
+          summarize: 'Summarize this content: ',
+          help: 'What can you help me with?'
+        };
+
+        const input = document.getElementById('ai-input');
+        input.value = prompts[action] || '';
+        input.focus();
+
+        if (action === 'help') {
+          this.handleSend();
+        }
+      }
+
+      async getAIResponse(userMessage) {
+        const isHelp = userMessage.toLowerCase().includes('help');
+
+        if (isHelp) {
+          return `I can help you with:
+
+1. 🔍 Search - Find content in your library
+   Example: "Search my content for: investment"
+
+2. 🌐 Translate - German ↔ English translation
+   Example: "Translate to German: Hello world"
+
+3. 📄 Summarize - Summarize your content
+   Example: "Summarize this content: [paste text]"
+
+4. 💬 Chat - Ask me anything!
+
+Just type naturally and I'll understand!`;
+        }
+
+        let prompt = `You are a helpful AI assistant. Keep responses concise and friendly.\n\nUser: ${userMessage}\n\nAssistant:`;
+
+        const response = await fetch('http://localhost:11434/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'llama3.1:8b',
+            prompt: prompt,
+            stream: false,
+            options: { temperature: 0.7, num_predict: 300 }
+          })
+        });
+
+        if (!response.ok) throw new Error('AI request failed');
+
+        const data = await response.json();
+        return data.response.trim();
+      }
+
+      addMessage(role, content, type = '') {
+        const messagesDiv = document.getElementById('ai-messages');
+        const messageId = 'msg-' + (this.messageCount++);
+
+        const messageEl = document.createElement('div');
+        messageEl.className = `ai-message ${role} ${type}`;
+        messageEl.id = messageId;
+
+        messageEl.innerHTML = `
+          <div class="ai-message-avatar">
+            <i data-lucide="${role === 'user' ? 'user' : 'sparkles'}"></i>
+          </div>
+          <div class="ai-message-content">${this.escapeHtml(content)}</div>
+        `;
+
+        messagesDiv.appendChild(messageEl);
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        return messageId;
+      }
+
+      addTypingIndicator() {
+        const messagesDiv = document.getElementById('ai-messages');
+        const typingId = 'typing-' + Date.now();
+
+        const typingEl = document.createElement('div');
+        typingEl.className = 'ai-message assistant';
+        typingEl.id = typingId;
+
+        typingEl.innerHTML = `
+          <div class="ai-message-avatar">
+            <i data-lucide="sparkles"></i>
+          </div>
+          <div class="ai-message-content">
+            <div class="ai-typing-indicator">
+              <div class="ai-typing-dot"></div>
+              <div class="ai-typing-dot"></div>
+              <div class="ai-typing-dot"></div>
+            </div>
+          </div>
+        `;
+
+        messagesDiv.appendChild(typingEl);
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        return typingId;
+      }
+
+      removeTypingIndicator(id) {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+      }
+
+      escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    }
+
+    // Initialize
+    window.aiAssistant = new AIAssistant();
+  </script>
+</body>
+</html>
