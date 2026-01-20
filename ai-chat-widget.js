@@ -16,13 +16,7 @@ class AIChatWidget {
     this.createWidget();
     this.bindEvents();
 
-    // Check AI status quietly
-    if (window.checkOllamaStatus) {
-      window.checkOllamaStatus().then(status => {
-        const badge = document.querySelector('.ai-chat-badge');
-        if (badge) badge.style.opacity = status ? '1' : '0.5';
-      });
-    }
+    // No auto-check on init to save quota
   }
 
   createWidget() {
@@ -212,9 +206,9 @@ class AIChatWidget {
     // 1. Get current AI status
     let status = typeof getAIStatus === 'function' ? getAIStatus() : { provider: 'none' };
 
-    // 2. Retry detection if none
+    // 2. Lazy Load: If no provider detected, try to detect NOW
     if (status.provider === 'none' && typeof detectAIProvider === 'function') {
-      console.log('Chat Widget: Re-checking AI provider...');
+      console.log('Chat Widget: First-time AI detection (Lazy Load)...');
       await detectAIProvider();
       status = getAIStatus();
     }

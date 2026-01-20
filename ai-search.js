@@ -379,11 +379,5 @@ if (typeof module !== 'undefined' && module.exports) {
   };
 }
 
-// Auto-initialize when loaded in browser
-if (typeof window !== 'undefined') {
-  window.addEventListener('DOMContentLoaded', () => {
-    initAISearch().then(available => {
-      console.log('🤖 AI Search System initialized:', available ? getAIStatus().displayName : 'Disabled');
-    });
-  });
-}
+// Auto-initialization removed to save quota. 
+// Widget will trigger initAISearch() when opened or used.
