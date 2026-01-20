@@ -186,7 +186,9 @@ class AIChatWidget {
   buildContext(query) {
     const wa = (window.waContents || []).map(i => `[WhatsApp] ${i.title}: ${i.content}`).join('\n\n');
     const gpt = (window.gptPrompts || []).map(i => `[GPT] ${i.title}: ${i.prompt}`).join('\n\n');
-    return `Use the following content library to answer:\n\n${wa}\n\n${gpt}`.substring(0, 100000);
+    // Combine and limit to a safe number for Groq Free Tier (Limit ~6000 tokens)
+    // 20,000 chars is roughly 4k-5k tokens.
+    return `Use the following content library to answer:\n\n${wa}\n\n${gpt}`.substring(0, 20000);
   }
 }
 
