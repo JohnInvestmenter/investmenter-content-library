@@ -197,9 +197,12 @@ class AIChatWidget {
 
   buildContext(query) {
     // Get globally available content
-    const wa = (window.waContents || []).map(i => `[WhatsApp] ${i.title}: ${i.content}`).join('\n').substring(0, 3000);
-    const gpt = (window.gptPrompts || []).map(i => `[GPT] ${i.title}: ${i.prompt}`).join('\n').substring(0, 3000);
-    return `Use the following content library to answer:\n\n${wa}\n\n${gpt}`;
+    const wa = (window.waContents || []).map(i => `[WhatsApp] ${i.title}: ${i.content}`).join('\n\n');
+    const gpt = (window.gptPrompts || []).map(i => `[GPT] ${i.title}: ${i.prompt}`).join('\n\n');
+
+    // Combine and limit to a safe large number (Groq handles ~8k tokens, Gemini ~1M)
+    // 50,000 chars is roughly 10k-12k tokens, safe for most modern models
+    return `Use the following content library to answer:\n\n${wa}\n\n${gpt}`.substring(0, 100000);
   }
 
   async callAI(query, context) {
