@@ -215,7 +215,21 @@ class AIChatWidget {
 
     console.log('Chat Widget using provider:', status.provider);
 
-    // 3. Check for Gemini
+    // 3. Check for Groq
+    if (typeof callGroq === 'function' && status.provider === 'groq') {
+      const prompt = `You are a helpful assistant for an investment content library.
+       
+Context:
+${context}
+
+User Question: "${query}"
+
+Answer politely and briefly using the context provided.`;
+
+      return await callGroq(prompt);
+    }
+
+    // 4. Check for Gemini
     if (typeof callGemini === 'function' && status.provider === 'gemini') {
       const prompt = `You are a helpful assistant for an investment content library.
       
