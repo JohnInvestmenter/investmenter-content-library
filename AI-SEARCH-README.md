@@ -329,12 +329,36 @@ A: Yes! AI enhances the search query, then searches your Notion content (already
 
 **Q: Will this slow down my laptop?**
 A: Only during searches (3-8 seconds). Otherwise, minimal impact.
+ 
+## 🏠 Ollama (Local + Cloudflare Tunnel)
 
-**Q: Can I use this with other databases?**
-A: Yes! Works with any content source. AI just enhances keywords.
+To use your local Ollama on the live site, you must use a **Cloudflare Tunnel** and allow **CORS**.
 
-**Q: What if Ollama crashes?**
-A: Search automatically falls back to basic keyword matching.
+### 1. Start Ollama with CORS Allowed
+You must allow the browser to talk to your local Ollama.
+**Mac/Linux:**
+```bash
+OLLAMA_ORIGINS="*" ollama serve
+```
+**Windows (PowerShell):**
+```powershell
+$env:OLLAMA_ORIGINS="*"; ollama serve
+```
+
+### 2. Start Cloudflare Tunnel
+```bash
+cloudflared tunnel --url http://localhost:11434
+```
+
+### 3. Add URL to Vercel
+1. Copy the `https://....trycloudflare.com` URL.
+2. Go to Vercel Project Settings -> Environment Variables.
+3. Add `OLLAMA_TUNNEL_URL` = `your-url`.
+4. Redeploy (or just save if using the Client-Side implementation).
+
+---
+
+## ⚡ API Configuration (Vercel)ic keyword matching.
 
 **Q: Can multiple users use my Ollama instance?**
 A: Yes! Configure Ollama to accept remote connections, or deploy on a server.
