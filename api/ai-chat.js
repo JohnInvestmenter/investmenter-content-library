@@ -48,10 +48,15 @@ export default async function handler(req) {
 
         // === OLLAMA TUNNEL CONFIG ===
         else if (provider === 'ollama') {
-            // Tunnel URL provided by user
-            apiUrl = 'https://nine-dealt-suggestions-density.trycloudflare.com/api/generate';
+            // Tunnel URL from Vercel Env Var
+            const tunnelUrl = process.env.OLLAMA_TUNNEL_URL;
+            if (!tunnelUrl) throw new Error('OLLAMA_TUNNEL_URL not configured in Vercel');
+
+            // Ensure URL ends with /api/generate
+            apiUrl = tunnelUrl.endsWith('/api/generate') ? tunnelUrl : `${tunnelUrl.replace(/\/$/, '')}/api/generate`;
+
             body = {
-                model: 'llama3.1:8b', // Confirmed via previous curl check
+                model: 'llama3.1:8b',
                 prompt: `Context:\n${context}\n\nQuestion: ${message}`,
                 stream: false,
                 options: { temperature: 0.3 }
