@@ -92,9 +92,16 @@ async function callAI(prompt, context = '', preferredProvider = 'auto') {
     else providerToUse = 'groq'; // Default auto
   }
 
-  // Direct local Ollama check
-  if (providerToUse === 'ollama' && currentProvider === 'ollama') {
-    return callOllama(prompt);
+  // Direct Ollama Call (Bypass Vercel Server to avoid Timeout)
+  if (providerToUse === 'ollama') {
+    let tunnelUrl = 'http://localhost:11434';
+    try {
+      // Fetch tunnel URL from Vercel Env (exposed via API)
+      const cfg = await fetch('/api/config').then(r => r.json());
+      if (cfg.ollamaTunnelUrl) tunnelUrl = cfg.ollamaTunnelUrl;
+    } catch (e) { console.warn('Could not fetch tunnel config', e); }
+
+    return callOllamaDirect(prompt, context, tunnelUrl);
   }
 
   try {
@@ -126,6 +133,29 @@ async function callAI(prompt, context = '', preferredProvider = 'auto') {
 }
 
 // ... Keep existing helper functions (Ollama, basicSearch) ...
+
+// Direct Client-Side Call to Ollama Tunnel
+async function callOllamaDirect(prompt, context, baseUrl) {
+  // Ensure we hit the API endpoint
+  const url = baseUrl.endsWith('/api/generate') ? baseUrl : `${baseUrl.replace(/\/$/, '')}/api/generate`;
+
+  console.log('Calling Ollama Tunnel Direct:', url);
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'llama3.1:8b',
+      prompt: `Context:\n${context.substring(0, 10000)} ...\n\nQuestion: ${prompt}`,
+      stream: false,
+      options: { temperature: 0.3 }
+    })
+  });
+
+  if (!response.ok) throw new Error(`Ollama Tunnel Error: ${response.status}`);
+  const data = await response.json();
+  return data.response;
+}
 
 async function callOllama(prompt) {
   const response = await fetch('http://localhost:11434/api/generate', {
