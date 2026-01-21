@@ -46,6 +46,18 @@ export default async function handler(req) {
             };
         }
 
+        // === OLLAMA TUNNEL CONFIG ===
+        else if (provider === 'ollama') {
+            // Tunnel URL provided by user
+            apiUrl = 'https://nine-dealt-suggestions-density.trycloudflare.com/api/generate';
+            body = {
+                model: 'llama3.1:8b', // Confirmed via previous curl check
+                prompt: `Context:\n${context}\n\nQuestion: ${message}`,
+                stream: false,
+                options: { temperature: 0.3 }
+            };
+        }
+
         // 2. CALL AI PROVIDER
         const response = await fetch(apiUrl, {
             method: 'POST',
@@ -64,6 +76,7 @@ export default async function handler(req) {
         // Extract reply based on provider
         if (provider === 'groq') reply = data.choices[0]?.message?.content;
         if (provider === 'gemini') reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (provider === 'ollama') reply = data.response;
 
         return new Response(JSON.stringify({ reply }), {
             headers: { 'Content-Type': 'application/json' }

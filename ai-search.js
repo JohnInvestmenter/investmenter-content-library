@@ -46,6 +46,19 @@ async function detectAIProvider() {
         console.log('✅ AI Provider: Vercel Server (Gemini)');
         return 'server-gemini';
       }
+
+      // Try Ollama Tunnel (Cloudflare)
+      const resp3 = await fetch('/api/ai-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'test', context: 'test', provider: 'ollama' })
+      });
+
+      if (resp3.ok) {
+        currentProvider = 'server-ollama';
+        console.log('✅ AI Provider: Vercel Server (Ollama Tunnel)');
+        return 'server-ollama';
+      }
     }
   } catch (e) {
     console.warn('AI Server unreachable:', e);
@@ -72,6 +85,7 @@ async function callAI(prompt, context = '') {
   // Determine provider name for the API
   let provider = 'groq';
   if (currentProvider === 'server-gemini') provider = 'gemini';
+  if (currentProvider === 'server-ollama') provider = 'ollama';
   if (currentProvider === 'ollama') return callOllama(prompt);
 
   try {
