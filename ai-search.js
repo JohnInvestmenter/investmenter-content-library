@@ -81,12 +81,21 @@ async function detectAIProvider() {
 /**
  * Call AI via Secure Proxy
  */
-async function callAI(prompt, context = '') {
-  // Determine provider name for the API
-  let provider = 'groq';
-  if (currentProvider === 'server-gemini') provider = 'gemini';
-  if (currentProvider === 'server-ollama') provider = 'ollama';
-  if (currentProvider === 'ollama') return callOllama(prompt);
+async function callAI(prompt, context = '', preferredProvider = 'auto') {
+  // Determine provider to use
+  let providerToUse = preferredProvider;
+
+  if (providerToUse === 'auto') {
+    if (currentProvider === 'server-gemini') providerToUse = 'gemini';
+    else if (currentProvider === 'server-ollama') providerToUse = 'ollama';
+    else if (currentProvider === 'ollama') return callOllama(prompt);
+    else providerToUse = 'groq'; // Default auto
+  }
+
+  // Direct local Ollama check
+  if (providerToUse === 'ollama' && currentProvider === 'ollama') {
+    return callOllama(prompt);
+  }
 
   try {
     const response = await fetch('/api/ai-chat', {
@@ -95,7 +104,7 @@ async function callAI(prompt, context = '') {
       body: JSON.stringify({
         message: prompt,
         context: context,
-        provider: provider
+        provider: providerToUse
       })
     });
 

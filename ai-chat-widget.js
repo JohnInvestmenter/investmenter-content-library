@@ -32,8 +32,12 @@ class AIChatWidget {
       <div class="ai-chat-header">
         <div class="ai-chat-title">
           <i data-lucide="bot"></i>
-          AI Assistant
-          <span class="ai-chat-badge">Beta</span>
+          <select id="aiProviderSelect" class="ai-provider-select" style="background:transparent; border:none; color:inherit; font-weight:600; cursor:pointer; outline:none;">
+            <option value="auto">Auto (Best)</option>
+            <option value="groq">⚡ Groq (Llama 3)</option>
+            <option value="gemini">🧠 Gemini</option>
+            <option value="ollama">🏠 Ollama (Tunnel)</option>
+          </select>
         </div>
         <button class="btn-icon" id="aiChatClose" style="border:none;background:none;cursor:pointer;opacity:0.6;">
           <i data-lucide="x" style="width:18px;"></i>
@@ -125,8 +129,11 @@ class AIChatWidget {
         }
       }
 
-      // Call Secure Proxy
-      const response = await callAI(msg, context);
+      // Call Secure Proxy with selected provider
+      const providerSelect = document.getElementById('aiProviderSelect');
+      const preferredProvider = providerSelect ? providerSelect.value : 'auto';
+
+      const response = await callAI(msg, context, preferredProvider);
 
       this.hideTyping();
       this.addMessage(response, 'ai');
