@@ -1033,6 +1033,129 @@
       background: rgba(255, 255, 255, .2);
     }
 
+    /* ---------- FOLDER TREE VIEW ---------- */
+    .folder-tree {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .folder-node {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .folder-node-header {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background .2s;
+      position: relative;
+    }
+
+    .folder-node-header:hover {
+      background: var(--accent-bg);
+    }
+
+    .folder-node-header.active {
+      background: var(--brand);
+      color: #fff;
+    }
+
+    .folder-toggle {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border-radius: 4px;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .folder-toggle:hover {
+      background: rgba(0,0,0,0.1);
+    }
+
+    .folder-toggle.expanded {
+      transform: rotate(90deg);
+    }
+
+    .folder-toggle.hidden {
+      visibility: hidden;
+    }
+
+    .folder-node-icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .folder-node-header.active .folder-node-icon {
+      color: #fff;
+    }
+
+    .folder-node-name {
+      flex: 1;
+      font-weight: 500;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .folder-node-count {
+      font-size: 12px;
+      opacity: .7;
+      background: rgba(0, 0, 0, .1);
+      padding: 2px 8px;
+      border-radius: 12px;
+      flex-shrink: 0;
+    }
+
+    .folder-node-header.active .folder-node-count {
+      background: rgba(255, 255, 255, .2);
+    }
+
+    .folder-add-subfolder {
+      opacity: 0;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: opacity 0.2s, background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .folder-node-header:hover .folder-add-subfolder {
+      opacity: 1;
+    }
+
+    .folder-add-subfolder:hover {
+      background: rgba(0,0,0,0.15);
+    }
+
+    .folder-node-header.active .folder-add-subfolder:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    .folder-children {
+      display: none;
+      flex-direction: column;
+      gap: 2px;
+      padding-left: 24px;
+      margin-top: 2px;
+    }
+
+    .folder-children.expanded {
+      display: flex;
+    }
+
     .sidebar-header {
       display: flex;
       align-items: center;
@@ -1716,6 +1839,44 @@
     </div>
   </div>
 
+  <!-- ==================== CREATE SUBFOLDER MODAL ==================== -->
+  <div id="createSubfolderModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+    <div class="card rounded-xl p-6 w-full max-w-md">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Create Folder</h2>
+        <button onclick="closeCreateSubfolderModal()" class="btn btn-sm">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="mb-4" id="subfolder-parent-display">
+        <label class="block text-sm text-[var(--muted-ink)] mb-1">Parent Folder</label>
+        <div id="subfolder-parent-path" class="p-2 rounded-lg bg-[var(--accent-bg)] text-sm font-mono">
+          (Root)
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm mb-1">Folder Name</label>
+        <input id="subfolder-name" type="text" placeholder="Enter folder name..."
+          class="w-full p-3 rounded-lg border border-[var(--border)] bg-[var(--card)]" />
+        <p class="text-xs text-[var(--muted-ink)] mt-1">Folder names cannot contain "/" characters</p>
+      </div>
+
+      <div id="subfolder-depth-warning" class="mb-4 p-3 rounded-lg bg-yellow-100 text-yellow-800 text-sm hidden">
+        <i data-lucide="alert-triangle" style="width:16px;height:16px;display:inline;vertical-align:middle"></i>
+        <span>Maximum folder depth (10 levels) reached. Cannot create subfolder here.</span>
+      </div>
+
+      <div class="flex justify-end gap-2">
+        <button onclick="closeCreateSubfolderModal()" class="btn">Cancel</button>
+        <button id="subfolder-create-btn" onclick="createSubfolder()" class="btn btn-brand">
+          <i data-lucide="folder-plus"></i> Create
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== MEDIA LIGHTBOX ==================== -->
   <div id="mediaLightbox" class="media-lightbox">
     <button class="media-lightbox-close" id="mediaLightboxClose">
@@ -1829,6 +1990,8 @@
     const pageSize = 24;
     let theme = localStorage.getItem('theme') || 'light';
     let activeWAFolder = 'all'; // Track active folder for WhatsApp section
+    let expandedFolders = new Set(JSON.parse(localStorage.getItem('expandedFolders') || '[]')); // Track expanded folder paths
+    const MAX_FOLDER_DEPTH = 10; // Maximum folder nesting depth
     document.documentElement.setAttribute('data-theme', theme);
 
     /* ====== HASH ROUTING ====== */
@@ -3086,6 +3249,87 @@
       const j = await r.json().catch(() => ({})); if (!r.ok || j.error) throw new Error(j.message || j.error || ('HTTP ' + r.status)); return j;
     }
 
+    // ====== FOLDER HIERARCHY HELPERS ======
+    function parseFolderPath(path) {
+      if (!path || typeof path !== 'string') return [];
+      return path.split('/').map(s => s.trim()).filter(Boolean);
+    }
+
+    function getFolderDepth(path) {
+      return parseFolderPath(path).length;
+    }
+
+    function getParentPath(path) {
+      const parts = parseFolderPath(path);
+      if (parts.length <= 1) return '';
+      return parts.slice(0, -1).join('/');
+    }
+
+    function getFolderName(path) {
+      const parts = parseFolderPath(path);
+      return parts.length > 0 ? parts[parts.length - 1] : '';
+    }
+
+    function isChildOf(path, parentPath) {
+      if (!parentPath) return getFolderDepth(path) === 1; // Top-level folders have no parent
+      const normalizedPath = parseFolderPath(path).join('/');
+      const normalizedParent = parseFolderPath(parentPath).join('/');
+      return normalizedPath.startsWith(normalizedParent + '/');
+    }
+
+    function isDirectChildOf(path, parentPath) {
+      if (!parentPath) return getFolderDepth(path) === 1;
+      const pathParts = parseFolderPath(path);
+      const parentParts = parseFolderPath(parentPath);
+      if (pathParts.length !== parentParts.length + 1) return false;
+      return pathParts.slice(0, -1).join('/') === parentParts.join('/');
+    }
+
+    function buildFolderTree(folderPaths) {
+      const tree = {};
+
+      folderPaths.forEach(path => {
+        const parts = parseFolderPath(path);
+        let currentLevel = tree;
+        let currentPath = '';
+
+        parts.forEach((part, index) => {
+          currentPath = currentPath ? currentPath + '/' + part : part;
+          if (!currentLevel[part]) {
+            currentLevel[part] = {
+              name: part,
+              path: currentPath,
+              children: {}
+            };
+          }
+          currentLevel = currentLevel[part].children;
+        });
+      });
+
+      return tree;
+    }
+
+    function getAllFolderPaths(tree, paths = []) {
+      Object.values(tree).forEach(node => {
+        paths.push(node.path);
+        getAllFolderPaths(node.children, paths);
+      });
+      return paths;
+    }
+
+    function toggleFolderExpand(path, event) {
+      if (event) {
+        event.stopPropagation();
+      }
+      if (expandedFolders.has(path)) {
+        expandedFolders.delete(path);
+      } else {
+        expandedFolders.add(path);
+      }
+      localStorage.setItem('expandedFolders', JSON.stringify([...expandedFolders]));
+      renderWAFolderTabs();
+    }
+
     function computeWAFolderOptions() {
       const set = new Set(defaultWAFolders.map(f => (f || '').trim()).filter(Boolean));
       waContents.forEach(item => {
@@ -3098,9 +3342,31 @@
 
     function renderWAFolderDropdowns() {
       const folders = computeWAFolderOptions();
+
+      // Build tree and flatten with proper ordering (parents before children)
+      const tree = buildFolderTree(folders);
+
+      function flattenTree(node, depth = 0, result = []) {
+        result.push({ path: node.path, name: node.name, depth });
+        Object.values(node.children)
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .forEach(child => flattenTree(child, depth + 1, result));
+        return result;
+      }
+
+      const flatFolders = [];
+      Object.values(tree)
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach(node => flattenTree(node, 0, flatFolders));
+
+      // Create options with indentation
       const optionHTML = [
         `<option value="">${UNASSIGNED_FOLDER}</option>`,
-        ...folders.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`)
+        ...flatFolders.map(f => {
+          const indent = '\u00A0\u00A0\u00A0\u00A0'.repeat(f.depth); // Non-breaking spaces for indentation
+          const prefix = f.depth > 0 ? '└ ' : '';
+          return `<option value="${escapeHtml(f.path)}">${indent}${prefix}${escapeHtml(f.name)}</option>`;
+        })
       ].join('');
 
       const selects = [document.getElementById('wa-folderInput'), document.getElementById('wa-editFolder')];
@@ -3108,7 +3374,7 @@
         if (!sel) return;
         const previous = sel.value;
         sel.innerHTML = optionHTML;
-        if (previous && folders.some(f => f === previous)) {
+        if (previous && flatFolders.some(f => f.path === previous)) {
           sel.value = previous;
         } else {
           sel.value = sel.querySelector('option')?.value || '';
@@ -3133,44 +3399,102 @@
       if (!container) return;
 
       const folders = computeWAFolderOptions();
-      const counts = {};
+
+      // Count items per folder path (exact match only for direct counts)
+      const directCounts = {};
+      const totalCounts = {}; // includes children
       waContents.forEach(item => {
-        const name = (item.folder || '').trim() || UNASSIGNED_FOLDER;
-        counts[name] = (counts[name] || 0) + 1;
+        const path = (item.folder || '').trim() || UNASSIGNED_FOLDER;
+        directCounts[path] = (directCounts[path] || 0) + 1;
       });
 
-      // Add Unassigned tab if there are items without a folder
-      if (counts[UNASSIGNED_FOLDER] && !folders.includes(UNASSIGNED_FOLDER)) {
-        folders.push(UNASSIGNED_FOLDER);
+      // Calculate total counts (folder + all descendants)
+      folders.forEach(folderPath => {
+        let total = directCounts[folderPath] || 0;
+        folders.forEach(otherPath => {
+          if (otherPath !== folderPath && isChildOf(otherPath, folderPath)) {
+            total += directCounts[otherPath] || 0;
+          }
+        });
+        totalCounts[folderPath] = total;
+      });
+
+      // Add Unassigned count
+      if (directCounts[UNASSIGNED_FOLDER]) {
+        totalCounts[UNASSIGNED_FOLDER] = directCounts[UNASSIGNED_FOLDER];
       }
 
+      // Build folder tree
+      const tree = buildFolderTree(folders);
+
       // Reset active folder if it no longer exists
-      if (activeWAFolder !== 'all' && !folders.includes(activeWAFolder)) {
+      const allPaths = getAllFolderPaths(tree);
+      if (activeWAFolder !== 'all' && activeWAFolder !== UNASSIGNED_FOLDER && !allPaths.includes(activeWAFolder)) {
         activeWAFolder = 'all';
       }
 
-      // Add "All" tab first
+      // Render tree recursively
+      function renderNode(node, depth = 0) {
+        const hasChildren = Object.keys(node.children).length > 0;
+        const isExpanded = expandedFolders.has(node.path);
+        const isActive = activeWAFolder === node.path;
+        const count = totalCounts[node.path] || 0;
+        const canAddSubfolder = depth < MAX_FOLDER_DEPTH - 1;
+        const escapedPath = escapeHtml(node.path).replace(/'/g, "\\'");
+
+        let html = `
+          <div class="folder-node">
+            <div class="folder-node-header ${isActive ? 'active' : ''}" onclick="selectWAFolder('${escapedPath}')">
+              <span class="folder-toggle ${hasChildren ? (isExpanded ? 'expanded' : '') : 'hidden'}" onclick="toggleFolderExpand('${escapedPath}', event)">
+                <i data-lucide="chevron-right" style="width:14px;height:14px"></i>
+              </span>
+              <i data-lucide="${hasChildren ? 'folder' : 'folder'}" class="folder-node-icon"></i>
+              <span class="folder-node-name">${escapeHtml(node.name)}</span>
+              <span class="folder-node-count">${count}</span>
+              ${canAddSubfolder ? `<span class="folder-add-subfolder" onclick="openCreateSubfolderModal('${escapedPath}', event)" title="Create subfolder">
+                <i data-lucide="plus" style="width:14px;height:14px"></i>
+              </span>` : ''}
+            </div>
+            ${hasChildren ? `<div class="folder-children ${isExpanded ? 'expanded' : ''}">
+              ${Object.values(node.children).map(child => renderNode(child, depth + 1)).join('')}
+            </div>` : ''}
+          </div>
+        `;
+        return html;
+      }
+
+      // Build HTML
       const allCount = waContents.length;
       let tabsHTML = `
-    <div class="folder-tab ${activeWAFolder === 'all' ? 'active' : ''}" onclick="selectWAFolder('all')">
-      <i data-lucide="folder" class="folder-icon"></i>
-      <span class="folder-name">All Content</span>
-      <span class="folder-count">${allCount}</span>
-    </div>
-  `;
-
-      // Add folder tabs
-      folders.forEach(folderName => {
-        const count = counts[folderName] || 0;
-        const isActive = activeWAFolder === folderName;
-        tabsHTML += `
-      <div class="folder-tab ${isActive ? 'active' : ''}" onclick="selectWAFolder('${escapeHtml(folderName).replace(/'/g, "\\'")}')">
-        <i data-lucide="folder" class="folder-icon"></i>
-        <span class="folder-name">${escapeHtml(folderName)}</span>
-        <span class="folder-count">${count}</span>
-      </div>
-    `;
-      });
+        <div class="folder-tree">
+          <div class="folder-node">
+            <div class="folder-node-header ${activeWAFolder === 'all' ? 'active' : ''}" onclick="selectWAFolder('all')">
+              <span class="folder-toggle hidden">
+                <i data-lucide="chevron-right" style="width:14px;height:14px"></i>
+              </span>
+              <i data-lucide="folder" class="folder-node-icon"></i>
+              <span class="folder-node-name">All Content</span>
+              <span class="folder-node-count">${allCount}</span>
+              <span class="folder-add-subfolder" onclick="openCreateSubfolderModal('', event)" title="Create top-level folder">
+                <i data-lucide="plus" style="width:14px;height:14px"></i>
+              </span>
+            </div>
+          </div>
+          ${Object.values(tree).map(node => renderNode(node, 0)).join('')}
+          ${directCounts[UNASSIGNED_FOLDER] ? `
+            <div class="folder-node">
+              <div class="folder-node-header ${activeWAFolder === UNASSIGNED_FOLDER ? 'active' : ''}" onclick="selectWAFolder('${UNASSIGNED_FOLDER}')">
+                <span class="folder-toggle hidden">
+                  <i data-lucide="chevron-right" style="width:14px;height:14px"></i>
+                </span>
+                <i data-lucide="folder-x" class="folder-node-icon"></i>
+                <span class="folder-node-name">${UNASSIGNED_FOLDER}</span>
+                <span class="folder-node-count">${directCounts[UNASSIGNED_FOLDER]}</span>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
 
       container.innerHTML = tabsHTML;
       lucide.createIcons();
@@ -3186,13 +3510,124 @@
       renderWA();
     }
 
+    // ====== SUBFOLDER MODAL FUNCTIONS ======
+    let currentSubfolderParent = '';
+
+    function openCreateSubfolderModal(parentPath, event) {
+      if (event) {
+        event.stopPropagation();
+      }
+      currentSubfolderParent = parentPath || '';
+
+      const modal = document.getElementById('createSubfolderModal');
+      const parentDisplay = document.getElementById('subfolder-parent-path');
+      const nameInput = document.getElementById('subfolder-name');
+      const depthWarning = document.getElementById('subfolder-depth-warning');
+      const createBtn = document.getElementById('subfolder-create-btn');
+
+      // Show parent path
+      if (currentSubfolderParent) {
+        parentDisplay.textContent = currentSubfolderParent;
+      } else {
+        parentDisplay.textContent = '(Root - Top Level)';
+      }
+
+      // Check depth
+      const currentDepth = getFolderDepth(currentSubfolderParent);
+      if (currentDepth >= MAX_FOLDER_DEPTH) {
+        depthWarning.classList.remove('hidden');
+        createBtn.disabled = true;
+      } else {
+        depthWarning.classList.add('hidden');
+        createBtn.disabled = false;
+      }
+
+      // Clear and focus input
+      nameInput.value = '';
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      lucide.createIcons();
+      setTimeout(() => nameInput.focus(), 100);
+    }
+
+    function closeCreateSubfolderModal() {
+      const modal = document.getElementById('createSubfolderModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      currentSubfolderParent = '';
+    }
+
+    async function createSubfolder() {
+      const nameInput = document.getElementById('subfolder-name');
+      const name = (nameInput.value || '').trim();
+
+      // Validate name
+      if (!name) {
+        showToast('Error', 'Folder name is required', 'error');
+        return;
+      }
+
+      if (name.includes('/')) {
+        showToast('Error', 'Folder name cannot contain "/" characters', 'error');
+        return;
+      }
+
+      // Build full path
+      const newPath = currentSubfolderParent ? `${currentSubfolderParent}/${name}` : name;
+
+      // Check if folder already exists
+      const existingFolders = computeWAFolderOptions();
+      if (existingFolders.includes(newPath)) {
+        showToast('Error', 'A folder with this path already exists', 'error');
+        return;
+      }
+
+      // Check depth
+      if (getFolderDepth(newPath) > MAX_FOLDER_DEPTH) {
+        showToast('Error', `Maximum folder depth is ${MAX_FOLDER_DEPTH} levels`, 'error');
+        return;
+      }
+
+      // Add to default folders so it persists even without items
+      if (!defaultWAFolders.includes(newPath)) {
+        defaultWAFolders.push(newPath);
+      }
+
+      // Expand parent folder if it exists
+      if (currentSubfolderParent) {
+        expandedFolders.add(currentSubfolderParent);
+        localStorage.setItem('expandedFolders', JSON.stringify([...expandedFolders]));
+      }
+
+      // Refresh UI
+      renderWAFolderTabs();
+      closeCreateSubfolderModal();
+      showToast('Success', `Folder "${name}" created`, 'success');
+    }
+
     function renderWA() {
       const grid = document.getElementById('wa-contentGrid');
       const search = (waSearchInput.value || '').toLowerCase();
 
+      // Helper to check if item's folder matches selected folder (including children)
+      function matchesFolder(itemFolder) {
+        if (activeWAFolder === 'all') return true;
+        const normalizedItemFolder = (itemFolder || '').trim() || UNASSIGNED_FOLDER;
+
+        // Exact match
+        if (normalizedItemFolder === activeWAFolder) return true;
+
+        // Check if item is in a subfolder of the selected folder
+        if (activeWAFolder !== UNASSIGNED_FOLDER && isChildOf(normalizedItemFolder, activeWAFolder)) {
+          return true;
+        }
+
+        return false;
+      }
+
       const filtered = waContents.filter(c =>
         (!search || (c.title || '').toLowerCase().includes(search) || (c.content || '').toLowerCase().includes(search) || (c.tags || []).some(t => (t || '').toLowerCase().includes(search))) &&
-        (activeWAFolder === 'all' || ((c.folder || '').trim() || UNASSIGNED_FOLDER) === activeWAFolder)
+        matchesFolder(c.folder)
       );
 
       const total = filtered.length;
@@ -3218,7 +3653,9 @@
         const borderClass = getCardBorderClass(c.category || 'general');
         const showNew = isNew(c.dateCreated);
         const showTrending = isTrending(c.useCount);
-        const folderLabel = (c.folder || '').trim() || UNASSIGNED_FOLDER;
+        const folderPath = (c.folder || '').trim() || UNASSIGNED_FOLDER;
+        const folderName = getFolderName(folderPath) || folderPath;
+        const hasNestedPath = folderPath.includes('/');
 
         return `
     <div class="h-full fade-in" style="animation-delay:${idx * 50}ms">
@@ -3227,7 +3664,7 @@
           <div class="flex-1">
             <h3 class="text-lg font-semibold cursor-pointer hover:text-[var(--brand)] transition-colors" onclick="openWAPreview('${escapeHtml(c.id || '')}')">${escapeHtml(c.title || '')}</h3>
             <div class="flex items-center gap-2 mt-1 flex-wrap">
-              <span class="chip chip-folder"><i data-lucide="folder"></i>${escapeHtml(folderLabel)}</span>
+              <span class="chip chip-folder" ${hasNestedPath ? `title="${escapeHtml(folderPath)}"` : ''}><i data-lucide="folder"></i>${escapeHtml(folderName)}</span>
               <span class="chip ${categoryClass}">${escapeHtml(c.category || '')}</span>
               ${showNew ? '<span class="badge badge-new"><i data-lucide="sparkles"></i>NEW</span>' : ''}
               ${showTrending ? '<span class="badge badge-trending"><i data-lucide="flame"></i>TRENDING</span>' : ''}
