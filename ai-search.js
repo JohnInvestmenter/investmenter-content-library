@@ -108,8 +108,14 @@ async function callAI(prompt, context = '', preferredProvider = 'auto') {
       })
     });
 
-    const data = await response.json();
+    if (!response.ok) {
+      const errText = await response.text();
+      let errJson;
+      try { errJson = JSON.parse(errText); } catch (e) { }
+      throw new Error(errJson?.error || `Server Error: ${errText.substring(0, 100)}`);
+    }
 
+    const data = await response.json();
     if (data.error) throw new Error(data.error);
     return data.reply;
 
