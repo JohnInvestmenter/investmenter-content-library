@@ -12,42 +12,47 @@
   <link rel="stylesheet" href="ai-chat-widget.css">
   <style>
     /* ---------- THEME ---------- */
+    /* Brand Colors: Gold #D6B160, White #FFFFFF, Black #000000 */
     :root {
-      --ink: #0b0b0c;
-      --fg: #0b0b0c;
-      --muted: #f4f5f7;
-      --muted-ink: #6b7280;
-      --brand: #d6b160;
-      --brand-ink: #000;
-      --chip: #0f766e;
-      --chip-ink: #ecfeff;
+      --ink: #000000;
+      --fg: #000000;
+      --muted: #f5f5f5;
+      --muted-ink: #555555;
+      --brand: #D6B160;
+      --brand-ink: #000000;
+      --brand-light: #e8d4a0;
+      --chip: #D6B160;
+      --chip-ink: #000000;
       --card: #ffffff;
-      --border: rgba(0, 0, 0, .08);
+      --border: rgba(0, 0, 0, .12);
       --bg: #ffffff;
-      --canvas: #f9fafb;
-      --wa: #e7f1e9;
-      --wa-ink: #0b0b0c;
-      --prompt: #f0f4ff;
-      --prompt-ink: #0b0b0c;
+      --canvas: #fafafa;
+      --wa: #faf8f3;
+      --wa-ink: #000000;
+      --prompt: #faf8f3;
+      --prompt-ink: #000000;
+      --accent-bg: rgba(214, 177, 96, 0.08);
     }
 
     [data-theme="dark"] {
-      --ink: #e5e7eb;
-      --fg: #e5e7eb;
-      --muted: #16181b;
-      --muted-ink: #9ca3af;
-      --brand: #d6b160;
-      --brand-ink: #000;
-      --chip: #0d9488;
-      --chip-ink: #ecfeff;
-      --card: #0f1114;
-      --border: rgba(255, 255, 255, .10);
-      --bg: #0b0b0c;
-      --canvas: #1a1d21;
-      --wa: #0f1a13;
-      --wa-ink: #e5e7eb;
-      --prompt: #1a1f2e;
-      --prompt-ink: #e5e7eb;
+      --ink: #ffffff;
+      --fg: #ffffff;
+      --muted: #1a1a1a;
+      --muted-ink: #999999;
+      --brand: #D6B160;
+      --brand-ink: #000000;
+      --brand-light: #3d3526;
+      --chip: #D6B160;
+      --chip-ink: #000000;
+      --card: #111111;
+      --border: rgba(255, 255, 255, .12);
+      --bg: #000000;
+      --canvas: #0a0a0a;
+      --wa: #1a1814;
+      --wa-ink: #ffffff;
+      --prompt: #1a1814;
+      --prompt-ink: #ffffff;
+      --accent-bg: rgba(214, 177, 96, 0.12);
     }
 
     body {
@@ -82,12 +87,17 @@
     }
 
     .chip-folder {
-      background: var(--muted);
+      background: transparent;
       color: var(--fg);
       border: 1px solid var(--border);
       display: inline-flex;
       align-items: center;
       gap: 6px;
+    }
+
+    .chip-folder:hover {
+      border-color: var(--brand);
+      background: var(--accent-bg);
     }
 
     .btn {
@@ -565,121 +575,39 @@
     }
 
     /* ---------- CATEGORY COLORS ---------- */
-    .category-general {
-      background: #8b5cf6 !important;
-      color: #fff !important;
-    }
-
-    .category-motivation {
-      background: #f59e0b !important;
-      color: #fff !important;
-    }
-
-    .category-tech-tips {
-      background: #3b82f6 !important;
-      color: #fff !important;
-    }
-
-    .category-fun-facts {
-      background: #ec4899 !important;
-      color: #fff !important;
-    }
-
-    .category-announcements {
-      background: #ef4444 !important;
-      color: #fff !important;
-    }
-
-    .category-events {
-      background: #10b981 !important;
-      color: #fff !important;
-    }
-
-    .category-educational {
-      background: #06b6d4 !important;
-      color: #fff !important;
-    }
-
-    .category-sales {
-      background: #8b5cf6 !important;
-      color: #fff !important;
-    }
-
-    .category-marketing {
-      background: #f59e0b !important;
-      color: #fff !important;
-    }
-
-    .category-support {
-      background: #10b981 !important;
-      color: #fff !important;
-    }
-
-    .category-technical {
-      background: #3b82f6 !important;
-      color: #fff !important;
-    }
-
-    .category-creative {
-      background: #ec4899 !important;
-      color: #fff !important;
-    }
-
+    /* Category chips - all use gold brand color with black text */
+    .category-general,
+    .category-motivation,
+    .category-tech-tips,
+    .category-fun-facts,
+    .category-announcements,
+    .category-events,
+    .category-educational,
+    .category-sales,
+    .category-marketing,
+    .category-support,
+    .category-technical,
+    .category-creative,
     .category-analysis {
-      background: #06b6d4 !important;
-      color: #fff !important;
+      background: #D6B160 !important;
+      color: #000000 !important;
     }
 
-    .card-border-general {
-      border-left: 4px solid #8b5cf6 !important;
-    }
-
-    .card-border-motivation {
-      border-left: 4px solid #f59e0b !important;
-    }
-
-    .card-border-tech-tips {
-      border-left: 4px solid #3b82f6 !important;
-    }
-
-    .card-border-fun-facts {
-      border-left: 4px solid #ec4899 !important;
-    }
-
-    .card-border-announcements {
-      border-left: 4px solid #ef4444 !important;
-    }
-
-    .card-border-events {
-      border-left: 4px solid #10b981 !important;
-    }
-
-    .card-border-educational {
-      border-left: 4px solid #06b6d4 !important;
-    }
-
-    .card-border-sales {
-      border-left: 4px solid #8b5cf6 !important;
-    }
-
-    .card-border-marketing {
-      border-left: 4px solid #f59e0b !important;
-    }
-
-    .card-border-support {
-      border-left: 4px solid #10b981 !important;
-    }
-
-    .card-border-technical {
-      border-left: 4px solid #3b82f6 !important;
-    }
-
-    .card-border-creative {
-      border-left: 4px solid #ec4899 !important;
-    }
-
+    /* Card left borders - all use gold brand color */
+    .card-border-general,
+    .card-border-motivation,
+    .card-border-tech-tips,
+    .card-border-fun-facts,
+    .card-border-announcements,
+    .card-border-events,
+    .card-border-educational,
+    .card-border-sales,
+    .card-border-marketing,
+    .card-border-support,
+    .card-border-technical,
+    .card-border-creative,
     .card-border-analysis {
-      border-left: 4px solid #06b6d4 !important;
+      border-left: 4px solid #D6B160 !important;
     }
 
     /* ---------- BADGES ---------- */
@@ -694,14 +622,19 @@
     }
 
     .badge-new {
-      background: #10b981;
-      color: #fff;
+      background: #D6B160;
+      color: #000000;
     }
 
     .badge-trending {
-      background: #ef4444;
-      color: #fff;
+      background: #000000;
+      color: #D6B160;
       animation: pulse 2s infinite;
+    }
+
+    [data-theme="dark"] .badge-trending {
+      background: #D6B160;
+      color: #000000;
     }
 
     @keyframes pulse {
