@@ -724,6 +724,160 @@
       color: var(--brand);
     }
 
+    /* ---------- VERSION HISTORY ---------- */
+    .version-history-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .7);
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .version-history-modal.active {
+      display: flex;
+    }
+
+    .version-history-content {
+      background: var(--card);
+      border-radius: 16px;
+      max-width: 900px;
+      width: 100%;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .version-history-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .version-history-body {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .version-list {
+      width: 280px;
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+
+    .version-item {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background .2s;
+    }
+
+    .version-item:hover {
+      background: var(--accent-bg);
+    }
+
+    .version-item.active {
+      background: var(--accent-bg);
+      border-left: 3px solid var(--brand);
+    }
+
+    .version-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .version-number {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .version-current-badge {
+      background: var(--brand);
+      color: var(--brand-ink);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .version-date {
+      font-size: 12px;
+      color: var(--muted-ink);
+    }
+
+    .version-preview-panel {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .version-preview-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .version-preview-content {
+      flex: 1;
+      background: var(--muted);
+      border-radius: 12px;
+      padding: 16px;
+      white-space: pre-wrap;
+      font-size: 14px;
+      overflow-y: auto;
+    }
+
+    .version-actions {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    .version-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      color: var(--muted-ink);
+    }
+
+    .version-empty i {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    @media (max-width: 768px) {
+      .version-history-body {
+        flex-direction: column;
+      }
+
+      .version-list {
+        width: 100%;
+        max-height: 200px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+    }
+
     /* ---------- PREVIEW MODAL ---------- */
     .preview-modal {
       position: fixed;
@@ -1528,9 +1682,53 @@
           </div>
         </div>
       </div>
-      <div class="p-4 border-t border-[var(--border)] flex justify-end gap-2">
-        <button id="wa-editCancel" class="btn">Cancel</button>
-        <button id="wa-editSave" class="btn btn-brand"><span id="wa-editSaveText">Save changes</span></button>
+      <div class="p-4 border-t border-[var(--border)] flex justify-between">
+        <button id="wa-editHistory" class="btn" title="View version history">
+          <i data-lucide="history"></i>
+          <span class="hidden md:inline">History</span>
+          <span id="wa-editHistoryBadge" class="ml-1 px-2 py-0.5 bg-[var(--muted)] rounded-full text-xs hidden">0</span>
+        </button>
+        <div class="flex gap-2">
+          <button id="wa-editCancel" class="btn">Cancel</button>
+          <button id="wa-editSave" class="btn btn-brand"><span id="wa-editSaveText">Save changes</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VERSION HISTORY MODAL ==================== -->
+  <div id="versionHistoryModal" class="version-history-modal">
+    <div class="version-history-content">
+      <div class="version-history-header">
+        <h2 class="text-xl font-semibold flex items-center gap-2">
+          <i data-lucide="history"></i>
+          Version History
+        </h2>
+        <button id="versionHistoryClose" class="btn btn-sm">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="version-history-body">
+        <div class="version-list" id="versionList">
+          <!-- Dynamically populated -->
+        </div>
+        <div class="version-preview-panel" id="versionPreviewPanel">
+          <div class="version-empty" id="versionEmptyState">
+            <i data-lucide="file-clock"></i>
+            <p>Select a version to preview</p>
+          </div>
+          <div id="versionPreviewContent" class="hidden">
+            <div class="version-preview-title" id="versionPreviewTitle"></div>
+            <div class="version-preview-content" id="versionPreviewText"></div>
+          </div>
+        </div>
+      </div>
+      <div class="version-actions">
+        <button id="versionRestoreBtn" class="btn btn-brand hidden">
+          <i data-lucide="rotate-ccw"></i>
+          Restore This Version
+        </button>
+        <button id="versionCloseBtn" class="btn">Close</button>
       </div>
     </div>
   </div>
@@ -3837,6 +4035,189 @@
     waEditContent.addEventListener('input', updateWAEditPreview);
     // Enable formatted paste for edit textarea
     handleFormattedPaste(waEditContent);
+
+    /* ==================== VERSION HISTORY ==================== */
+    let versionHistoryData = [];
+    let selectedVersionIndex = -1;
+    let currentHistoryContentId = null;
+
+    const versionHistoryModal = document.getElementById('versionHistoryModal');
+    const versionList = document.getElementById('versionList');
+    const versionPreviewPanel = document.getElementById('versionPreviewPanel');
+    const versionEmptyState = document.getElementById('versionEmptyState');
+    const versionPreviewContent = document.getElementById('versionPreviewContent');
+    const versionPreviewTitle = document.getElementById('versionPreviewTitle');
+    const versionPreviewText = document.getElementById('versionPreviewText');
+    const versionRestoreBtn = document.getElementById('versionRestoreBtn');
+
+    async function openVersionHistory(contentId) {
+      currentHistoryContentId = contentId;
+      versionHistoryData = [];
+      selectedVersionIndex = -1;
+
+      // Show modal with loading state
+      versionHistoryModal.classList.add('active');
+      versionList.innerHTML = '<div class="p-4 text-center text-[var(--muted-ink)]"><i data-lucide="loader" class="animate-spin mx-auto mb-2" style="width:24px;height:24px"></i><p>Loading history...</p></div>';
+      versionEmptyState.classList.remove('hidden');
+      versionPreviewContent.classList.add('hidden');
+      versionRestoreBtn.classList.add('hidden');
+      lucide.createIcons();
+
+      try {
+        const res = await fetch(`/api/history?contentId=${encodeURIComponent(contentId)}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to load history');
+        }
+
+        versionHistoryData = data.versions || [];
+        renderVersionList();
+      } catch (e) {
+        console.error('Failed to load version history:', e);
+        versionList.innerHTML = `<div class="version-empty"><i data-lucide="alert-circle"></i><p>${e.message}</p></div>`;
+        lucide.createIcons();
+      }
+    }
+
+    function renderVersionList() {
+      if (!versionHistoryData.length) {
+        versionList.innerHTML = `
+          <div class="version-empty">
+            <i data-lucide="file-clock"></i>
+            <p>No previous versions</p>
+            <p class="text-xs mt-2">Versions are created when you edit content</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      // Find current item to show as "Current Version"
+      const currentItem = waContents.find(x => String(x.id) === String(currentHistoryContentId));
+
+      let html = '';
+
+      // Add current version at top (not from history, but from live data)
+      if (currentItem) {
+        html += `
+          <div class="version-item ${selectedVersionIndex === -1 ? 'active' : ''}" onclick="selectVersion(-1)">
+            <div class="version-item-header">
+              <span class="version-number">Current Version</span>
+              <span class="version-current-badge">Live</span>
+            </div>
+            <div class="version-date">Now</div>
+          </div>
+        `;
+      }
+
+      // Add history versions
+      versionHistoryData.forEach((v, idx) => {
+        const date = v.createdAt ? new Date(v.createdAt).toLocaleString() : 'Unknown date';
+        html += `
+          <div class="version-item ${selectedVersionIndex === idx ? 'active' : ''}" onclick="selectVersion(${idx})">
+            <div class="version-item-header">
+              <span class="version-number">Version ${v.versionNumber}</span>
+            </div>
+            <div class="version-date">${date}</div>
+            ${v.changeNote ? `<div class="text-xs text-[var(--muted-ink)] mt-1">${escapeHtml(v.changeNote)}</div>` : ''}
+          </div>
+        `;
+      });
+
+      versionList.innerHTML = html;
+    }
+
+    function selectVersion(index) {
+      selectedVersionIndex = index;
+      renderVersionList();
+
+      if (index === -1) {
+        // Show current version
+        const currentItem = waContents.find(x => String(x.id) === String(currentHistoryContentId));
+        if (currentItem) {
+          versionEmptyState.classList.add('hidden');
+          versionPreviewContent.classList.remove('hidden');
+          versionPreviewTitle.textContent = currentItem.title || 'Untitled';
+          versionPreviewText.textContent = currentItem.content || '';
+          versionRestoreBtn.classList.add('hidden'); // Can't restore current version
+        }
+      } else if (index >= 0 && index < versionHistoryData.length) {
+        const version = versionHistoryData[index];
+        versionEmptyState.classList.add('hidden');
+        versionPreviewContent.classList.remove('hidden');
+        versionPreviewTitle.textContent = version.title || 'Untitled';
+        versionPreviewText.textContent = version.content || '';
+        versionRestoreBtn.classList.remove('hidden');
+      }
+    }
+
+    async function restoreVersion() {
+      if (selectedVersionIndex < 0 || selectedVersionIndex >= versionHistoryData.length) return;
+
+      const version = versionHistoryData[selectedVersionIndex];
+
+      if (!confirm(`Restore to Version ${version.versionNumber}? This will save the current version to history first.`)) {
+        return;
+      }
+
+      versionRestoreBtn.disabled = true;
+      versionRestoreBtn.innerHTML = '<i data-lucide="loader" class="animate-spin"></i> Restoring...';
+      lucide.createIcons();
+
+      try {
+        const res = await fetch('/api/history', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contentId: currentHistoryContentId,
+            versionNumber: version.versionNumber
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to restore version');
+        }
+
+        showToast('Restored', `Content restored to Version ${version.versionNumber}`, 'success');
+        closeVersionHistory();
+        closeWAEditModal();
+        await syncWAContents(); // Refresh content list
+      } catch (e) {
+        console.error('Failed to restore version:', e);
+        showToast('Error', e.message, 'error');
+      } finally {
+        versionRestoreBtn.disabled = false;
+        versionRestoreBtn.innerHTML = '<i data-lucide="rotate-ccw"></i> Restore This Version';
+        lucide.createIcons();
+      }
+    }
+
+    function closeVersionHistory() {
+      versionHistoryModal.classList.remove('active');
+      versionHistoryData = [];
+      selectedVersionIndex = -1;
+      currentHistoryContentId = null;
+    }
+
+    // Event listeners for version history
+    document.getElementById('wa-editHistory').addEventListener('click', () => {
+      if (waEditItem && waEditItem.id) {
+        openVersionHistory(waEditItem.id);
+      }
+    });
+    document.getElementById('versionHistoryClose').addEventListener('click', closeVersionHistory);
+    document.getElementById('versionCloseBtn').addEventListener('click', closeVersionHistory);
+    document.getElementById('versionRestoreBtn').addEventListener('click', restoreVersion);
+
+    // Close on backdrop click
+    versionHistoryModal.addEventListener('click', (e) => {
+      if (e.target === versionHistoryModal) {
+        closeVersionHistory();
+      }
+    });
 
     /* ==================== FILE PREVIEW HELPERS ==================== */
 
