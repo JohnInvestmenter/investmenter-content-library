@@ -24,8 +24,16 @@ export default async function handler(req, res) {
     }
 
     if (!NOTION_HISTORY_DATABASE_ID) {
-      return res.status(500).json({
-        error: "Missing NOTION_HISTORY_DATABASE_ID",
+      // Return empty versions if history database is not configured
+      if (req.method === "GET") {
+        return res.status(200).json({
+          versions: [],
+          notConfigured: true,
+          hint: "Version history requires a ContentHistory database. Create one in Notion and set NOTION_HISTORY_DATABASE_ID in environment variables."
+        });
+      }
+      return res.status(400).json({
+        error: "Version history not configured",
         hint: "Create a ContentHistory database in Notion and set NOTION_HISTORY_DATABASE_ID in environment variables"
       });
     }

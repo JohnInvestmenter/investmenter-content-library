@@ -4072,15 +4072,27 @@
         }
 
         versionHistoryData = data.versions || [];
-        renderVersionList();
+        renderVersionList(data.notConfigured, data.hint);
       } catch (e) {
         console.error('Failed to load version history:', e);
-        versionList.innerHTML = `<div class="version-empty"><i data-lucide="alert-circle"></i><p>${e.message}</p></div>`;
+        versionList.innerHTML = `<div class="version-empty"><i data-lucide="alert-circle"></i><p>${escapeHtml(e.message)}</p></div>`;
         lucide.createIcons();
       }
     }
 
-    function renderVersionList() {
+    function renderVersionList(notConfigured = false, configHint = '') {
+      if (notConfigured) {
+        versionList.innerHTML = `
+          <div class="version-empty">
+            <i data-lucide="settings"></i>
+            <p class="font-semibold">History Not Configured</p>
+            <p class="text-xs mt-2 text-center px-4">To enable version history, create a ContentHistory database in Notion and set NOTION_HISTORY_DATABASE_ID in your environment variables.</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
       if (!versionHistoryData.length) {
         versionList.innerHTML = `
           <div class="version-empty">
