@@ -8,6 +8,7 @@
   <link rel="icon" href="https://onecdn.io/media/ffb500c6-8305-4802-8cf9-6b55e6bd5ed5/md2x" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <link rel="stylesheet" href="command-palette.css">
   <link rel="stylesheet" href="ai-chat-widget.css">
   <style>
@@ -710,6 +711,36 @@
 
     .bounce {
       animation: bounce .5s ease;
+    }
+
+    /* ---------- DRAG AND DROP ---------- */
+    .sortable-ghost {
+      opacity: 0.4;
+    }
+
+    .sortable-chosen {
+      transform: scale(1.02);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .sortable-drag {
+      opacity: 1;
+    }
+
+    .drag-handle {
+      cursor: grab;
+      opacity: 0.4;
+      transition: opacity 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .drag-handle:hover {
+      opacity: 1;
+      color: var(--brand);
+    }
+
+    .drag-handle:active {
+      cursor: grabbing;
     }
 
     /* ---------- STATS ANIMATIONS ---------- */
@@ -3790,11 +3821,12 @@
         const hasNestedPath = folderPath.includes('/');
 
         return `
-    <div class="h-full fade-in" style="animation-delay:${idx * 50}ms">
+    <div class="h-full fade-in" style="animation-delay:${idx * 50}ms" data-id="${escapeHtml(c.id || '')}">
       <div class="card rounded-xl shadow-soft flex flex-col p-4 h-[420px] ${borderClass}" data-card-id="${escapeHtml(c.id || '')}">
-        <div class="flex justify-between items-start">
-          <div class="flex-1">
-            <h3 class="text-lg font-semibold cursor-pointer hover:text-[var(--brand)] transition-colors" onclick="openWAPreview('${escapeHtml(c.id || '')}')">${escapeHtml(c.title || '')}</h3>
+        <div class="flex justify-between items-start gap-2">
+          <i data-lucide="grip-vertical" class="drag-handle" style="width:20px;height:20px;margin-top:2px;"></i>
+          <div class="flex-1 min-w-0">
+            <h3 class="text-lg font-semibold cursor-pointer hover:text-[var(--brand)] transition-colors truncate" onclick="openWAPreview('${escapeHtml(c.id || '')}')">${escapeHtml(c.title || '')}</h3>
             <div class="flex items-center gap-2 mt-1 flex-wrap">
               <span class="chip chip-folder" ${hasNestedPath ? `title="${escapeHtml(folderPath)}"` : ''}><i data-lucide="folder"></i>${escapeHtml(folderName)}</span>
               <span class="chip ${categoryClass}">${escapeHtml(c.category || '')}</span>
@@ -3912,6 +3944,9 @@
 
       lucide.createIcons();
 
+      // Initialize drag-and-drop sorting
+      initSortable();
+
       animateStatValue('wa-statTotal', waContents.length);
       animateStatValue('wa-statUses', waContents.reduce((a, c) => a + (c.useCount || 0), 0));
       animateStatValue('wa-statCategories', new Set(waContents.map(c => c.category)).size);
@@ -3921,6 +3956,75 @@
       document.getElementById('wa-pageCount').textContent = pageCount;
       document.getElementById('wa-prevPage').disabled = waPage <= 1;
       document.getElementById('wa-nextPage').disabled = waPage >= pageCount;
+    }
+
+    /* ==================== DRAG AND DROP SORTING ==================== */
+    let sortableInstance = null;
+
+    function initSortable() {
+      const grid = document.getElementById('wa-contentGrid');
+      if (!grid) return;
+
+      // Destroy previous instance if exists
+      if (sortableInstance) {
+        sortableInstance.destroy();
+        sortableInstance = null;
+      }
+
+      // Initialize Sortable.js
+      sortableInstance = new Sortable(grid, {
+        animation: 200,
+        handle: '.drag-handle',
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        dragClass: 'sortable-drag',
+        onEnd: onSortEnd
+      });
+    }
+
+    async function onSortEnd(evt) {
+      const grid = document.getElementById('wa-contentGrid');
+      const items = Array.from(grid.children);
+
+      // Build array of items with new sort order
+      const reorderedItems = items.map((el, index) => {
+        const id = el.getAttribute('data-id');
+        return { id, sortOrder: index };
+      }).filter(item => item.id);
+
+      if (reorderedItems.length === 0) return;
+
+      // Update local waContents array order
+      const idToOrder = {};
+      reorderedItems.forEach(item => {
+        idToOrder[item.id] = item.sortOrder;
+      });
+      waContents.forEach(item => {
+        if (idToOrder[item.id] !== undefined) {
+          item.sortOrder = idToOrder[item.id];
+        }
+      });
+
+      // Save to server
+      try {
+        const res = await fetch('/api/contents?action=reorder', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: reorderedItems })
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'Failed to save order');
+        }
+
+        showToast('Reordered', 'Content order saved', 'success');
+      } catch (e) {
+        console.error('Failed to save order:', e);
+        showToast('Error', 'Failed to save order: ' + e.message, 'error');
+        // Re-render to restore original order
+        await syncWAContents();
+      }
     }
 
     function animateStatValue(id, target) {
