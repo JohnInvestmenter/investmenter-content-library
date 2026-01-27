@@ -202,6 +202,11 @@
     .wa-bubble br:first-child {
       display: none;
     }
+    .wa-bubble br.paragraph-break {
+      display: block;
+      content: "";
+      margin-top: 0.5em;
+    }
 
     .wa-bubble strong {
       font-weight: 700;
@@ -2223,6 +2228,7 @@
         .replace(/_(.*?)_/g, '<em>$1</em>')
         .replace(/~(.*?)~/g, '<s>$1</s>')
         .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\n\n/g, '<br/><br class="paragraph-break"/>')
         .replace(/\n/g, '<br/>');
     }
 
