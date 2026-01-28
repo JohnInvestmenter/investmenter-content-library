@@ -197,7 +197,7 @@
       color: var(--wa-ink);
       border: none;
       border-radius: 0;
-      padding: 20px;
+      padding: 0;
     }
 
     .wa-bubble br:first-child {
@@ -1703,9 +1703,10 @@
               <i data-lucide="file-code"></i>
             </button>
           </div>
-          <textarea id="wa-editContent" rows="8"
+          <textarea id="wa-editContent" rows="8" maxlength="4096"
             class="w-full p-2 rounded-b-lg border border-t-0 border-[var(--border)] bg-transparent"
             style="border-top-left-radius: 0; border-top-right-radius: 0;"></textarea>
+          <div class="text-xs text-[var(--muted-ink)] text-right mt-1"><span id="wa-editCharCount">0</span> / 4096</div>
         </div>
         <div><label class="block text-sm mb-1">Tags (comma separated)</label><input id="wa-editTags"
             class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" /></div>
@@ -1815,10 +1816,11 @@
               <i data-lucide="file-code"></i>
             </button>
           </div>
-          <textarea id="wa-contentInput" rows="8"
+          <textarea id="wa-contentInput" rows="8" maxlength="4096"
             class="w-full p-2 rounded-b-lg border border-t-0 border-[var(--border)] bg-transparent"
             placeholder="Use the toolbar above or type manually..."
             style="border-top-left-radius: 0; border-top-right-radius: 0;"></textarea>
+          <div class="text-xs text-[var(--muted-ink)] text-right mt-1"><span id="wa-addCharCount">0</span> / 4096</div>
         </div>
         <div><label class="block text-sm mb-1">Tags (comma separated)</label><input id="wa-tagsInput"
             class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent"
@@ -4120,6 +4122,7 @@
       waEditCategory.value = waEditItem.category || waCategoriesData[0]?.name || 'General';
       waEditFolder.value = (waEditItem.folder || '').trim() || '';
       waEditContent.value = waEditItem.content || '';
+      document.getElementById('wa-editCharCount').textContent = (waEditItem.content || '').length;
       waEditTags.value = (waEditItem.tags || []).join(', ');
 
       // Display existing attachments
@@ -4147,7 +4150,10 @@
     function closeWAEditModal() { waEditModal.classList.add('hidden'); waEditModal.classList.remove('flex'); }
     document.getElementById('wa-editClose').addEventListener('click', closeWAEditModal);
     document.getElementById('wa-editCancel').addEventListener('click', closeWAEditModal);
-    function updateWAEditPreview() { waEditPreview.innerHTML = whatsappPreviewHTML(toWhatsApp(waEditContent.value || '')); }
+    function updateWAEditPreview() {
+      waEditPreview.innerHTML = whatsappPreviewHTML(toWhatsApp(waEditContent.value || ''));
+      document.getElementById('wa-editCharCount').textContent = (waEditContent.value || '').length;
+    }
     waEditContent.addEventListener('input', updateWAEditPreview);
     // Enable formatted paste for edit textarea
     handleFormattedPaste(waEditContent);
@@ -4604,7 +4610,11 @@
       waSaveAdd.disabled = inflightUploads > 0 || !valid;
     }
 
-    waContentInput.addEventListener('input', () => { waWaPreview.innerHTML = whatsappPreviewHTML(toWhatsApp(waContentInput.value || '')); updateWASaveDisabled(); });
+    waContentInput.addEventListener('input', () => {
+      waWaPreview.innerHTML = whatsappPreviewHTML(toWhatsApp(waContentInput.value || ''));
+      document.getElementById('wa-addCharCount').textContent = (waContentInput.value || '').length;
+      updateWASaveDisabled();
+    });
     // Enable formatted paste for add textarea
     handleFormattedPaste(waContentInput);
     waTitleInput.addEventListener('input', updateWASaveDisabled);
