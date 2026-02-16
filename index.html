@@ -1716,6 +1716,16 @@
             class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" />
           <div id="wa-editUploadStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div>
           <div id="wa-editFilePreview" class="mt-3 grid grid-cols-2 gap-2"></div>
+          <div class="mt-3">
+            <label class="block text-sm mb-1">Or add a Loom video URL</label>
+            <div class="flex gap-2">
+              <input id="wa-editLoomUrl" type="url"
+                class="flex-1 p-2 rounded-lg border border-[var(--border)] bg-transparent"
+                placeholder="https://www.loom.com/share/..." />
+              <button type="button" id="wa-editAddLoom" class="btn btn-brand text-sm px-3">Add</button>
+            </div>
+            <div id="wa-editLoomStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div>
+          </div>
           <div id="wa-editExistingFiles" class="mt-2 text-sm"></div>
         </div>
         <div><label class="block text-sm mb-1">WhatsApp Preview</label>
@@ -1831,6 +1841,16 @@
             class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" />
           <div id="wa-uploadStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div>
           <div id="wa-filePreview" class="mt-3 grid grid-cols-2 gap-2"></div>
+          <div class="mt-3">
+            <label class="block text-sm mb-1">Or add a Loom video URL</label>
+            <div class="flex gap-2">
+              <input id="wa-loomUrl" type="url"
+                class="flex-1 p-2 rounded-lg border border-[var(--border)] bg-transparent"
+                placeholder="https://www.loom.com/share/..." />
+              <button type="button" id="wa-addLoom" class="btn btn-brand text-sm px-3">Add</button>
+            </div>
+            <div id="wa-loomStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div>
+          </div>
         </div>
         <div><label class="block text-sm mb-1">WhatsApp Preview</label>
           <div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-2">
@@ -2920,7 +2940,23 @@
       }
     });
 
+    // Loom URL helpers
+    function isLoomUrl(url) {
+      return /^https?:\/\/(www\.)?loom\.com\/share\/[a-zA-Z0-9]+/.test(url);
+    }
+
+    function getLoomVideoId(url) {
+      const match = (url || '').match(/loom\.com\/share\/([a-zA-Z0-9]+)/);
+      return match ? match[1] : null;
+    }
+
+    function getLoomEmbedUrl(url) {
+      const id = getLoomVideoId(url);
+      return id ? `https://www.loom.com/embed/${id}` : null;
+    }
+
     function getFileType(filename) {
+      if ((filename || '').startsWith('[Loom]')) return 'loom';
       const ext = (filename || '').split('.').pop().toLowerCase();
       if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext)) return 'image';
       if (['mp4', 'webm', 'mov', 'avi', 'mkv'].includes(ext)) return 'video';
@@ -2936,6 +2972,7 @@
       const icons = {
         image: 'image',
         video: 'video',
+        loom: 'video',
         pdf: 'file-text',
         document: 'file-text',
         spreadsheet: 'table',
@@ -3040,6 +3077,27 @@
         <div class="attachment-info">
           <div class="attachment-name">${escapeHtml(attachment.name)}</div>
           <div class="attachment-type">${type.toUpperCase()}</div>
+        </div>
+      </div>
+    `;
+      }
+
+      if (type === 'loom') {
+        const embedUrl = getLoomEmbedUrl(urls.primary);
+        return `
+      <div class="attachment-card"
+           data-media-url="${escapeHtml(embedUrl || urls.primary)}"
+           data-media-backup=""
+           data-media-name="${escapeHtml(attachment.name)}"
+           data-media-type="loom">
+        <div class="attachment-thumbnail" style="background:#625DF5; display:flex; align-items:center; justify-content:center;">
+          <div class="attachment-play-icon" style="position:relative;">
+            <i data-lucide="play-circle"></i>
+          </div>
+        </div>
+        <div class="attachment-info">
+          <div class="attachment-name">${escapeHtml(attachment.name)}</div>
+          <div class="attachment-type">LOOM</div>
         </div>
       </div>
     `;
@@ -4139,6 +4197,8 @@
       // Clear file input and status
       document.getElementById('wa-editFileUpload').value = '';
       document.getElementById('wa-editUploadStatus').textContent = '';
+      document.getElementById('wa-editLoomUrl').value = '';
+      document.getElementById('wa-editLoomStatus').textContent = '';
       waEditNewAttachments = [];
       waEditInflightUploads = 0;
       renderEditFilePreview(); // Clear preview
@@ -4388,23 +4448,35 @@
 
     // Create file preview card HTML
     function createFilePreviewCard(file, index, onRemove) {
-      const isImage = isImageFile(file);
+      const isLoom = (file.name || '').startsWith('[Loom]');
+      const isImage = !isLoom && isImageFile(file);
       const fileSize = file.size ? formatFileSize(file.size) : '';
       const icon = getFileIcon(file);
 
-      return `
-    <div class="file-preview-card relative rounded-lg border-2 border-[var(--brand)] bg-[var(--card)] overflow-hidden flex flex-col" data-file-index="${index}">
-      ${isImage && file.url ? `
+      let thumbnailHtml;
+      if (isLoom) {
+        thumbnailHtml = `
+        <div class="file-preview-thumbnail w-full h-32 flex items-center justify-center" style="background:#625DF5;">
+          <i data-lucide="play-circle" class="w-12 h-12 text-white"></i>
+        </div>`;
+      } else if (isImage && file.url) {
+        thumbnailHtml = `
         <div class="file-preview-thumbnail w-full h-32 bg-[var(--canvas)] flex items-center justify-center">
           <img src="${file.url}" alt="${file.name}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i data-lucide=\\'image-off\\' class=\\'text-[var(--muted-ink)]\\'></i>';" />
-        </div>
-      ` : `
+        </div>`;
+      } else {
+        thumbnailHtml = `
         <div class="file-preview-thumbnail w-full h-32 bg-[var(--canvas)] flex items-center justify-center">
           <i data-lucide="${icon}" class="w-12 h-12 text-[var(--brand)]"></i>
-        </div>
-      `}
+        </div>`;
+      }
+
+      return `
+    <div class="file-preview-card relative rounded-lg border-2 border-[var(--brand)] bg-[var(--card)] overflow-hidden flex flex-col" data-file-index="${index}">
+      ${thumbnailHtml}
       <div class="flex-1 min-w-0 p-2">
         <div class="text-sm font-medium truncate" title="${file.name}">${file.name}</div>
+        ${isLoom ? '<div class="text-xs text-[var(--muted-ink)] mt-1">Loom Video</div>' : ''}
         ${fileSize ? `<div class="text-xs text-[var(--muted-ink)] mt-1">${fileSize}</div>` : ''}
       </div>
       <button type="button" class="file-preview-remove absolute top-1 right-1 w-6 h-6 rounded-full bg-[var(--brand)] hover:brightness-90 text-[var(--brand-ink)] flex items-center justify-center shadow-lg transition-all" onclick="${onRemove}" title="Remove file">
@@ -4537,6 +4609,36 @@
       this.value = '';
     });
 
+    // Loom URL add for Edit modal
+    document.getElementById('wa-editAddLoom').addEventListener('click', () => {
+      const input = document.getElementById('wa-editLoomUrl');
+      const url = (input.value || '').trim();
+      const statusEl = document.getElementById('wa-editLoomStatus');
+
+      if (!url) {
+        showToast('Missing URL', 'Please enter a Loom video URL', 'error');
+        return;
+      }
+
+      if (!isLoomUrl(url)) {
+        showToast('Invalid URL', 'Please enter a valid Loom share URL (e.g. https://www.loom.com/share/...)', 'error');
+        return;
+      }
+
+      const videoId = getLoomVideoId(url);
+      waEditNewAttachments.push({
+        name: '[Loom] Video',
+        url: url,
+        backupUrl: null,
+        id: 'loom-' + videoId
+      });
+
+      input.value = '';
+      statusEl.textContent = 'Loom video added';
+      renderEditFilePreview();
+      showToast('Loom Added', 'Loom video attached successfully', 'success');
+    });
+
     document.getElementById('wa-editSave').addEventListener('click', async () => {
       if (!waEditItem) return;
       if (waEditInflightUploads > 0) return;
@@ -4599,6 +4701,8 @@
       waTagsInput.value = '';
       document.getElementById('wa-fileUpload').value = '';
       document.getElementById('wa-uploadStatus').textContent = '';
+      document.getElementById('wa-loomUrl').value = '';
+      document.getElementById('wa-loomStatus').textContent = '';
       addAttachments = [];
       inflightUploads = 0;
       renderAddFilePreview(); // Clear preview
@@ -4662,6 +4766,37 @@
         }
       }
       this.value = '';
+    });
+
+    // Loom URL add for Add modal
+    document.getElementById('wa-addLoom').addEventListener('click', () => {
+      const input = document.getElementById('wa-loomUrl');
+      const url = (input.value || '').trim();
+      const statusEl = document.getElementById('wa-loomStatus');
+
+      if (!url) {
+        showToast('Missing URL', 'Please enter a Loom video URL', 'error');
+        return;
+      }
+
+      if (!isLoomUrl(url)) {
+        showToast('Invalid URL', 'Please enter a valid Loom share URL (e.g. https://www.loom.com/share/...)', 'error');
+        return;
+      }
+
+      const videoId = getLoomVideoId(url);
+      addAttachments.push({
+        name: '[Loom] Video',
+        url: url,
+        backupUrl: null,
+        id: 'loom-' + videoId
+      });
+
+      input.value = '';
+      statusEl.textContent = 'Loom video added';
+      renderAddFilePreview();
+      updateWASaveDisabled();
+      showToast('Loom Added', 'Loom video attached successfully', 'success');
     });
 
     waSaveAdd.addEventListener('click', async () => {
@@ -5409,6 +5544,13 @@
              class="media-lightbox-video"
              data-backup-url="${escapeHtml(backupUrl)}"
              onerror="handleLightboxVideoError(this)"></video>
+    `;
+      } else if (type === 'loom') {
+        container.innerHTML = `
+      <iframe src="${url}"
+              frameborder="0"
+              webkitallowfullscreen mozallowfullscreen allowfullscreen
+              style="width:80vw; max-width:900px; height:45vw; max-height:506px; border-radius:8px;"></iframe>
     `;
       } else if (type === 'pdf') {
         container.innerHTML = `
