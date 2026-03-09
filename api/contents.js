@@ -67,9 +67,20 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "GET") {
-      const pages = await notion.databases.query(query);
+      // Paginate through all results (Notion returns max 100 per page)
+      const allResults = [];
+      let cursor = undefined;
+      do {
+        const pages = await notion.databases.query({
+          ...query,
+          page_size: 100,
+          ...(cursor ? { start_cursor: cursor } : {})
+        });
+        allResults.push(...pages.results);
+        cursor = pages.has_more ? pages.next_cursor : undefined;
+      } while (cursor);
 
-      const items = pages.results.map((p) => {
+      const items = allResults.map((p) => {
         const props = p.properties || {};
 
         return {
