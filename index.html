@@ -3605,11 +3605,14 @@
           throw new Error(`Drive returned non-JSON: ${driveText.slice(0, 200)}`);
         }
 
+        console.log('🔍 Drive raw response:', JSON.stringify(driveData));
+
         if (!driveRes.ok || !driveData.success) {
           throw new Error(driveData.error || `Drive upload failed (HTTP ${driveRes.status})`);
         }
 
         const driveFile = driveData.files?.[0];
+        console.log('🔍 Drive file object:', JSON.stringify(driveFile));
         driveId = driveFile?.id || null;
         // Prefer constructing URL from file ID (Apps Script sometimes returns a path instead of a URL)
         if (driveId) {
