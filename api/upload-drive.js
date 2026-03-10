@@ -23,13 +23,15 @@ export default async function handler(req, res) {
     const driveRes = await fetch(DRIVE_APP_SCRIPT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req.body)
+      body: JSON.stringify(req.body),
+      redirect: 'follow'
     });
 
     const text = await driveRes.text();
+    console.log('Drive raw response (first 500):', text.slice(0, 500));
     let data;
     try { data = JSON.parse(text); } catch {
-      return res.status(502).json({ error: 'Drive returned non-JSON', raw: text.slice(0, 300) });
+      return res.status(502).json({ error: 'Drive returned non-JSON', raw: text.slice(0, 500) });
     }
 
     return res.status(driveRes.ok ? 200 : 502).json(data);
