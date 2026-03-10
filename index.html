@@ -1105,10 +1105,15 @@
       align-items: center;
       gap: 4px;
       white-space: nowrap;
-      display: none;
     }
-    .attachment-card[data-unavailable="true"] .attachment-replace-btn {
+    .attachment-card .attachment-replace-btn {
       display: flex;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    .attachment-card:hover .attachment-replace-btn,
+    .attachment-card[data-unavailable="true"] .attachment-replace-btn {
+      opacity: 1;
     }
     .attachment-replace-btn:hover {
       background: var(--brand-hover, #5550e0);
