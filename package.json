@@ -2,8 +2,7 @@
   "name": "content-library-api",
   "private": true,
   "dependencies": {
-    "@notionhq/client": "^2.2.10",
-    "@vercel/blob": "^2.0.0"
+    "@notionhq/client": "^2.2.10"
   },
   "devDependencies": {
     "@vercel/node": "^3.0.0"

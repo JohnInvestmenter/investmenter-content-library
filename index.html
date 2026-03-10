@@ -2176,11 +2176,10 @@
     /* ====== CONFIG ====== */
     const WA_API = '/api/contents';
     const GPT_API = '/api/prompts';
-    const BLOB_UPLOAD_API = '/api/upload-blob';
+    const NOTION_UPLOAD_API = '/api/upload-notion';
     const DRIVE_APP_SCRIPT = 'https://script.google.com/macros/s/AKfycbwWgZ3B3vcN4flFQo1-Ul-AVjVGZozfoe8RDcbr8ez2d_d7r9XvQ7tnePY5q8ZC4w7Ziw/exec';
     const UNASSIGNED_FOLDER = 'Unassigned';
     const defaultWAFolders = ['Construction Updates', 'Investors Reach Out', 'Resell', 'Conveyance'];
-    const USE_DUAL_STORAGE = true; // Set to false to use Google Drive only
 
     // Dynamic category data loaded from Notion
     let waCategoriesData = []; // [{name, color, count}]
@@ -3512,8 +3511,11 @@
     }
 
     /**
-     * Dual upload: Uploads to Vercel Blob (primary) + Google Drive (backup)
-     * Returns: { name, url, backupUrl, id }
+     * Uploads to Notion (primary, hosted on Notion S3) + Google Drive (permanent backup).
+     * Returns: { name, url, backupUrl, notionFileUploadId, id }
+     *   url           = Google Drive export=view URL (for immediate preview before next sync)
+     *   backupUrl     = original Google Drive URL (for download)
+     *   notionFileUploadId = Notion file upload ID (attached to page → becomes the S3 preview URL after sync)
      */
     function getErrMsg(err) {
       if (!err) return 'unknown error';
@@ -3524,42 +3526,37 @@
     }
 
     async function uploadFileDual(file) {
-      let blobUrl = null;
+      let notionFileUploadId = null;
       let driveUrl = null;
       let driveId = null;
 
-      // Read the file ONCE up front — re-reading the same File reference with separate
-      // FileReader instances causes "permission problems" errors on macOS/Safari/Chrome.
+      // Read the file ONCE — prevents FileReader permission errors on macOS/Safari/Chrome.
       const dataURL = await fileToDataURL(file);
       const base64 = dataURL.split(',')[1] || '';
 
-      // Step 1: Upload to Vercel Blob (primary)
-      if (USE_DUAL_STORAGE) {
-        try {
-          const blobRes = await fetch(BLOB_UPLOAD_API, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              file: dataURL,
-              filename: file.name,
-              contentType: file.type || 'application/octet-stream'
-            })
-          });
-
-          if (blobRes.ok) {
-            const blobData = await blobRes.json();
-            blobUrl = blobData.url;
-            console.log('✓ Uploaded to Vercel Blob:', blobUrl);
-          } else {
-            const errText = await blobRes.text().catch(() => blobRes.status);
-            console.warn('Blob upload failed, will use Drive only:', errText);
-          }
-        } catch (err) {
-          console.warn('Blob upload error, falling back to Drive only:', getErrMsg(err));
+      // Step 1: Upload to Notion (primary storage, S3-hosted)
+      try {
+        const notionRes = await fetch(NOTION_UPLOAD_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            file: dataURL,
+            filename: file.name,
+            contentType: file.type || 'application/octet-stream'
+          })
+        });
+        const notionData = await notionRes.json();
+        if (notionRes.ok && notionData.fileUploadId) {
+          notionFileUploadId = notionData.fileUploadId;
+          console.log('✓ Uploaded to Notion:', notionFileUploadId);
+        } else {
+          console.warn('Notion upload failed, will use Drive only:', notionData.message);
         }
+      } catch (err) {
+        console.warn('Notion upload error, will use Drive only:', getErrMsg(err));
       }
 
-      // Step 2: Upload to Google Drive (backup or primary if Blob failed)
+      // Step 2: Upload to Google Drive (permanent backup + immediate preview URL)
       let driveErrMsg = null;
       try {
         const driveRes = await fetch(DRIVE_APP_SCRIPT, {
@@ -3591,17 +3588,17 @@
       } catch (err) {
         driveErrMsg = getErrMsg(err);
         console.warn('Drive upload error:', driveErrMsg, err);
-        if (!blobUrl) {
-          throw new Error(`Upload failed — Blob: ${blobUrl === null ? 'failed' : 'ok'}, Drive: ${driveErrMsg}`);
+        if (!notionFileUploadId) {
+          throw new Error(`Both uploads failed. Drive: ${driveErrMsg}`);
         }
       }
 
-      // Return with primary and backup URLs
       return {
         name: file.name,
-        url: blobUrl || driveUrl, // Primary URL (prefer Blob)
-        backupUrl: blobUrl ? driveUrl : null, // Backup URL (Drive if we have Blob)
-        id: driveId // Keep Drive ID for compatibility
+        url: fixGoogleDriveUrl(driveUrl),   // Drive export=view URL for immediate preview
+        backupUrl: driveUrl,                 // Original Drive URL for download
+        notionFileUploadId,                  // Attached to Notion page → fresh S3 URL after sync
+        id: driveId
       };
     }
 
@@ -4729,7 +4726,7 @@
 
       waEditInflightUploads += files.length;
       saveBtn.disabled = true;
-      statusEl.textContent = `Uploading ${waEditInflightUploads} file(s) to ${USE_DUAL_STORAGE ? 'Blob + Drive' : 'Drive'}…`;
+      statusEl.textContent = `Uploading ${waEditInflightUploads} file(s) to Notion + Drive…`;
 
       for (const file of files) {
         try {
@@ -4751,7 +4748,7 @@
           uploadedFile.size = file.size;
           uploadedFile.type = file.type;
           waEditNewAttachments.push(uploadedFile);
-          statusEl.textContent = `${waEditNewAttachments.length} file(s) uploaded${USE_DUAL_STORAGE ? ' (with backup)' : ''}`;
+          statusEl.textContent = `${waEditNewAttachments.length} file(s) uploaded to Notion + Drive`;
           // Update preview after each successful upload
           renderEditFilePreview();
         } catch (err) {
@@ -4888,7 +4885,7 @@
       const statusEl = document.getElementById('wa-uploadStatus');
       inflightUploads += files.length;
       updateWASaveDisabled();
-      statusEl.textContent = `Uploading ${inflightUploads} file(s) to ${USE_DUAL_STORAGE ? 'Blob + Drive' : 'Drive'}…`;
+      statusEl.textContent = `Uploading ${inflightUploads} file(s) to Notion + Drive…`;
 
       for (const file of files) {
         try {
@@ -4910,7 +4907,7 @@
           uploadedFile.size = file.size;
           uploadedFile.type = file.type;
           addAttachments.push(uploadedFile);
-          statusEl.textContent = `${addAttachments.length} file(s) uploaded${USE_DUAL_STORAGE ? ' (with backup)' : ''}`;
+          statusEl.textContent = `${addAttachments.length} file(s) uploaded to Notion + Drive`;
           // Update preview after each successful upload
           renderAddFilePreview();
         } catch (err) {
