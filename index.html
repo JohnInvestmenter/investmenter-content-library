@@ -3309,7 +3309,7 @@
     document.getElementById('replaceAttachmentInput').addEventListener('change', async function () {
       const file = this.files[0];
       if (!file || !replaceAttachmentName || !previewModalItemId) return;
-      this.value = '';
+      // NOTE: do NOT clear this.value here — it invalidates the file reference before FileReader can read it
 
       const item = waContents.find(x => String(x.id) === String(previewModalItemId));
       if (!item) return;
@@ -3350,6 +3350,7 @@
         showToast('Replace Failed', err.message, 'error');
       } finally {
         replaceAttachmentName = null;
+        this.value = ''; // Reset here, after FileReader is done
       }
     });
 
