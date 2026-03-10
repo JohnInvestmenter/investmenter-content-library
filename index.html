@@ -3526,10 +3526,14 @@
       let driveUrl = null;
       let driveId = null;
 
+      // Read the file ONCE up front — re-reading the same File reference with separate
+      // FileReader instances causes "permission problems" errors on macOS/Safari/Chrome.
+      const dataURL = await fileToDataURL(file);
+      const base64 = dataURL.split(',')[1] || '';
+
       // Step 1: Upload to Vercel Blob (primary)
       if (USE_DUAL_STORAGE) {
         try {
-          const dataURL = await fileToDataURL(file);
           const blobRes = await fetch(BLOB_UPLOAD_API, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -3556,7 +3560,6 @@
       // Step 2: Upload to Google Drive (backup or primary if Blob failed)
       let driveErrMsg = null;
       try {
-        const base64 = await fileToBase64(file);
         const driveRes = await fetch(DRIVE_APP_SCRIPT, {
           method: 'POST',
           body: JSON.stringify({
