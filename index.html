@@ -2011,7 +2011,6 @@
   <div id="toastContainer" class="toast-container"></div>
 
   <!-- ==================== PREVIEW MODAL ==================== -->
-  <input type="file" id="replaceAttachmentInput" style="opacity:0;position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;" accept="image/*,video/*,.pdf">
   <div id="previewModal" class="preview-modal">
     <div class="preview-content">
       <div class="preview-header">
@@ -3112,9 +3111,13 @@
           <div class="attachment-icon" style="display:none;">
             <i data-lucide="${icon}"></i>
           </div>
-          <button class="attachment-replace-btn" data-replace-name="${escapeHtml(attachment.name)}" onclick="triggerReplaceAttachment(event, this)">
+          <label class="attachment-replace-btn" onclick="event.stopPropagation();">
+            <input type="file" accept="image/*,video/*,.pdf"
+                   data-replace-name="${escapeHtml(attachment.name)}"
+                   style="position:absolute;width:0;height:0;overflow:hidden;opacity:0;"
+                   onchange="handleReplaceFileInput(this)">
             <i data-lucide="upload" style="width:11px;height:11px;"></i> Replace
-          </button>
+          </label>
         </div>
         <div class="attachment-info">
           <div class="attachment-name">${escapeHtml(attachment.name)}</div>
@@ -3142,9 +3145,13 @@
           <div class="attachment-play-icon">
             <i data-lucide="play-circle"></i>
           </div>
-          <button class="attachment-replace-btn" data-replace-name="${escapeHtml(attachment.name)}" onclick="triggerReplaceAttachment(event, this)">
+          <label class="attachment-replace-btn" onclick="event.stopPropagation();">
+            <input type="file" accept="image/*,video/*,.pdf"
+                   data-replace-name="${escapeHtml(attachment.name)}"
+                   style="position:absolute;width:0;height:0;overflow:hidden;opacity:0;"
+                   onchange="handleReplaceFileInput(this)">
             <i data-lucide="upload" style="width:11px;height:11px;"></i> Replace
-          </button>
+          </label>
         </div>
         <div class="attachment-info">
           <div class="attachment-name">${escapeHtml(attachment.name)}</div>
@@ -3191,9 +3198,13 @@
           <div class="attachment-icon">
             <i data-lucide="${icon}"></i>
           </div>
-          <button class="attachment-replace-btn" data-replace-name="${escapeHtml(attachment.name)}" onclick="triggerReplaceAttachment(event, this)">
+          <label class="attachment-replace-btn" onclick="event.stopPropagation();">
+            <input type="file" accept="image/*,video/*,.pdf"
+                   data-replace-name="${escapeHtml(attachment.name)}"
+                   style="position:absolute;width:0;height:0;overflow:hidden;opacity:0;"
+                   onchange="handleReplaceFileInput(this)">
             <i data-lucide="upload" style="width:11px;height:11px;"></i> Replace
-          </button>
+          </label>
         </div>
         <div class="attachment-info">
           <div class="attachment-name">${escapeHtml(attachment.name)}</div>
@@ -3298,29 +3309,24 @@
     document.getElementById('previewCloseBtn').addEventListener('click', closePreviewModal);
 
     /* ====== REPLACE MISSING ATTACHMENT ====== */
-    let replaceAttachmentName = null; // name of the attachment being replaced
-
-    function triggerReplaceAttachment(event, btn) {
-      event.stopPropagation(); // don't open lightbox
-      replaceAttachmentName = btn.getAttribute('data-replace-name');
-      document.getElementById('replaceAttachmentInput').click();
-    }
-
-    document.getElementById('replaceAttachmentInput').addEventListener('change', async function () {
-      const file = this.files[0];
-      if (!file || !replaceAttachmentName || !previewModalItemId) return;
-      // NOTE: do NOT clear this.value here — it invalidates the file reference before FileReader can read it
+    // Uses inline <label>+<input> per card so the browser treats it as a direct
+    // user gesture — programmatic .click() on hidden inputs causes FileReader
+    // permission errors on macOS Chrome/Safari.
+    async function handleReplaceFileInput(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const attachmentName = input.getAttribute('data-replace-name');
+      if (!attachmentName || !previewModalItemId) return;
 
       const item = waContents.find(x => String(x.id) === String(previewModalItemId));
       if (!item) return;
 
-      showToast('Uploading...', `Replacing ${replaceAttachmentName}`, 'info');
+      showToast('Uploading...', `Replacing ${attachmentName}`, 'info');
 
       try {
         const uploaded = await uploadFileDual(file);
-        // Replace the matching attachment (match by name), preserving the rest
         const updatedAttachments = (item.attachments || []).map(a =>
-          a.name === replaceAttachmentName ? { ...uploaded, name: a.name } : a
+          a.name === attachmentName ? { ...uploaded, name: a.name } : a
         );
 
         const payload = {
@@ -3335,24 +3341,20 @@
         };
 
         await updateWAItem(payload);
-
-        // Update local data
         item.attachments = updatedAttachments;
 
-        // Re-render the preview modal with the updated attachments
         const waText = item.formattedContent || toWhatsApp(item.content || '');
         const waHTML = `<div class="wa-bubble text-base">${whatsappPreviewHTML(waText)}</div>`;
         openPreviewModal(item.title, waHTML, waText, item.attachments, item.id, 'whatsapp');
 
-        showToast('Replaced!', `${replaceAttachmentName} has been replaced successfully`, 'success');
+        showToast('Replaced!', `${attachmentName} replaced successfully`, 'success');
       } catch (err) {
         console.error(err);
-        showToast('Replace Failed', err.message, 'error');
+        showToast('Replace Failed', getErrMsg(err), 'error');
       } finally {
-        replaceAttachmentName = null;
-        this.value = ''; // Reset here, after FileReader is done
+        input.value = '';
       }
-    });
+    }
 
     // Copy for WhatsApp (original format)
     document.getElementById('previewCopyWABtn').addEventListener('click', async () => {
