@@ -1080,6 +1080,16 @@
       text-transform: uppercase;
     }
 
+    .attachment-card[data-unavailable="true"] .attachment-thumbnail {
+      opacity: 0.5;
+    }
+    .attachment-card[data-unavailable="true"] .attachment-type {
+      color: #e53e3e;
+    }
+    .attachment-card[data-unavailable="true"] .attachment-type::before {
+      content: "⚠ ";
+    }
+
     /* ---------- FADE IN ANIMATION ---------- */
     @keyframes fadeIn {
       from {
@@ -3182,6 +3192,9 @@
         if (img.nextElementSibling) {
           img.nextElementSibling.style.display = 'flex';
         }
+        // Mark the card so download can warn the user
+        const card = img.closest('.attachment-card');
+        if (card) card.dataset.unavailable = 'true';
       }
     }
 
@@ -5536,12 +5549,14 @@
     let currentMediaBackupUrl = '';
     let currentMediaName = '';
     let currentMediaType = '';
+    let currentMediaUnavailable = false;
 
-    function openMediaLightbox(url, name, type, backupUrl = '') {
+    function openMediaLightbox(url, name, type, backupUrl = '', unavailable = false) {
       currentMediaUrl = url;
       currentMediaBackupUrl = backupUrl;
       currentMediaName = name;
       currentMediaType = type;
+      currentMediaUnavailable = unavailable;
 
       const lightbox = document.getElementById('mediaLightbox');
       const container = document.getElementById('mediaLightboxContainer');
@@ -5679,6 +5694,10 @@
     });
 
     document.getElementById('mediaLightboxDownload').addEventListener('click', () => {
+      if (currentMediaUnavailable) {
+        showToast('File Not Available', 'This file no longer exists. The original may have been deleted or expired.', 'error');
+        return;
+      }
       const a = document.createElement('a');
       a.href = getDownloadUrl(currentMediaUrl, currentMediaBackupUrl);
       a.download = currentMediaName;
@@ -5719,8 +5738,9 @@
         const backupUrl = card.getAttribute('data-media-backup');
         const name = card.getAttribute('data-media-name');
         const type = card.getAttribute('data-media-type');
+        const unavailable = card.dataset.unavailable === 'true';
         if (url && name && type) {
-          openMediaLightbox(url, name, type, backupUrl);
+          openMediaLightbox(url, name, type, backupUrl, unavailable);
         }
       }
     });
