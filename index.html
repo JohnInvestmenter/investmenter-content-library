@@ -1089,6 +1089,33 @@
     .attachment-card[data-unavailable="true"] .attachment-type::before {
       content: "⚠ ";
     }
+    .attachment-replace-btn {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      background: var(--brand);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      z-index: 2;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      display: none;
+    }
+    .attachment-card[data-unavailable="true"] .attachment-replace-btn {
+      display: flex;
+    }
+    .attachment-replace-btn:hover {
+      background: var(--brand-hover, #5550e0);
+    }
+    .attachment-thumbnail {
+      position: relative;
+    }
 
     /* ---------- FADE IN ANIMATION ---------- */
     @keyframes fadeIn {
@@ -1984,6 +2011,7 @@
   <div id="toastContainer" class="toast-container"></div>
 
   <!-- ==================== PREVIEW MODAL ==================== -->
+  <input type="file" id="replaceAttachmentInput" style="display:none;" accept="image/*,video/*,.pdf">
   <div id="previewModal" class="preview-modal">
     <div class="preview-content">
       <div class="preview-header">
@@ -3084,6 +3112,9 @@
           <div class="attachment-icon" style="display:none;">
             <i data-lucide="${icon}"></i>
           </div>
+          <button class="attachment-replace-btn" data-replace-name="${escapeHtml(attachment.name)}" onclick="triggerReplaceAttachment(event, this)">
+            <i data-lucide="upload" style="width:11px;height:11px;"></i> Replace
+          </button>
         </div>
         <div class="attachment-info">
           <div class="attachment-name">${escapeHtml(attachment.name)}</div>
@@ -3111,6 +3142,9 @@
           <div class="attachment-play-icon">
             <i data-lucide="play-circle"></i>
           </div>
+          <button class="attachment-replace-btn" data-replace-name="${escapeHtml(attachment.name)}" onclick="triggerReplaceAttachment(event, this)">
+            <i data-lucide="upload" style="width:11px;height:11px;"></i> Replace
+          </button>
         </div>
         <div class="attachment-info">
           <div class="attachment-name">${escapeHtml(attachment.name)}</div>
@@ -3157,6 +3191,9 @@
           <div class="attachment-icon">
             <i data-lucide="${icon}"></i>
           </div>
+          <button class="attachment-replace-btn" data-replace-name="${escapeHtml(attachment.name)}" onclick="triggerReplaceAttachment(event, this)">
+            <i data-lucide="upload" style="width:11px;height:11px;"></i> Replace
+          </button>
         </div>
         <div class="attachment-info">
           <div class="attachment-name">${escapeHtml(attachment.name)}</div>
@@ -3259,6 +3296,62 @@
 
     document.getElementById('previewClose').addEventListener('click', closePreviewModal);
     document.getElementById('previewCloseBtn').addEventListener('click', closePreviewModal);
+
+    /* ====== REPLACE MISSING ATTACHMENT ====== */
+    let replaceAttachmentName = null; // name of the attachment being replaced
+
+    function triggerReplaceAttachment(event, btn) {
+      event.stopPropagation(); // don't open lightbox
+      replaceAttachmentName = btn.getAttribute('data-replace-name');
+      document.getElementById('replaceAttachmentInput').click();
+    }
+
+    document.getElementById('replaceAttachmentInput').addEventListener('change', async function () {
+      const file = this.files[0];
+      if (!file || !replaceAttachmentName || !previewModalItemId) return;
+      this.value = '';
+
+      const item = waContents.find(x => String(x.id) === String(previewModalItemId));
+      if (!item) return;
+
+      showToast('Uploading...', `Replacing ${replaceAttachmentName}`, 'info');
+
+      try {
+        const uploaded = await uploadFileDual(file);
+        // Replace the matching attachment (match by name), preserving the rest
+        const updatedAttachments = (item.attachments || []).map(a =>
+          a.name === replaceAttachmentName ? { ...uploaded, name: a.name } : a
+        );
+
+        const payload = {
+          id: item.id,
+          title: item.title,
+          category: item.category,
+          folder: item.folder,
+          content: item.content,
+          formattedContent: item.formattedContent,
+          tags: item.tags,
+          attachments: updatedAttachments
+        };
+
+        await updateWAItem(payload);
+
+        // Update local data
+        item.attachments = updatedAttachments;
+
+        // Re-render the preview modal with the updated attachments
+        const waText = item.formattedContent || toWhatsApp(item.content || '');
+        const waHTML = `<div class="wa-bubble text-base">${whatsappPreviewHTML(waText)}</div>`;
+        openPreviewModal(item.title, waHTML, waText, item.attachments, item.id, 'whatsapp');
+
+        showToast('Replaced!', `${replaceAttachmentName} has been replaced successfully`, 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('Replace Failed', err.message, 'error');
+      } finally {
+        replaceAttachmentName = null;
+      }
+    });
 
     // Copy for WhatsApp (original format)
     document.getElementById('previewCopyWABtn').addEventListener('click', async () => {
