@@ -2983,6 +2983,17 @@
       return icons[type] || 'file';
     }
 
+    // Helper to get the best download URL (prefers Google Drive with export=download)
+    function getDownloadUrl(primaryUrl, backupUrl) {
+      const driveUrl = (backupUrl && backupUrl.includes('drive.google.com')) ? backupUrl
+                     : (primaryUrl && primaryUrl.includes('drive.google.com')) ? primaryUrl
+                     : null;
+      if (driveUrl) {
+        return driveUrl.replace('export=view', 'export=download');
+      }
+      return primaryUrl;
+    }
+
     // Helper to fix Google Drive URLs for embedding
     function fixGoogleDriveUrl(url) {
       if (!url) return url;
@@ -5649,7 +5660,7 @@
 
     document.getElementById('mediaLightboxDownload').addEventListener('click', () => {
       const a = document.createElement('a');
-      a.href = currentMediaUrl;
+      a.href = getDownloadUrl(currentMediaUrl, currentMediaBackupUrl);
       a.download = currentMediaName;
       a.target = '_blank';
       document.body.appendChild(a);
@@ -5701,18 +5712,21 @@
         e.preventDefault();
         const url = card.getAttribute('data-media-url');
         const name = card.getAttribute('data-media-name');
-        showImageContextMenu(e, url, name);
+        const backupUrl = card.getAttribute('data-media-backup');
+        showImageContextMenu(e, url, name, backupUrl);
       }
     });
 
     /* ====== CUSTOM CONTEXT MENU FOR IMAGES ====== */
     let contextMenuImageUrl = '';
+    let contextMenuImageBackupUrl = '';
     let contextMenuImageName = '';
 
-    function showImageContextMenu(event, url, name) {
+    function showImageContextMenu(event, url, name, backupUrl = '') {
       if (!url || !name) return;
 
       contextMenuImageUrl = url;
+      contextMenuImageBackupUrl = backupUrl;
       contextMenuImageName = name;
 
       const menu = document.getElementById('customContextMenu');
@@ -5770,7 +5784,7 @@
 
     document.getElementById('contextDownloadImage').addEventListener('click', () => {
       const a = document.createElement('a');
-      a.href = contextMenuImageUrl;
+      a.href = getDownloadUrl(contextMenuImageUrl, contextMenuImageBackupUrl);
       a.download = contextMenuImageName;
       a.target = '_blank';
       document.body.appendChild(a);
