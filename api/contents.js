@@ -54,42 +54,11 @@ export default async function handler(req, res) {
       const n = props?.[name]?.number;
       return typeof n === "number" ? n : 0;
     };
-    const getFiles = (props, name) => {
-      const files = props?.[name]?.files || [];
-      // New format: primary entry + "_bk_" prefixed backup entry per file.
-      // Legacy format: single external URL entry.
-      const result = {};
-      for (const f of files) {
-        const rawName = f?.name || "file";
-        const isBackup = rawName.startsWith("_bk_");
-        const actualName = isBackup ? rawName.slice(4) : rawName;
+    const getFiles = (props, name) =>
+      (props?.[name]?.files || []).map((f) => {
         const url = f?.external?.url || f?.file?.url || "";
-        if (!result[actualName]) result[actualName] = { name: actualName, url: "", backupUrl: "" };
-        if (isBackup) result[actualName].backupUrl = url;
-        else result[actualName].url = url;
-      }
-      return Object.values(result).filter(a => a.url || a.backupUrl);
-    };
-
-    // Build Notion files array from attachment objects.
-    // Each attachment can have: { name, url, backupUrl, notionFileUploadId }
-    // - notionFileUploadId → Notion-hosted file (primary)
-    // - backupUrl → Google Drive URL stored as "_bk_" prefixed external entry
-    // - url → legacy external URL (blob/drive) when no notionFileUploadId
-    function buildNotionFiles(attachments) {
-      const entries = [];
-      for (const a of (attachments || []).filter(a => a?.name)) {
-        if (a.notionFileUploadId) {
-          entries.push({ type: "file_upload", file_upload: { id: a.notionFileUploadId }, name: a.name });
-        } else if (a.url) {
-          entries.push({ name: a.name, external: { url: a.url } });
-        }
-        if (a.backupUrl) {
-          entries.push({ name: `_bk_${a.name}`, external: { url: a.backupUrl } });
-        }
-      }
-      return entries;
-    }
+        return { name: f?.name || "file", url };
+      });
 
     // Build filters/sorts safely
     const query = { database_id: NOTION_DATABASE_ID };
@@ -98,20 +67,9 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "GET") {
-      // Paginate through all results (Notion returns max 100 per page)
-      const allResults = [];
-      let cursor = undefined;
-      do {
-        const pages = await notion.databases.query({
-          ...query,
-          page_size: 100,
-          ...(cursor ? { start_cursor: cursor } : {})
-        });
-        allResults.push(...pages.results);
-        cursor = pages.has_more ? pages.next_cursor : undefined;
-      } while (cursor);
+      const pages = await notion.databases.query(query);
 
-      const items = allResults.map((p) => {
+      const items = pages.results.map((p) => {
         const props = p.properties || {};
 
         return {
@@ -213,8 +171,14 @@ export default async function handler(req, res) {
         properties.UseCount = { number: Number(useCount || 0) };
       }
       if (has("Attachments") && Array.isArray(attachments) && attachments.length) {
-        const files = buildNotionFiles(attachments);
-        if (files.length) properties.Attachments = { files };
+        properties.Attachments = {
+          files: attachments
+            .filter((a) => a?.url)
+            .map((a) => ({
+              name: a.name || "attachment",
+              external: { url: a.url }
+            }))
+        };
       }
       // LastUsed is intentionally not set here; you can add an update endpoint later.
 
@@ -303,8 +267,14 @@ export default async function handler(req, res) {
         properties.Tags = { multi_select: tags.map((t) => ({ name: t })) };
       }
       if (has("Attachments") && Array.isArray(attachments)) {
-        const files = buildNotionFiles(attachments);
-        properties.Attachments = { files };
+        properties.Attachments = {
+          files: attachments
+            .filter((a) => a?.url)
+            .map((a) => ({
+              name: a.name || "attachment",
+              external: { url: a.url }
+            }))
+        };
       }
 
       // Add version tracking if history is enabled

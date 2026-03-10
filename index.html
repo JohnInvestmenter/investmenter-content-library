@@ -1080,48 +1080,6 @@
       text-transform: uppercase;
     }
 
-    .attachment-card[data-unavailable="true"] .attachment-thumbnail {
-      opacity: 0.5;
-    }
-    .attachment-card[data-unavailable="true"] .attachment-type {
-      color: #e53e3e;
-    }
-    .attachment-card[data-unavailable="true"] .attachment-type::before {
-      content: "⚠ ";
-    }
-    .attachment-replace-btn {
-      position: absolute;
-      bottom: 6px;
-      right: 6px;
-      background: var(--brand);
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 4px 8px;
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      z-index: 2;
-      align-items: center;
-      gap: 4px;
-      white-space: nowrap;
-    }
-    .attachment-card .attachment-replace-btn {
-      display: flex;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-    }
-    .attachment-card:hover .attachment-replace-btn,
-    .attachment-card[data-unavailable="true"] .attachment-replace-btn {
-      opacity: 1;
-    }
-    .attachment-replace-btn:hover {
-      background: var(--brand-hover, #5550e0);
-    }
-    .attachment-thumbnail {
-      position: relative;
-    }
-
     /* ---------- FADE IN ANIMATION ---------- */
     @keyframes fadeIn {
       from {
@@ -1758,16 +1716,6 @@
             class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" />
           <div id="wa-editUploadStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div>
           <div id="wa-editFilePreview" class="mt-3 grid grid-cols-2 gap-2"></div>
-          <div class="mt-3">
-            <label class="block text-sm mb-1">Or add a Loom video URL</label>
-            <div class="flex gap-2">
-              <input id="wa-editLoomUrl" type="url"
-                class="flex-1 p-2 rounded-lg border border-[var(--border)] bg-transparent"
-                placeholder="https://www.loom.com/share/..." />
-              <button type="button" id="wa-editAddLoom" class="btn btn-brand text-sm px-3">Add</button>
-            </div>
-            <div id="wa-editLoomStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div>
-          </div>
           <div id="wa-editExistingFiles" class="mt-2 text-sm"></div>
         </div>
         <div><label class="block text-sm mb-1">WhatsApp Preview</label>
@@ -1829,22 +1777,6 @@
   </div>
 
   <!-- WA Add Modal -->
-  <!-- Replace File Modal — uses a visible file input so macOS browser sandbox allows file reads -->
-  <div id="replaceFileModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-[60]">
-    <div class="card w-full max-w-sm rounded-xl shadow-soft p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold">Replace File</h2>
-        <button id="replaceFileModalClose" class="btn btn-sm"><i data-lucide="x"></i></button>
-      </div>
-      <p class="text-sm text-[var(--muted-ink)] mb-1">Replacing:</p>
-      <p id="replaceFileModalName" class="text-sm font-semibold mb-4 truncate"></p>
-      <label class="block text-sm mb-1">Select new file</label>
-      <input id="replaceFileModalInput" type="file" accept="image/*,video/*,.pdf"
-             class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent text-sm" />
-      <div id="replaceFileModalStatus" class="text-xs text-[var(--muted-ink)] mt-2 min-h-[1.2em]"></div>
-    </div>
-  </div>
-
   <div id="wa-addModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
     <div class="card w-full max-w-2xl rounded-xl shadow-soft flex flex-col max-h-[90vh]">
       <div class="flex items-center justify-between p-4 border-b border-[var(--border)]">
@@ -1899,16 +1831,6 @@
             class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" />
           <div id="wa-uploadStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div>
           <div id="wa-filePreview" class="mt-3 grid grid-cols-2 gap-2"></div>
-          <div class="mt-3">
-            <label class="block text-sm mb-1">Or add a Loom video URL</label>
-            <div class="flex gap-2">
-              <input id="wa-loomUrl" type="url"
-                class="flex-1 p-2 rounded-lg border border-[var(--border)] bg-transparent"
-                placeholder="https://www.loom.com/share/..." />
-              <button type="button" id="wa-addLoom" class="btn btn-brand text-sm px-3">Add</button>
-            </div>
-            <div id="wa-loomStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div>
-          </div>
         </div>
         <div><label class="block text-sm mb-1">WhatsApp Preview</label>
           <div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-2">
@@ -2197,9 +2119,11 @@
     /* ====== CONFIG ====== */
     const WA_API = '/api/contents';
     const GPT_API = '/api/prompts';
-    const DRIVE_UPLOAD_API = '/api/upload-drive';
+    const BLOB_UPLOAD_API = '/api/upload-blob';
+    const DRIVE_APP_SCRIPT = 'https://script.google.com/macros/s/AKfycbwWgZ3B3vcN4flFQo1-Ul-AVjVGZozfoe8RDcbr8ez2d_d7r9XvQ7tnePY5q8ZC4w7Ziw/exec';
     const UNASSIGNED_FOLDER = 'Unassigned';
     const defaultWAFolders = ['Construction Updates', 'Investors Reach Out', 'Resell', 'Conveyance'];
+    const USE_DUAL_STORAGE = true; // Set to false to use Google Drive only
 
     // Dynamic category data loaded from Notion
     let waCategoriesData = []; // [{name, color, count}]
@@ -2996,23 +2920,7 @@
       }
     });
 
-    // Loom URL helpers
-    function isLoomUrl(url) {
-      return /^https?:\/\/(www\.)?loom\.com\/share\/[a-zA-Z0-9]+/.test(url);
-    }
-
-    function getLoomVideoId(url) {
-      const match = (url || '').match(/loom\.com\/share\/([a-zA-Z0-9]+)/);
-      return match ? match[1] : null;
-    }
-
-    function getLoomEmbedUrl(url) {
-      const id = getLoomVideoId(url);
-      return id ? `https://www.loom.com/embed/${id}` : null;
-    }
-
     function getFileType(filename) {
-      if ((filename || '').startsWith('[Loom]')) return 'loom';
       const ext = (filename || '').split('.').pop().toLowerCase();
       if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext)) return 'image';
       if (['mp4', 'webm', 'mov', 'avi', 'mkv'].includes(ext)) return 'video';
@@ -3028,7 +2936,6 @@
       const icons = {
         image: 'image',
         video: 'video',
-        loom: 'video',
         pdf: 'file-text',
         document: 'file-text',
         spreadsheet: 'table',
@@ -3037,34 +2944,6 @@
         file: 'file'
       };
       return icons[type] || 'file';
-    }
-
-    // Helper to get the best download URL (prefers Google Drive with export=download)
-    function getDownloadUrl(primaryUrl, backupUrl) {
-      const driveUrl = (backupUrl && backupUrl.includes('drive.google.com')) ? backupUrl
-                     : (primaryUrl && primaryUrl.includes('drive.google.com')) ? primaryUrl
-                     : null;
-      if (driveUrl) {
-        // Extract file ID from any Drive URL format and build export=download URL
-        const m = driveUrl.match(/\/file\/d\/([^\/]+)/) || driveUrl.match(/[?&]id=([^&]+)/);
-        if (m) return `https://drive.google.com/uc?export=download&id=${m[1]}`;
-        return driveUrl.replace('export=view', 'export=download');
-      }
-      return primaryUrl;
-    }
-
-    // Helper to get Google Drive preview URL (for iframe embedding of PDFs)
-    function getGoogleDrivePreviewUrl(url) {
-      if (!url) return url;
-      if (url.includes('drive.google.com')) {
-        let fileId = null;
-        const m1 = url.match(/\/file\/d\/([^\/]+)/);
-        if (m1) fileId = m1[1];
-        const m2 = url.match(/[?&]id=([^&]+)/);
-        if (m2) fileId = m2[1];
-        if (fileId) return `https://drive.google.com/file/d/${fileId}/preview`;
-      }
-      return url;
     }
 
     // Helper to fix Google Drive URLs for embedding
@@ -3130,9 +3009,6 @@
           <div class="attachment-icon" style="display:none;">
             <i data-lucide="${icon}"></i>
           </div>
-          <button class="attachment-replace-btn" onclick="event.stopPropagation(); openReplaceFileModal('${escapeHtml(attachment.name)}')">
-            <i data-lucide="upload" style="width:11px;height:11px;"></i> Replace
-          </button>
         </div>
         <div class="attachment-info">
           <div class="attachment-name">${escapeHtml(attachment.name)}</div>
@@ -3160,9 +3036,6 @@
           <div class="attachment-play-icon">
             <i data-lucide="play-circle"></i>
           </div>
-          <button class="attachment-replace-btn" onclick="event.stopPropagation(); openReplaceFileModal('${escapeHtml(attachment.name)}')">
-            <i data-lucide="upload" style="width:11px;height:11px;"></i> Replace
-          </button>
         </div>
         <div class="attachment-info">
           <div class="attachment-name">${escapeHtml(attachment.name)}</div>
@@ -3172,46 +3045,20 @@
     `;
       }
 
-      if (type === 'loom') {
-        const embedUrl = getLoomEmbedUrl(urls.primary);
-        return `
-      <div class="attachment-card"
-           data-media-url="${escapeHtml(embedUrl || urls.primary)}"
-           data-media-backup=""
-           data-media-name="${escapeHtml(attachment.name)}"
-           data-media-type="loom">
-        <div class="attachment-thumbnail" style="background:#625DF5; display:flex; align-items:center; justify-content:center;">
-          <div class="attachment-play-icon" style="position:relative;">
-            <i data-lucide="play-circle"></i>
-          </div>
-        </div>
-        <div class="attachment-info">
-          <div class="attachment-name">${escapeHtml(attachment.name)}</div>
-          <div class="attachment-type">LOOM</div>
-        </div>
-      </div>
-    `;
-      }
-
       if (type === 'pdf') {
-        // Use Drive /preview URL for display (blob URLs can't be iframe-embedded; export=view may download instead of display)
-        const pdfDisplayUrl = getGoogleDrivePreviewUrl(urls.backup || urls.primary);
         return `
       <div class="attachment-card"
-           data-media-url="${escapeHtml(pdfDisplayUrl)}"
+           data-media-url="${escapeHtml(urls.primary)}"
            data-media-backup="${escapeHtml(urls.backup || '')}"
            data-media-name="${escapeHtml(attachment.name)}"
            data-media-type="pdf">
         <div class="attachment-thumbnail">
-          <iframe src="${escapeHtml(pdfDisplayUrl)}#page=1&view=FitH"
+          <iframe src="${urls.primary}#page=1&view=FitH"
                   style="width:100%; height:100%; border:none; pointer-events:none;"
                   onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"></iframe>
           <div class="attachment-icon">
             <i data-lucide="${icon}"></i>
           </div>
-          <button class="attachment-replace-btn" onclick="event.stopPropagation(); openReplaceFileModal('${escapeHtml(attachment.name)}')">
-            <i data-lucide="upload" style="width:11px;height:11px;"></i> Replace
-          </button>
         </div>
         <div class="attachment-info">
           <div class="attachment-name">${escapeHtml(attachment.name)}</div>
@@ -3247,9 +3094,6 @@
         if (img.nextElementSibling) {
           img.nextElementSibling.style.display = 'flex';
         }
-        // Mark the card so download can warn the user
-        const card = img.closest('.attachment-card');
-        if (card) card.dataset.unavailable = 'true';
       }
     }
 
@@ -3314,78 +3158,6 @@
 
     document.getElementById('previewClose').addEventListener('click', closePreviewModal);
     document.getElementById('previewCloseBtn').addEventListener('click', closePreviewModal);
-
-    /* ====== REPLACE FILE MODAL ====== */
-    // Uses a real visible file input inside a modal — the ONLY approach that reliably
-    // bypasses macOS browser sandbox restrictions on file reads.
-    let replaceFileAttachmentName = null;
-    let replaceFileItemId = null;
-
-    function openReplaceFileModal(attachmentName) {
-      replaceFileAttachmentName = attachmentName;
-      replaceFileItemId = previewModalItemId;
-      document.getElementById('replaceFileModalName').textContent = attachmentName;
-      document.getElementById('replaceFileModalStatus').textContent = '';
-      document.getElementById('replaceFileModalInput').value = '';
-      const modal = document.getElementById('replaceFileModal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-      lucide.createIcons();
-    }
-
-    function closeReplaceFileModal() {
-      document.getElementById('replaceFileModal').classList.add('hidden');
-      document.getElementById('replaceFileModal').classList.remove('flex');
-      replaceFileAttachmentName = null;
-      replaceFileItemId = null;
-    }
-
-    document.getElementById('replaceFileModalClose').addEventListener('click', closeReplaceFileModal);
-
-    document.getElementById('replaceFileModalInput').addEventListener('change', async function () {
-      const file = this.files[0];
-      if (!file || !replaceFileAttachmentName || !replaceFileItemId) return;
-
-      const item = waContents.find(x => String(x.id) === String(replaceFileItemId));
-      if (!item) return;
-
-      const statusEl = document.getElementById('replaceFileModalStatus');
-      statusEl.textContent = 'Uploading to Notion + Drive…';
-      this.disabled = true;
-
-      try {
-        const uploaded = await uploadFileDual(file);
-        const updatedAttachments = (item.attachments || []).map(a =>
-          a.name === replaceFileAttachmentName ? { ...uploaded, name: a.name } : a
-        );
-
-        const payload = {
-          id: item.id, title: item.title, category: item.category,
-          folder: item.folder, content: item.content,
-          formattedContent: item.formattedContent, tags: item.tags,
-          attachments: updatedAttachments
-        };
-
-        await updateWAItem(payload);
-        item.attachments = updatedAttachments;
-
-        closeReplaceFileModal();
-
-        // Re-render preview modal with updated attachments
-        const waText = item.formattedContent || toWhatsApp(item.content || '');
-        const waHTML = `<div class="wa-bubble text-base">${whatsappPreviewHTML(waText)}</div>`;
-        openPreviewModal(item.title, waHTML, waText, item.attachments, item.id, 'whatsapp');
-
-        showToast('Replaced!', `${replaceFileAttachmentName} replaced successfully`, 'success');
-      } catch (err) {
-        console.error(err);
-        statusEl.textContent = 'Failed: ' + getErrMsg(err);
-        showToast('Replace Failed', getErrMsg(err), 'error');
-      } finally {
-        this.disabled = false;
-        this.value = '';
-      }
-    });
 
     // Copy for WhatsApp (original format)
     document.getElementById('previewCopyWABtn').addEventListener('click', async () => {
@@ -3524,80 +3296,97 @@
     let addAttachments = [];
     let inflightUploads = 0;
 
-    // Use File.arrayBuffer() instead of FileReader — avoids macOS/Safari/Chrome
-    // FileReader permission errors when files are selected via programmatic inputs.
-    async function fileToDataURL(file) {
-      const buffer = await file.arrayBuffer();
-      const bytes = new Uint8Array(buffer);
-      let binary = '';
-      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-      return `data:${file.type || 'application/octet-stream'};base64,${btoa(binary)}`;
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result).split(',')[1] || '');
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
     }
 
-    function fileToBase64(file) {
-      return fileToDataURL(file).then(dataURL => dataURL.split(',')[1] || '');
+    function fileToDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
     }
 
     /**
-     * Uploads to Notion (primary, hosted on Notion S3) + Google Drive (permanent backup).
-     * Returns: { name, url, backupUrl, notionFileUploadId, id }
-     *   url           = Google Drive export=view URL (for immediate preview before next sync)
-     *   backupUrl     = original Google Drive URL (for download)
-     *   notionFileUploadId = Notion file upload ID (attached to page → becomes the S3 preview URL after sync)
+     * Dual upload: Uploads to Vercel Blob (primary) + Google Drive (backup)
+     * Returns: { name, url, backupUrl, id }
      */
-    function getErrMsg(err) {
-      if (!err) return 'unknown error';
-      if (typeof err === 'string') return err;
-      if (err instanceof Error) return err.message || String(err);
-      if (err.message) return String(err.message);
-      try { return JSON.stringify(err); } catch { return String(err); }
-    }
-
     async function uploadFileDual(file) {
+      let blobUrl = null;
       let driveUrl = null;
       let driveId = null;
 
-      // Read the file ONCE
-      const dataURL = await fileToDataURL(file);
-      const base64 = dataURL.split(',')[1] || '';
+      // Step 1: Upload to Vercel Blob (primary)
+      if (USE_DUAL_STORAGE) {
+        try {
+          const dataURL = await fileToDataURL(file);
+          const blobRes = await fetch(BLOB_UPLOAD_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              file: dataURL,
+              filename: file.name,
+              contentType: file.type || 'application/octet-stream'
+            })
+          });
 
-      // Upload to Google Drive via server-side proxy (avoids CORS)
-      const driveRes = await fetch(DRIVE_UPLOAD_API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          files: [{
-            name: file.name,
-            mimeType: file.type || 'application/octet-stream',
-            dataBase64: base64
-          }]
-        })
-      });
-
-      const driveData = await driveRes.json();
-      console.log('🔍 Drive response:', JSON.stringify(driveData));
-
-      if (!driveRes.ok || !driveData.success) {
-        throw new Error(driveData.error || `Drive upload failed (HTTP ${driveRes.status})`);
+          if (blobRes.ok) {
+            const blobData = await blobRes.json();
+            blobUrl = blobData.url;
+            console.log('✓ Uploaded to Vercel Blob:', blobUrl);
+          } else {
+            const error = await blobRes.json();
+            console.warn('Blob upload failed, will use Drive only:', error.message);
+          }
+        } catch (err) {
+          console.warn('Blob upload error, falling back to Drive only:', err.message);
+        }
       }
 
-      const driveFile = driveData.files?.[0];
-      driveId = driveFile?.id || null;
-      if (driveId) {
-        driveUrl = `https://drive.google.com/file/d/${driveId}/view`;
-      } else if (driveFile?.url && driveFile.url.startsWith('http')) {
+      // Step 2: Upload to Google Drive (backup or primary if Blob failed)
+      try {
+        const base64 = await fileToBase64(file);
+        const driveRes = await fetch(DRIVE_APP_SCRIPT, {
+          method: 'POST',
+          body: JSON.stringify({
+            files: [{
+              name: file.name,
+              mimeType: file.type || 'application/octet-stream',
+              dataBase64: base64
+            }]
+          })
+        });
+
+        const driveData = await driveRes.json();
+        if (!driveRes.ok || !driveData.success) {
+          throw new Error(driveData.error || 'Drive upload failed');
+        }
+
+        const driveFile = driveData.files[0];
         driveUrl = driveFile.url;
-      } else {
-        throw new Error('Drive returned no usable file URL or ID');
+        driveId = driveFile.id;
+        console.log('✓ Uploaded to Google Drive:', driveUrl);
+      } catch (err) {
+        // If both failed, throw error
+        if (!blobUrl) {
+          throw new Error(`Both uploads failed: ${err.message}`);
+        }
+        console.warn('Drive upload failed, using Blob only:', err.message);
       }
-      console.log('✓ Uploaded to Google Drive:', driveUrl);
 
+      // Return with primary and backup URLs
       return {
         name: file.name,
-        url: fixGoogleDriveUrl(driveUrl),
-        backupUrl: driveUrl,
-        notionFileUploadId: null,
-        id: driveId
+        url: blobUrl || driveUrl, // Primary URL (prefer Blob)
+        backupUrl: blobUrl ? driveUrl : null, // Backup URL (Drive if we have Blob)
+        id: driveId // Keep Drive ID for compatibility
       };
     }
 
@@ -4350,8 +4139,6 @@
       // Clear file input and status
       document.getElementById('wa-editFileUpload').value = '';
       document.getElementById('wa-editUploadStatus').textContent = '';
-      document.getElementById('wa-editLoomUrl').value = '';
-      document.getElementById('wa-editLoomStatus').textContent = '';
       waEditNewAttachments = [];
       waEditInflightUploads = 0;
       renderEditFilePreview(); // Clear preview
@@ -4601,35 +4388,23 @@
 
     // Create file preview card HTML
     function createFilePreviewCard(file, index, onRemove) {
-      const isLoom = (file.name || '').startsWith('[Loom]');
-      const isImage = !isLoom && isImageFile(file);
+      const isImage = isImageFile(file);
       const fileSize = file.size ? formatFileSize(file.size) : '';
       const icon = getFileIcon(file);
 
-      let thumbnailHtml;
-      if (isLoom) {
-        thumbnailHtml = `
-        <div class="file-preview-thumbnail w-full h-32 flex items-center justify-center" style="background:#625DF5;">
-          <i data-lucide="play-circle" class="w-12 h-12 text-white"></i>
-        </div>`;
-      } else if (isImage && file.url) {
-        thumbnailHtml = `
-        <div class="file-preview-thumbnail w-full h-32 bg-[var(--canvas)] flex items-center justify-center">
-          <img src="${file.url}" alt="${file.name}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i data-lucide=\\'image-off\\' class=\\'text-[var(--muted-ink)]\\'></i>';" />
-        </div>`;
-      } else {
-        thumbnailHtml = `
-        <div class="file-preview-thumbnail w-full h-32 bg-[var(--canvas)] flex items-center justify-center">
-          <i data-lucide="${icon}" class="w-12 h-12 text-[var(--brand)]"></i>
-        </div>`;
-      }
-
       return `
     <div class="file-preview-card relative rounded-lg border-2 border-[var(--brand)] bg-[var(--card)] overflow-hidden flex flex-col" data-file-index="${index}">
-      ${thumbnailHtml}
+      ${isImage && file.url ? `
+        <div class="file-preview-thumbnail w-full h-32 bg-[var(--canvas)] flex items-center justify-center">
+          <img src="${file.url}" alt="${file.name}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i data-lucide=\\'image-off\\' class=\\'text-[var(--muted-ink)]\\'></i>';" />
+        </div>
+      ` : `
+        <div class="file-preview-thumbnail w-full h-32 bg-[var(--canvas)] flex items-center justify-center">
+          <i data-lucide="${icon}" class="w-12 h-12 text-[var(--brand)]"></i>
+        </div>
+      `}
       <div class="flex-1 min-w-0 p-2">
         <div class="text-sm font-medium truncate" title="${file.name}">${file.name}</div>
-        ${isLoom ? '<div class="text-xs text-[var(--muted-ink)] mt-1">Loom Video</div>' : ''}
         ${fileSize ? `<div class="text-xs text-[var(--muted-ink)] mt-1">${fileSize}</div>` : ''}
       </div>
       <button type="button" class="file-preview-remove absolute top-1 right-1 w-6 h-6 rounded-full bg-[var(--brand)] hover:brightness-90 text-[var(--brand-ink)] flex items-center justify-center shadow-lg transition-all" onclick="${onRemove}" title="Remove file">
@@ -4725,7 +4500,7 @@
 
       waEditInflightUploads += files.length;
       saveBtn.disabled = true;
-      statusEl.textContent = `Uploading ${waEditInflightUploads} file(s) to Notion + Drive…`;
+      statusEl.textContent = `Uploading ${waEditInflightUploads} file(s) to ${USE_DUAL_STORAGE ? 'Blob + Drive' : 'Drive'}…`;
 
       for (const file of files) {
         try {
@@ -4747,7 +4522,7 @@
           uploadedFile.size = file.size;
           uploadedFile.type = file.type;
           waEditNewAttachments.push(uploadedFile);
-          statusEl.textContent = `${waEditNewAttachments.length} file(s) uploaded to Notion + Drive`;
+          statusEl.textContent = `${waEditNewAttachments.length} file(s) uploaded${USE_DUAL_STORAGE ? ' (with backup)' : ''}`;
           // Update preview after each successful upload
           renderEditFilePreview();
         } catch (err) {
@@ -4760,36 +4535,6 @@
         }
       }
       this.value = '';
-    });
-
-    // Loom URL add for Edit modal
-    document.getElementById('wa-editAddLoom').addEventListener('click', () => {
-      const input = document.getElementById('wa-editLoomUrl');
-      const url = (input.value || '').trim();
-      const statusEl = document.getElementById('wa-editLoomStatus');
-
-      if (!url) {
-        showToast('Missing URL', 'Please enter a Loom video URL', 'error');
-        return;
-      }
-
-      if (!isLoomUrl(url)) {
-        showToast('Invalid URL', 'Please enter a valid Loom share URL (e.g. https://www.loom.com/share/...)', 'error');
-        return;
-      }
-
-      const videoId = getLoomVideoId(url);
-      waEditNewAttachments.push({
-        name: '[Loom] Video',
-        url: url,
-        backupUrl: null,
-        id: 'loom-' + videoId
-      });
-
-      input.value = '';
-      statusEl.textContent = 'Loom video added';
-      renderEditFilePreview();
-      showToast('Loom Added', 'Loom video attached successfully', 'success');
     });
 
     document.getElementById('wa-editSave').addEventListener('click', async () => {
@@ -4854,8 +4599,6 @@
       waTagsInput.value = '';
       document.getElementById('wa-fileUpload').value = '';
       document.getElementById('wa-uploadStatus').textContent = '';
-      document.getElementById('wa-loomUrl').value = '';
-      document.getElementById('wa-loomStatus').textContent = '';
       addAttachments = [];
       inflightUploads = 0;
       renderAddFilePreview(); // Clear preview
@@ -4884,7 +4627,7 @@
       const statusEl = document.getElementById('wa-uploadStatus');
       inflightUploads += files.length;
       updateWASaveDisabled();
-      statusEl.textContent = `Uploading ${inflightUploads} file(s) to Notion + Drive…`;
+      statusEl.textContent = `Uploading ${inflightUploads} file(s) to ${USE_DUAL_STORAGE ? 'Blob + Drive' : 'Drive'}…`;
 
       for (const file of files) {
         try {
@@ -4906,7 +4649,7 @@
           uploadedFile.size = file.size;
           uploadedFile.type = file.type;
           addAttachments.push(uploadedFile);
-          statusEl.textContent = `${addAttachments.length} file(s) uploaded to Notion + Drive`;
+          statusEl.textContent = `${addAttachments.length} file(s) uploaded${USE_DUAL_STORAGE ? ' (with backup)' : ''}`;
           // Update preview after each successful upload
           renderAddFilePreview();
         } catch (err) {
@@ -4919,37 +4662,6 @@
         }
       }
       this.value = '';
-    });
-
-    // Loom URL add for Add modal
-    document.getElementById('wa-addLoom').addEventListener('click', () => {
-      const input = document.getElementById('wa-loomUrl');
-      const url = (input.value || '').trim();
-      const statusEl = document.getElementById('wa-loomStatus');
-
-      if (!url) {
-        showToast('Missing URL', 'Please enter a Loom video URL', 'error');
-        return;
-      }
-
-      if (!isLoomUrl(url)) {
-        showToast('Invalid URL', 'Please enter a valid Loom share URL (e.g. https://www.loom.com/share/...)', 'error');
-        return;
-      }
-
-      const videoId = getLoomVideoId(url);
-      addAttachments.push({
-        name: '[Loom] Video',
-        url: url,
-        backupUrl: null,
-        id: 'loom-' + videoId
-      });
-
-      input.value = '';
-      statusEl.textContent = 'Loom video added';
-      renderAddFilePreview();
-      updateWASaveDisabled();
-      showToast('Loom Added', 'Loom video attached successfully', 'success');
     });
 
     waSaveAdd.addEventListener('click', async () => {
@@ -5659,14 +5371,12 @@
     let currentMediaBackupUrl = '';
     let currentMediaName = '';
     let currentMediaType = '';
-    let currentMediaUnavailable = false;
 
-    function openMediaLightbox(url, name, type, backupUrl = '', unavailable = false) {
+    function openMediaLightbox(url, name, type, backupUrl = '') {
       currentMediaUrl = url;
       currentMediaBackupUrl = backupUrl;
       currentMediaName = name;
       currentMediaType = type;
-      currentMediaUnavailable = unavailable;
 
       const lightbox = document.getElementById('mediaLightbox');
       const container = document.getElementById('mediaLightboxContainer');
@@ -5700,19 +5410,11 @@
              data-backup-url="${escapeHtml(backupUrl)}"
              onerror="handleLightboxVideoError(this)"></video>
     `;
-      } else if (type === 'loom') {
+      } else if (type === 'pdf') {
         container.innerHTML = `
       <iframe src="${url}"
-              frameborder="0"
-              webkitallowfullscreen mozallowfullscreen allowfullscreen
-              style="width:80vw; max-width:900px; height:45vw; max-height:506px; border-radius:8px;"></iframe>
-    `;
-      } else if (type === 'pdf') {
-        const pdfViewUrl = getGoogleDrivePreviewUrl(url);
-        container.innerHTML = `
-      <iframe src="${escapeHtml(pdfViewUrl)}"
               class="media-lightbox-pdf"
-              data-backup-url="${escapeHtml(getGoogleDrivePreviewUrl(backupUrl))}"
+              data-backup-url="${escapeHtml(backupUrl)}"
               onerror="handleLightboxPdfError(this)"></iframe>
     `;
       }
@@ -5804,12 +5506,8 @@
     });
 
     document.getElementById('mediaLightboxDownload').addEventListener('click', () => {
-      if (currentMediaUnavailable) {
-        showToast('File Not Available', 'This file no longer exists. The original may have been deleted or expired.', 'error');
-        return;
-      }
       const a = document.createElement('a');
-      a.href = getDownloadUrl(currentMediaUrl, currentMediaBackupUrl);
+      a.href = currentMediaUrl;
       a.download = currentMediaName;
       a.target = '_blank';
       document.body.appendChild(a);
@@ -5848,9 +5546,8 @@
         const backupUrl = card.getAttribute('data-media-backup');
         const name = card.getAttribute('data-media-name');
         const type = card.getAttribute('data-media-type');
-        const unavailable = card.dataset.unavailable === 'true';
         if (url && name && type) {
-          openMediaLightbox(url, name, type, backupUrl, unavailable);
+          openMediaLightbox(url, name, type, backupUrl);
         }
       }
     });
@@ -5862,21 +5559,18 @@
         e.preventDefault();
         const url = card.getAttribute('data-media-url');
         const name = card.getAttribute('data-media-name');
-        const backupUrl = card.getAttribute('data-media-backup');
-        showImageContextMenu(e, url, name, backupUrl);
+        showImageContextMenu(e, url, name);
       }
     });
 
     /* ====== CUSTOM CONTEXT MENU FOR IMAGES ====== */
     let contextMenuImageUrl = '';
-    let contextMenuImageBackupUrl = '';
     let contextMenuImageName = '';
 
-    function showImageContextMenu(event, url, name, backupUrl = '') {
+    function showImageContextMenu(event, url, name) {
       if (!url || !name) return;
 
       contextMenuImageUrl = url;
-      contextMenuImageBackupUrl = backupUrl;
       contextMenuImageName = name;
 
       const menu = document.getElementById('customContextMenu');
@@ -5934,7 +5628,7 @@
 
     document.getElementById('contextDownloadImage').addEventListener('click', () => {
       const a = document.createElement('a');
-      a.href = getDownloadUrl(contextMenuImageUrl, contextMenuImageBackupUrl);
+      a.href = contextMenuImageUrl;
       a.download = contextMenuImageName;
       a.target = '_blank';
       document.body.appendChild(a);
