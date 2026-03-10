@@ -1829,6 +1829,22 @@
   </div>
 
   <!-- WA Add Modal -->
+  <!-- Replace File Modal — uses a visible file input so macOS browser sandbox allows file reads -->
+  <div id="replaceFileModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-[60]">
+    <div class="card w-full max-w-sm rounded-xl shadow-soft p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold">Replace File</h2>
+        <button id="replaceFileModalClose" class="btn btn-sm"><i data-lucide="x"></i></button>
+      </div>
+      <p class="text-sm text-[var(--muted-ink)] mb-1">Replacing:</p>
+      <p id="replaceFileModalName" class="text-sm font-semibold mb-4 truncate"></p>
+      <label class="block text-sm mb-1">Select new file</label>
+      <input id="replaceFileModalInput" type="file" accept="image/*,video/*,.pdf"
+             class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent text-sm" />
+      <div id="replaceFileModalStatus" class="text-xs text-[var(--muted-ink)] mt-2 min-h-[1.2em]"></div>
+    </div>
+  </div>
+
   <div id="wa-addModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
     <div class="card w-full max-w-2xl rounded-xl shadow-soft flex flex-col max-h-[90vh]">
       <div class="flex items-center justify-between p-4 border-b border-[var(--border)]">
@@ -3115,13 +3131,9 @@
           <div class="attachment-icon" style="display:none;">
             <i data-lucide="${icon}"></i>
           </div>
-          <label class="attachment-replace-btn" onclick="event.stopPropagation();">
-            <input type="file" accept="image/*,video/*,.pdf"
-                   data-replace-name="${escapeHtml(attachment.name)}"
-                   style="position:absolute;width:0;height:0;overflow:hidden;opacity:0;"
-                   onchange="handleReplaceFileInput(this)">
+          <button class="attachment-replace-btn" onclick="event.stopPropagation(); openReplaceFileModal('${escapeHtml(attachment.name)}')">
             <i data-lucide="upload" style="width:11px;height:11px;"></i> Replace
-          </label>
+          </button>
         </div>
         <div class="attachment-info">
           <div class="attachment-name">${escapeHtml(attachment.name)}</div>
@@ -3149,13 +3161,9 @@
           <div class="attachment-play-icon">
             <i data-lucide="play-circle"></i>
           </div>
-          <label class="attachment-replace-btn" onclick="event.stopPropagation();">
-            <input type="file" accept="image/*,video/*,.pdf"
-                   data-replace-name="${escapeHtml(attachment.name)}"
-                   style="position:absolute;width:0;height:0;overflow:hidden;opacity:0;"
-                   onchange="handleReplaceFileInput(this)">
+          <button class="attachment-replace-btn" onclick="event.stopPropagation(); openReplaceFileModal('${escapeHtml(attachment.name)}')">
             <i data-lucide="upload" style="width:11px;height:11px;"></i> Replace
-          </label>
+          </button>
         </div>
         <div class="attachment-info">
           <div class="attachment-name">${escapeHtml(attachment.name)}</div>
@@ -3202,13 +3210,9 @@
           <div class="attachment-icon">
             <i data-lucide="${icon}"></i>
           </div>
-          <label class="attachment-replace-btn" onclick="event.stopPropagation();">
-            <input type="file" accept="image/*,video/*,.pdf"
-                   data-replace-name="${escapeHtml(attachment.name)}"
-                   style="position:absolute;width:0;height:0;overflow:hidden;opacity:0;"
-                   onchange="handleReplaceFileInput(this)">
+          <button class="attachment-replace-btn" onclick="event.stopPropagation(); openReplaceFileModal('${escapeHtml(attachment.name)}')">
             <i data-lucide="upload" style="width:11px;height:11px;"></i> Replace
-          </label>
+          </button>
         </div>
         <div class="attachment-info">
           <div class="attachment-name">${escapeHtml(attachment.name)}</div>
@@ -3312,53 +3316,77 @@
     document.getElementById('previewClose').addEventListener('click', closePreviewModal);
     document.getElementById('previewCloseBtn').addEventListener('click', closePreviewModal);
 
-    /* ====== REPLACE MISSING ATTACHMENT ====== */
-    // Uses inline <label>+<input> per card so the browser treats it as a direct
-    // user gesture — programmatic .click() on hidden inputs causes FileReader
-    // permission errors on macOS Chrome/Safari.
-    async function handleReplaceFileInput(input) {
-      const file = input.files[0];
-      if (!file) return;
-      const attachmentName = input.getAttribute('data-replace-name');
-      if (!attachmentName || !previewModalItemId) return;
+    /* ====== REPLACE FILE MODAL ====== */
+    // Uses a real visible file input inside a modal — the ONLY approach that reliably
+    // bypasses macOS browser sandbox restrictions on file reads.
+    let replaceFileAttachmentName = null;
+    let replaceFileItemId = null;
 
-      const item = waContents.find(x => String(x.id) === String(previewModalItemId));
+    function openReplaceFileModal(attachmentName) {
+      replaceFileAttachmentName = attachmentName;
+      replaceFileItemId = previewModalItemId;
+      document.getElementById('replaceFileModalName').textContent = attachmentName;
+      document.getElementById('replaceFileModalStatus').textContent = '';
+      document.getElementById('replaceFileModalInput').value = '';
+      const modal = document.getElementById('replaceFileModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      lucide.createIcons();
+    }
+
+    function closeReplaceFileModal() {
+      document.getElementById('replaceFileModal').classList.add('hidden');
+      document.getElementById('replaceFileModal').classList.remove('flex');
+      replaceFileAttachmentName = null;
+      replaceFileItemId = null;
+    }
+
+    document.getElementById('replaceFileModalClose').addEventListener('click', closeReplaceFileModal);
+
+    document.getElementById('replaceFileModalInput').addEventListener('change', async function () {
+      const file = this.files[0];
+      if (!file || !replaceFileAttachmentName || !replaceFileItemId) return;
+
+      const item = waContents.find(x => String(x.id) === String(replaceFileItemId));
       if (!item) return;
 
-      showToast('Uploading...', `Replacing ${attachmentName}`, 'info');
+      const statusEl = document.getElementById('replaceFileModalStatus');
+      statusEl.textContent = 'Uploading to Notion + Drive…';
+      this.disabled = true;
 
       try {
         const uploaded = await uploadFileDual(file);
         const updatedAttachments = (item.attachments || []).map(a =>
-          a.name === attachmentName ? { ...uploaded, name: a.name } : a
+          a.name === replaceFileAttachmentName ? { ...uploaded, name: a.name } : a
         );
 
         const payload = {
-          id: item.id,
-          title: item.title,
-          category: item.category,
-          folder: item.folder,
-          content: item.content,
-          formattedContent: item.formattedContent,
-          tags: item.tags,
+          id: item.id, title: item.title, category: item.category,
+          folder: item.folder, content: item.content,
+          formattedContent: item.formattedContent, tags: item.tags,
           attachments: updatedAttachments
         };
 
         await updateWAItem(payload);
         item.attachments = updatedAttachments;
 
+        closeReplaceFileModal();
+
+        // Re-render preview modal with updated attachments
         const waText = item.formattedContent || toWhatsApp(item.content || '');
         const waHTML = `<div class="wa-bubble text-base">${whatsappPreviewHTML(waText)}</div>`;
         openPreviewModal(item.title, waHTML, waText, item.attachments, item.id, 'whatsapp');
 
-        showToast('Replaced!', `${attachmentName} replaced successfully`, 'success');
+        showToast('Replaced!', `${replaceFileAttachmentName} replaced successfully`, 'success');
       } catch (err) {
         console.error(err);
+        statusEl.textContent = 'Failed: ' + getErrMsg(err);
         showToast('Replace Failed', getErrMsg(err), 'error');
       } finally {
-        input.value = '';
+        this.disabled = false;
+        this.value = '';
       }
-    }
+    });
 
     // Copy for WhatsApp (original format)
     document.getElementById('previewCopyWABtn').addEventListener('click', async () => {
@@ -3582,9 +3610,15 @@
         }
 
         const driveFile = driveData.files?.[0];
-        if (!driveFile?.url) throw new Error('Drive returned no file URL');
-        driveUrl = driveFile.url;
-        driveId = driveFile.id;
+        driveId = driveFile?.id || null;
+        // Prefer constructing URL from file ID (Apps Script sometimes returns a path instead of a URL)
+        if (driveId) {
+          driveUrl = `https://drive.google.com/file/d/${driveId}/view`;
+        } else if (driveFile?.url && driveFile.url.startsWith('http')) {
+          driveUrl = driveFile.url;
+        } else {
+          throw new Error('Drive returned no usable file URL or ID');
+        }
         console.log('✓ Uploaded to Google Drive:', driveUrl);
       } catch (err) {
         driveErrMsg = getErrMsg(err);
