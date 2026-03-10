@@ -3494,7 +3494,7 @@
       return new Promise((resolve, reject) => {
         const r = new FileReader();
         r.onload = () => resolve(String(r.result).split(',')[1] || '');
-        r.onerror = reject;
+        r.onerror = (e) => reject(new Error('FileReader error: ' + (e.target?.error?.message || 'could not read file')));
         r.readAsDataURL(file);
       });
     }
@@ -3503,7 +3503,7 @@
       return new Promise((resolve, reject) => {
         const r = new FileReader();
         r.onload = () => resolve(r.result);
-        r.onerror = reject;
+        r.onerror = (e) => reject(new Error('FileReader error: ' + (e.target?.error?.message || 'could not read file')));
         r.readAsDataURL(file);
       });
     }
@@ -3512,6 +3512,14 @@
      * Dual upload: Uploads to Vercel Blob (primary) + Google Drive (backup)
      * Returns: { name, url, backupUrl, id }
      */
+    function getErrMsg(err) {
+      if (!err) return 'unknown error';
+      if (typeof err === 'string') return err;
+      if (err instanceof Error) return err.message || String(err);
+      if (err.message) return String(err.message);
+      try { return JSON.stringify(err); } catch { return String(err); }
+    }
+
     async function uploadFileDual(file) {
       let blobUrl = null;
       let driveUrl = null;
@@ -3536,15 +3544,16 @@
             blobUrl = blobData.url;
             console.log('✓ Uploaded to Vercel Blob:', blobUrl);
           } else {
-            const error = await blobRes.json();
-            console.warn('Blob upload failed, will use Drive only:', error.message);
+            const errText = await blobRes.text().catch(() => blobRes.status);
+            console.warn('Blob upload failed, will use Drive only:', errText);
           }
         } catch (err) {
-          console.warn('Blob upload error, falling back to Drive only:', err.message);
+          console.warn('Blob upload error, falling back to Drive only:', getErrMsg(err));
         }
       }
 
       // Step 2: Upload to Google Drive (backup or primary if Blob failed)
+      let driveErrMsg = null;
       try {
         const base64 = await fileToBase64(file);
         const driveRes = await fetch(DRIVE_APP_SCRIPT, {
@@ -3558,21 +3567,27 @@
           })
         });
 
-        const driveData = await driveRes.json();
-        if (!driveRes.ok || !driveData.success) {
-          throw new Error(driveData.error || 'Drive upload failed');
+        const driveText = await driveRes.text();
+        let driveData;
+        try { driveData = JSON.parse(driveText); } catch {
+          throw new Error(`Drive returned non-JSON: ${driveText.slice(0, 200)}`);
         }
 
-        const driveFile = driveData.files[0];
+        if (!driveRes.ok || !driveData.success) {
+          throw new Error(driveData.error || `Drive upload failed (HTTP ${driveRes.status})`);
+        }
+
+        const driveFile = driveData.files?.[0];
+        if (!driveFile?.url) throw new Error('Drive returned no file URL');
         driveUrl = driveFile.url;
         driveId = driveFile.id;
         console.log('✓ Uploaded to Google Drive:', driveUrl);
       } catch (err) {
-        // If both failed, throw error
+        driveErrMsg = getErrMsg(err);
+        console.warn('Drive upload error:', driveErrMsg, err);
         if (!blobUrl) {
-          throw new Error(`Both uploads failed: ${err.message}`);
+          throw new Error(`Upload failed — Blob: ${blobUrl === null ? 'failed' : 'ok'}, Drive: ${driveErrMsg}`);
         }
-        console.warn('Drive upload failed, using Blob only:', err.message);
       }
 
       // Return with primary and backup URLs
