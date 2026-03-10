@@ -2197,8 +2197,7 @@
     /* ====== CONFIG ====== */
     const WA_API = '/api/contents';
     const GPT_API = '/api/prompts';
-    const NOTION_UPLOAD_API = '/api/upload-notion';
-    const DRIVE_APP_SCRIPT = 'https://script.google.com/macros/s/AKfycbwo1LQ3Az61J11c7bXrOw4W6z2QaNxy6sQFryNdjPVbqBuNjcCPf7YObAc8caI0Q6kcrQ/exec';
+    const DRIVE_UPLOAD_API = '/api/upload-drive';
     const UNASSIGNED_FOLDER = 'Unassigned';
     const defaultWAFolders = ['Construction Updates', 'Investors Reach Out', 'Resell', 'Conveyance'];
 
@@ -3555,87 +3554,49 @@
     }
 
     async function uploadFileDual(file) {
-      let notionFileUploadId = null;
       let driveUrl = null;
       let driveId = null;
 
-      // Read the file ONCE — prevents FileReader permission errors on macOS/Safari/Chrome.
+      // Read the file ONCE
       const dataURL = await fileToDataURL(file);
       const base64 = dataURL.split(',')[1] || '';
 
-      // Step 1: Upload to Notion (primary storage, S3-hosted)
-      try {
-        const notionRes = await fetch(NOTION_UPLOAD_API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            file: dataURL,
-            filename: file.name,
-            contentType: file.type || 'application/octet-stream'
-          })
-        });
-        const notionData = await notionRes.json();
-        if (notionRes.ok && notionData.fileUploadId) {
-          notionFileUploadId = notionData.fileUploadId;
-          console.log('✓ Uploaded to Notion:', notionFileUploadId);
-        } else {
-          console.warn('Notion upload failed, will use Drive only:', notionData.message);
-        }
-      } catch (err) {
-        console.warn('Notion upload error, will use Drive only:', getErrMsg(err));
+      // Upload to Google Drive via server-side proxy (avoids CORS)
+      const driveRes = await fetch(DRIVE_UPLOAD_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          files: [{
+            name: file.name,
+            mimeType: file.type || 'application/octet-stream',
+            dataBase64: base64
+          }]
+        })
+      });
+
+      const driveData = await driveRes.json();
+      console.log('🔍 Drive response:', JSON.stringify(driveData));
+
+      if (!driveRes.ok || !driveData.success) {
+        throw new Error(driveData.error || `Drive upload failed (HTTP ${driveRes.status})`);
       }
 
-      // Step 2: Upload to Google Drive (permanent backup + immediate preview URL)
-      let driveErrMsg = null;
-      try {
-        const driveRes = await fetch(DRIVE_APP_SCRIPT, {
-          method: 'POST',
-          body: JSON.stringify({
-            files: [{
-              name: file.name,
-              mimeType: file.type || 'application/octet-stream',
-              dataBase64: base64
-            }]
-          })
-        });
-
-        const driveText = await driveRes.text();
-        let driveData;
-        try { driveData = JSON.parse(driveText); } catch {
-          throw new Error(`Drive returned non-JSON: ${driveText.slice(0, 200)}`);
-        }
-
-        console.log('🔍 Drive raw response:', JSON.stringify(driveData));
-
-        if (!driveRes.ok || !driveData.success) {
-          throw new Error(driveData.error || `Drive upload failed (HTTP ${driveRes.status})`);
-        }
-
-        const driveFile = driveData.files?.[0];
-        console.log('🔍 Drive file object:', JSON.stringify(driveFile));
-        driveId = driveFile?.id || null;
-        // Prefer constructing URL from file ID (Apps Script sometimes returns a path instead of a URL)
-        if (driveId) {
-          driveUrl = `https://drive.google.com/file/d/${driveId}/view`;
-        } else if (driveFile?.url && driveFile.url.startsWith('http')) {
-          driveUrl = driveFile.url;
-        } else {
-          throw new Error('Drive returned no usable file URL or ID');
-        }
-        console.log('✓ Uploaded to Google Drive:', driveUrl);
-      } catch (err) {
-        driveErrMsg = getErrMsg(err);
-        console.warn('Drive upload error:', driveErrMsg, err);
-        if (!notionFileUploadId) {
-          throw new Error(`Both uploads failed. Drive: ${driveErrMsg}`);
-        }
+      const driveFile = driveData.files?.[0];
+      driveId = driveFile?.id || null;
+      if (driveId) {
+        driveUrl = `https://drive.google.com/file/d/${driveId}/view`;
+      } else if (driveFile?.url && driveFile.url.startsWith('http')) {
+        driveUrl = driveFile.url;
+      } else {
+        throw new Error('Drive returned no usable file URL or ID');
       }
+      console.log('✓ Uploaded to Google Drive:', driveUrl);
 
       return {
         name: file.name,
-        url: fixGoogleDriveUrl(driveUrl),   // Drive export=view URL for immediate preview
-        backupUrl: driveUrl,                 // Original Drive URL for download
-        notionFileUploadId,                  // Attached to Notion page → fresh S3 URL after sync
+        url: fixGoogleDriveUrl(driveUrl),
+        backupUrl: driveUrl,
+        notionFileUploadId: null,
         id: driveId
       };
     }
