@@ -65,24 +65,24 @@
       background: var(--card);
       border: 1px solid var(--border);
       border-left: 3px solid var(--brand);
-      transition: all .3s ease;
+      transition: transform .2s ease, box-shadow .2s ease;
+      contain: layout style;
     }
 
     .card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, .15);
-      border-left-color: var(--brand);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
     }
 
     [data-theme="dark"] .card:hover {
-      box-shadow: 0 12px 40px rgba(0, 0, 0, .4);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
     }
 
     .chip {
       border-radius: 9999px;
       padding: 2px 8px;
       font-size: 12px;
-      transition: all .2s ease;
+      transition: color .15s ease, border-color .15s ease, background .15s ease;
     }
 
     .chip:hover {
@@ -113,7 +113,7 @@
       cursor: pointer;
       position: relative;
       overflow: hidden;
-      transition: all .2s ease;
+      transition: color .15s ease, border-color .15s ease, background .15s ease;
     }
 
     .btn:hover:not([disabled]) {
@@ -284,7 +284,7 @@
       border: 1px solid var(--border);
       background: transparent;
       cursor: pointer;
-      transition: all .2s ease;
+      transition: color .15s ease, border-color .15s ease, background .15s ease;
     }
 
     .format-btn:hover {
@@ -306,7 +306,7 @@
     /* ---------- FILE PREVIEW CARDS ---------- */
     .file-preview-card {
       position: relative;
-      transition: all .2s ease;
+      transition: color .15s ease, border-color .15s ease, background .15s ease;
     }
 
     .file-preview-card:hover {
@@ -320,12 +320,12 @@
     }
 
     .file-preview-thumbnail {
-      transition: all .2s ease;
+      transition: color .15s ease, border-color .15s ease, background .15s ease;
     }
 
     .file-preview-remove {
       opacity: 0;
-      transition: all .2s ease;
+      transition: color .15s ease, border-color .15s ease, background .15s ease;
     }
 
     .file-preview-card:hover .file-preview-remove {
@@ -342,7 +342,7 @@
       padding: .75rem 1.5rem;
       border-bottom: 2px solid transparent;
       cursor: pointer;
-      transition: all .2s;
+      transition: color .15s ease, border-color .15s ease, background .15s ease;
     }
 
     .tab:hover {
@@ -381,7 +381,7 @@
       border: 3px solid var(--brand);
       border-radius: 12px;
       z-index: 10000;
-      transition: all .3s ease;
+      transition: color .2s ease, border-color .2s ease, background .2s ease;
       pointer-events: none;
     }
 
@@ -759,7 +759,7 @@
     .stat-value {
       font-size: 2rem;
       font-weight: 700;
-      transition: all .3s ease;
+      transition: color .2s ease, border-color .2s ease, background .2s ease;
     }
 
     .stat-value:hover {
@@ -796,7 +796,7 @@
       border: 1px solid var(--border);
       font-size: 13px;
       cursor: pointer;
-      transition: all .2s;
+      transition: color .15s ease, border-color .15s ease, background .15s ease;
       background: var(--card);
       color: var(--fg);
       white-space: nowrap;
@@ -1049,7 +1049,7 @@
       overflow: hidden;
       border: 1px solid var(--border);
       background: var(--muted);
-      transition: all .3s ease;
+      transition: color .2s ease, border-color .2s ease, background .2s ease;
       text-decoration: none;
       color: inherit;
     }
@@ -1171,7 +1171,7 @@
       padding: 12px 16px;
       border-radius: 8px;
       cursor: pointer;
-      transition: all .2s ease;
+      transition: color .15s ease, border-color .15s ease, background .15s ease;
       background: var(--card);
       border: 1px solid var(--border);
     }
@@ -1418,7 +1418,7 @@
       justify-content: center;
       cursor: pointer;
       z-index: 100001;
-      transition: all .2s;
+      transition: color .15s ease, border-color .15s ease, background .15s ease;
     }
 
     .media-lightbox-close:hover {
@@ -1481,7 +1481,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      transition: all .2s;
+      transition: color .15s ease, border-color .15s ease, background .15s ease;
     }
 
     .media-lightbox-btn:hover {
@@ -1518,7 +1518,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      transition: all .2s;
+      transition: color .15s ease, border-color .15s ease, background .15s ease;
       font-size: 14px;
     }
 
