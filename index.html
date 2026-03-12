@@ -1719,54 +1719,45 @@
     <div id="properties-section" class="tab-content hidden">
 
       <!-- Filters Panel -->
-      <div class="card rounded-xl p-4 shadow-soft flex flex-col gap-4">
+      <div class="flex flex-col gap-3">
 
         <!-- Search -->
         <div class="search-wrapper">
           <i data-lucide="search" class="search-icon"></i>
-          <input id="prop-searchInput" placeholder="Search properties, projects, areas, owners..."
+          <input id="prop-searchInput" placeholder="Search by project, area, developer, owner, unit..."
             class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent" />
           <i data-lucide="x" class="search-clear hidden" id="prop-searchClear"></i>
         </div>
 
+        <!-- Showing count -->
+        <p class="text-sm text-[var(--muted-ink)]">
+          Showing <strong id="prop-resultCount" style="color:var(--brand)">0</strong> of
+          <strong id="prop-totalCount">0</strong> properties
+        </p>
+
         <!-- Row 1: Dropdown filters -->
         <div class="flex flex-wrap gap-2 items-center">
-          <span class="text-sm text-[var(--muted-ink)] font-medium w-14 shrink-0">Filters:</span>
+          <span class="text-sm text-[var(--muted-ink)] font-medium w-20 shrink-0">Filters:</span>
           <select id="prop-areaSelect" class="prop-select">
-            <option value="all">Area ▾</option>
+            <option value="all">Area</option>
           </select>
           <select id="prop-developerSelect" class="prop-select">
-            <option value="all">Developer ▾</option>
+            <option value="all">Developer</option>
           </select>
           <select id="prop-typeSelect" class="prop-select">
-            <option value="all">Type ▾</option>
+            <option value="all">Type</option>
           </select>
           <select id="prop-prioritySelect" class="prop-select">
-            <option value="all">Priority ▾</option>
-          </select>
-          <select id="prop-statusSelect" class="prop-select">
-            <option value="all">Status ▾</option>
-          </select>
-          <select id="prop-viewSelect" class="prop-select">
-            <option value="all">View ▾</option>
-          </select>
-          <select id="prop-furnishedSelect" class="prop-select">
-            <option value="all">Furnished ▾</option>
-          </select>
-          <select id="prop-paymentPlanSelect" class="prop-select">
-            <option value="all">Payment Plan ▾</option>
-          </select>
-          <select id="prop-handoverSelect" class="prop-select">
-            <option value="all">Handover ▾</option>
+            <option value="all">Priority</option>
           </select>
           <button id="prop-clearFilters" class="btn btn-sm text-xs hidden" style="color:var(--brand)">
-            <i data-lucide="x"></i> Clear All
+            <i data-lucide="x"></i> Clear
           </button>
         </div>
 
         <!-- Row 2: Bedroom pills -->
         <div class="flex flex-wrap gap-2 items-center">
-          <span class="text-sm text-[var(--muted-ink)] font-medium w-14 shrink-0">Bedrooms:</span>
+          <span class="text-sm text-[var(--muted-ink)] font-medium w-20 shrink-0">Bedrooms:</span>
           <div id="prop-bedroomPills" class="flex flex-wrap gap-2">
             <!-- populated by JS -->
           </div>
@@ -1774,29 +1765,12 @@
 
         <!-- Row 3: Price range -->
         <div class="flex flex-wrap gap-2 items-center">
-          <span class="text-sm text-[var(--muted-ink)] font-medium w-14 shrink-0">Price (AED):</span>
+          <span class="text-sm text-[var(--muted-ink)] font-medium w-20 shrink-0">Price (AED):</span>
           <input id="prop-priceMin" type="number" placeholder="Min"
-            class="w-32 p-2 rounded-lg border border-[var(--border)] bg-transparent text-sm" />
+            class="w-28 p-2 rounded-lg border border-[var(--border)] bg-transparent text-sm" />
           <span class="text-[var(--muted-ink)]">—</span>
           <input id="prop-priceMax" type="number" placeholder="Max"
-            class="w-32 p-2 rounded-lg border border-[var(--border)] bg-transparent text-sm" />
-          <span class="text-xs text-[var(--muted-ink)] ml-2">
-            Total value: <strong id="prop-statTotalValue" style="color:var(--brand)">—</strong>
-            &nbsp;· Avg: <strong id="prop-statAvgPrice2" style="color:var(--brand)">—</strong>
-          </span>
-        </div>
-
-        <!-- Row 4: Size range -->
-        <div class="flex flex-wrap gap-2 items-center">
-          <span class="text-sm text-[var(--muted-ink)] font-medium w-14 shrink-0">Size (sqft):</span>
-          <input id="prop-sizeMin" type="number" placeholder="Min"
-            class="w-32 p-2 rounded-lg border border-[var(--border)] bg-transparent text-sm" />
-          <span class="text-[var(--muted-ink)]">—</span>
-          <input id="prop-sizeMax" type="number" placeholder="Max"
-            class="w-32 p-2 rounded-lg border border-[var(--border)] bg-transparent text-sm" />
-          <span class="text-xs text-[var(--muted-ink)] ml-2">
-            Showing <strong id="prop-resultCount">0</strong> of <strong id="prop-totalCount">0</strong> properties
-          </span>
+            class="w-28 p-2 rounded-lg border border-[var(--border)] bg-transparent text-sm" />
         </div>
       </div>
 
@@ -5993,8 +5967,7 @@
       });
       const sorted = Object.keys(counts).sort((a, b) => parseFloat(a) - parseFloat(b));
       const container = document.getElementById('prop-bedroomPills');
-      container.innerHTML = `<button class="prop-bed-pill active" data-bed="all">All <span class="pill-count">${propAllProperties.length}</span></button>` +
-        sorted.map(k => {
+      container.innerHTML = sorted.map(k => {
           const label = k === '0' ? 'Studio' : `${k} BR`;
           return `<button class="prop-bed-pill" data-bed="${k}">${label} <span class="pill-count">${counts[k]}</span></button>`;
         }).join('');
@@ -6017,22 +5990,10 @@
 
         const uniq = (fn) => [...new Set(propAllProperties.map(fn).filter(Boolean))].sort();
 
-        propPopulateSelect('prop-areaSelect',        uniq(p => p.area));
-        propPopulateSelect('prop-developerSelect',   uniq(p => p.developer));
-        propPopulateSelect('prop-typeSelect',        uniq(p => p.propertyType));
-        propPopulateSelect('prop-prioritySelect',    uniq(p => p.priority));
-        propPopulateSelect('prop-statusSelect',      uniq(p => p.status));
-        propPopulateSelect('prop-viewSelect',        uniq(p => p.view));
-        propPopulateSelect('prop-furnishedSelect',   uniq(p => p.furnished));
-        propPopulateSelect('prop-paymentPlanSelect', uniq(p => p.paymentPlan));
-
-        // Handover: extract year/quarter from handoverDate strings
-        const handovers = uniq(p => {
-          if (!p.handoverDate) return null;
-          // Try to extract year or keep as-is (truncate to ~20 chars)
-          return String(p.handoverDate).slice(0, 20);
-        });
-        propPopulateSelect('prop-handoverSelect', handovers);
+        propPopulateSelect('prop-areaSelect',      uniq(p => p.area));
+        propPopulateSelect('prop-developerSelect', uniq(p => p.developer));
+        propPopulateSelect('prop-typeSelect',      uniq(p => p.propertyType));
+        propPopulateSelect('prop-prioritySelect',  uniq(p => p.priority));
 
         propBuildBedroomPills();
 
@@ -6043,10 +6004,9 @@
         const prices = propAllProperties.map(p => p.sellingPriceAed).filter(Boolean);
         const avg    = prices.length ? Math.round(prices.reduce((a,b) => a+b,0) / prices.length) : null;
         const total  = prices.length ? Math.round(prices.reduce((a,b) => a+b,0)) : null;
-        document.getElementById('prop-statAvgPrice').textContent  = avg   ? propFormatAED(avg)   : '—';
-        document.getElementById('prop-statAvgPrice2').textContent  = avg  ? 'AED ' + propFormatAED(avg) : '—';
-        document.getElementById('prop-statTotalValue').textContent = total ? 'AED ' + propFormatAED(total) : '—';
+        document.getElementById('prop-statAvgPrice').textContent = avg ? propFormatAED(avg) : '—';
         document.getElementById('prop-totalCount').textContent = propAllProperties.length;
+        document.getElementById('prop-resultCount').textContent = propAllProperties.length;
 
         propApplyFilters();
       } catch (e) {
@@ -6057,57 +6017,33 @@
 
     function propGetActiveFilters() {
       return {
-        search:      document.getElementById('prop-searchInput').value.toLowerCase().trim(),
-        area:        document.getElementById('prop-areaSelect').value,
-        developer:   document.getElementById('prop-developerSelect').value,
-        type:        document.getElementById('prop-typeSelect').value,
-        priority:    document.getElementById('prop-prioritySelect').value,
-        status:      document.getElementById('prop-statusSelect').value,
-        view:        document.getElementById('prop-viewSelect').value,
-        furnished:   document.getElementById('prop-furnishedSelect').value,
-        paymentPlan: document.getElementById('prop-paymentPlanSelect').value,
-        handover:    document.getElementById('prop-handoverSelect').value,
-        priceMin:    parseFloat(document.getElementById('prop-priceMin').value) || null,
-        priceMax:    parseFloat(document.getElementById('prop-priceMax').value) || null,
-        sizeMin:     parseFloat(document.getElementById('prop-sizeMin').value) || null,
-        sizeMax:     parseFloat(document.getElementById('prop-sizeMax').value) || null,
-        bedrooms:    propActiveBedroom,
+        search:    document.getElementById('prop-searchInput').value.toLowerCase().trim(),
+        area:      document.getElementById('prop-areaSelect').value,
+        developer: document.getElementById('prop-developerSelect').value,
+        type:      document.getElementById('prop-typeSelect').value,
+        priority:  document.getElementById('prop-prioritySelect').value,
+        priceMin:  parseFloat(document.getElementById('prop-priceMin').value) || null,
+        priceMax:  parseFloat(document.getElementById('prop-priceMax').value) || null,
+        bedrooms:  propActiveBedroom,
       };
     }
 
     function propApplyFilters() {
       const f = propGetActiveFilters();
 
-      // Show/hide clear button
-      const hasFilter = f.search || f.area !== 'all' || f.developer !== 'all' || f.type !== 'all' ||
-        f.priority !== 'all' || f.status !== 'all' || f.view !== 'all' || f.furnished !== 'all' ||
-        f.paymentPlan !== 'all' || f.handover !== 'all' || f.priceMin || f.priceMax ||
-        f.sizeMin || f.sizeMax || f.bedrooms !== 'all';
+      const hasFilter = f.search || f.area !== 'all' || f.developer !== 'all' ||
+        f.type !== 'all' || f.priority !== 'all' || f.priceMin || f.priceMax || f.bedrooms !== 'all';
       document.getElementById('prop-clearFilters').classList.toggle('hidden', !hasFilter);
-
-      // Mark active selects
-      ['prop-areaSelect','prop-developerSelect','prop-typeSelect','prop-prioritySelect',
-       'prop-statusSelect','prop-viewSelect','prop-furnishedSelect','prop-paymentPlanSelect','prop-handoverSelect']
-        .forEach(propMarkSelectActive);
+      ['prop-areaSelect','prop-developerSelect','prop-typeSelect','prop-prioritySelect'].forEach(propMarkSelectActive);
 
       propFiltered = propAllProperties.filter(p => {
-        if (f.area        !== 'all' && p.area        !== f.area)        return false;
-        if (f.developer   !== 'all' && p.developer   !== f.developer)   return false;
-        if (f.type        !== 'all' && p.propertyType!== f.type)        return false;
-        if (f.priority    !== 'all' && p.priority    !== f.priority)    return false;
-        if (f.status      !== 'all' && p.status      !== f.status)      return false;
-        if (f.view        !== 'all' && p.view        !== f.view)        return false;
-        if (f.furnished   !== 'all' && p.furnished   !== f.furnished)   return false;
-        if (f.paymentPlan !== 'all' && p.paymentPlan !== f.paymentPlan) return false;
-        if (f.handover    !== 'all' && (!p.handoverDate || !String(p.handoverDate).startsWith(f.handover.slice(0,10)))) return false;
-        if (f.bedrooms    !== 'all') {
-          const b = parseFloat(f.bedrooms);
-          if (p.bedrooms !== b) return false;
-        }
+        if (f.area      !== 'all' && p.area        !== f.area)      return false;
+        if (f.developer !== 'all' && p.developer   !== f.developer) return false;
+        if (f.type      !== 'all' && p.propertyType !== f.type)     return false;
+        if (f.priority  !== 'all' && p.priority    !== f.priority)  return false;
+        if (f.bedrooms  !== 'all' && p.bedrooms    !== parseFloat(f.bedrooms)) return false;
         if (f.priceMin != null && (p.sellingPriceAed == null || p.sellingPriceAed < f.priceMin)) return false;
         if (f.priceMax != null && (p.sellingPriceAed == null || p.sellingPriceAed > f.priceMax)) return false;
-        if (f.sizeMin  != null && (p.sizeSqft == null || p.sizeSqft < f.sizeMin)) return false;
-        if (f.sizeMax  != null && (p.sizeSqft == null || p.sizeSqft > f.sizeMax)) return false;
         if (f.search) {
           const hay = [p.unit, p.project, p.area, p.developer, p.propertyType,
                        p.view, p.pitchText, p.ownerName, p.paymentPlan, p.status, p.buyerNotes]
@@ -6117,14 +6053,7 @@
         return true;
       });
 
-      // Update filtered stats
-      const fPrices = propFiltered.map(p => p.sellingPriceAed).filter(Boolean);
-      const fTotal  = fPrices.length ? Math.round(fPrices.reduce((a,b)=>a+b,0)) : null;
-      const fAvg    = fPrices.length ? Math.round(fTotal / fPrices.length) : null;
-      document.getElementById('prop-statTotalValue').textContent = fTotal ? 'AED ' + propFormatAED(fTotal) : '—';
-      document.getElementById('prop-statAvgPrice2').textContent  = fAvg   ? 'AED ' + propFormatAED(fAvg)   : '—';
       document.getElementById('prop-resultCount').textContent = propFiltered.length;
-
       propPage = 1;
       propRender();
     }
@@ -6240,17 +6169,17 @@
             <div class="grid grid-cols-2 gap-x-6 gap-y-2">${content}</div>
           </div>`;
         }
-        const id = 'prop-collapse-' + title.replace(/\s+/g,'_');
+        const uid = 'prop-sec-' + Math.random().toString(36).slice(2);
         return `<div>
-          <button onclick="(function(el){var b=el.closest('div').querySelector('.prop-collapsible');var open=b.style.display!=='none';b.style.display=open?'none':'';el.querySelector('.prop-chevron').style.transform=open?'rotate(-90deg)':'';})(this)"
-            class="flex items-center gap-2 w-full text-left mb-2 group">
+          <button onclick="propToggleSection('${uid}')"
+            class="flex items-center gap-2 w-full text-left mb-2">
             <h4 class="text-xs font-semibold uppercase tracking-widest" style="color:var(--brand)">${title}</h4>
-            <svg class="prop-chevron w-3 h-3 shrink-0 transition-transform duration-200" style="color:var(--brand)"
+            <svg id="chev-${uid}" class="w-3 h-3 shrink-0 transition-transform duration-200" style="color:var(--brand);transform:rotate(0deg)"
               fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
             </svg>
           </button>
-          <div class="prop-collapsible grid grid-cols-2 gap-x-6 gap-y-2">${content}</div>
+          <div id="${uid}" class="grid grid-cols-2 gap-x-6 gap-y-2">${content}</div>
         </div>`;
       }
       function linkBtn(href, label, icon) {
@@ -6335,6 +6264,14 @@
       modal.classList.remove('flex');
     }
 
+    function propToggleSection(uid) {
+      const body = document.getElementById(uid);
+      const chev = document.getElementById('chev-' + uid);
+      const collapsed = body.style.display === 'none';
+      body.style.display = collapsed ? '' : 'none';
+      chev.style.transform = collapsed ? 'rotate(0deg)' : 'rotate(-90deg)';
+    }
+
     // ESC key closes modal
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closePropModal();
@@ -6350,21 +6287,19 @@
       document.getElementById('prop-searchClear').classList.add('hidden');
       propApplyFilters();
     });
-    ['prop-areaSelect','prop-developerSelect','prop-typeSelect','prop-prioritySelect',
-     'prop-statusSelect','prop-viewSelect','prop-furnishedSelect','prop-paymentPlanSelect','prop-handoverSelect']
+    ['prop-areaSelect','prop-developerSelect','prop-typeSelect','prop-prioritySelect']
       .forEach(id => document.getElementById(id).addEventListener('change', propApplyFilters));
-    ['prop-priceMin','prop-priceMax','prop-sizeMin','prop-sizeMax']
+    ['prop-priceMin','prop-priceMax']
       .forEach(id => document.getElementById(id).addEventListener('input', propApplyFilters));
     document.getElementById('prop-clearFilters').addEventListener('click', () => {
       document.getElementById('prop-searchInput').value = '';
       document.getElementById('prop-searchClear').classList.add('hidden');
-      ['prop-areaSelect','prop-developerSelect','prop-typeSelect','prop-prioritySelect',
-       'prop-statusSelect','prop-viewSelect','prop-furnishedSelect','prop-paymentPlanSelect','prop-handoverSelect']
+      ['prop-areaSelect','prop-developerSelect','prop-typeSelect','prop-prioritySelect']
         .forEach(id => { document.getElementById(id).value = 'all'; });
-      ['prop-priceMin','prop-priceMax','prop-sizeMin','prop-sizeMax']
+      ['prop-priceMin','prop-priceMax']
         .forEach(id => { document.getElementById(id).value = ''; });
       propActiveBedroom = 'all';
-      document.querySelectorAll('.prop-bed-pill').forEach(b => b.classList.toggle('active', b.dataset.bed === 'all'));
+      document.querySelectorAll('.prop-bed-pill').forEach(b => b.classList.remove('active'));
       propApplyFilters();
     });
     document.getElementById('prop-prevPage').addEventListener('click', () => { propPage--; propRender(); });
