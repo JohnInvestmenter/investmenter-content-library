@@ -1522,6 +1522,9 @@
       <div class="tab" data-tab="prompts">
         <i data-lucide="cpu"></i> GPT Prompts
       </div>
+      <div class="tab" data-tab="properties">
+        <i data-lucide="building-2"></i> Property Library
+      </div>
     </div>
 
     <!-- ==================== WHATSAPP SECTION ==================== -->
@@ -1655,6 +1658,77 @@
           <div>
             <div id="gpt-statRecent" class="stat-value">0</div>
             <div class="text-sm text-[var(--muted-ink)]">Recently Used</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ==================== PROPERTY LIBRARY SECTION ==================== -->
+    <div id="properties-section" class="tab-content hidden">
+
+      <!-- Toolbar -->
+      <section class="flex flex-col gap-3">
+        <div class="flex gap-2 w-full flex-wrap">
+          <div class="search-wrapper flex-1" style="min-width:200px">
+            <i data-lucide="search" class="search-icon"></i>
+            <input id="prop-searchInput" placeholder="Search properties, projects, areas..."
+              class="w-full p-3 rounded-lg border border-[var(--border)] bg-transparent" />
+            <i data-lucide="x" class="search-clear hidden" id="prop-searchClear"></i>
+          </div>
+          <select id="prop-areaSelect" class="p-3 rounded-lg border border-[var(--border)] bg-[var(--card)] text-[var(--fg)]">
+            <option value="all">All Areas</option>
+          </select>
+          <select id="prop-developerSelect" class="p-3 rounded-lg border border-[var(--border)] bg-[var(--card)] text-[var(--fg)]">
+            <option value="all">All Developers</option>
+          </select>
+          <select id="prop-bedroomsSelect" class="p-3 rounded-lg border border-[var(--border)] bg-[var(--card)] text-[var(--fg)]">
+            <option value="all">All Bedrooms</option>
+            <option value="0">Studio</option>
+            <option value="1">1 Bedroom</option>
+            <option value="2">2 Bedrooms</option>
+            <option value="3">3 Bedrooms</option>
+            <option value="4">4+ Bedrooms</option>
+          </select>
+          <select id="prop-prioritySelect" class="p-3 rounded-lg border border-[var(--border)] bg-[var(--card)] text-[var(--fg)]">
+            <option value="all">All Priorities</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Grid -->
+      <section>
+        <div id="prop-contentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
+          <div class="col-span-full text-center py-12 text-[var(--muted-ink)]">Loading properties...</div>
+        </div>
+        <div class="flex items-center justify-between mt-4">
+          <button id="prop-prevPage" class="btn" disabled><i data-lucide="chevron-left"></i> Prev</button>
+          <div class="text-sm text-[var(--muted-ink)]">
+            Page <span id="prop-pageNum">1</span> of <span id="prop-pageCount">1</span>
+            &nbsp;·&nbsp; <span id="prop-resultCount">0</span> properties
+          </div>
+          <button id="prop-nextPage" class="btn">Next <i data-lucide="chevron-right"></i></button>
+        </div>
+      </section>
+
+      <!-- Stats -->
+      <section class="card rounded-xl p-4 shadow-soft">
+        <h2 class="font-semibold mb-2">Property Statistics</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div>
+            <div id="prop-statTotal" class="stat-value">0</div>
+            <div class="text-sm text-[var(--muted-ink)]">Total Properties</div>
+          </div>
+          <div>
+            <div id="prop-statAreas" class="stat-value">0</div>
+            <div class="text-sm text-[var(--muted-ink)]">Areas</div>
+          </div>
+          <div>
+            <div id="prop-statDevelopers" class="stat-value">0</div>
+            <div class="text-sm text-[var(--muted-ink)]">Developers</div>
+          </div>
+          <div>
+            <div id="prop-statAvgPrice" class="stat-value">—</div>
+            <div class="text-sm text-[var(--muted-ink)]">Avg. Price (AED)</div>
           </div>
         </div>
       </section>
@@ -2192,7 +2266,7 @@
       const { tab, id } = parseHash();
 
       // Switch to the correct tab
-      if (tab === 'whatsapp' || tab === 'prompts') {
+      if (tab === 'whatsapp' || tab === 'prompts' || tab === 'properties') {
         const tabElement = document.querySelector(`.tab[data-tab="${tab}"]`);
         if (tabElement && !tabElement.classList.contains('active')) {
           document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -5747,6 +5821,327 @@
 
         console.log('✅ Command Palette ready (press Cmd+K or Ctrl+K)');
       }, 500); // Wait for content to load
+    });
+  </script>
+
+  <!-- ==================== PROPERTY MODAL ==================== -->
+  <div id="prop-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50" style="backdrop-filter:blur(4px)">
+    <div class="card w-full max-w-2xl rounded-xl shadow-soft flex flex-col" style="max-height:90vh">
+      <div id="prop-modal-header" class="flex-shrink-0 border-b border-[var(--border)] px-6 py-5">
+        <!-- filled by JS -->
+      </div>
+      <div id="prop-modal-body" class="overflow-y-auto p-6 space-y-6 scrollbar-thin">
+        <!-- filled by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PROPERTY LIBRARY SCRIPT ==================== -->
+  <script>
+    /* ====== PROPERTY LIBRARY ====== */
+    let propAllProperties = [];
+    let propFiltered = [];
+    let propPage = 1;
+    const PROP_PER_PAGE = 24;
+    let propLoaded = false;
+
+    function propFormatAED(v) {
+      if (v == null) return '—';
+      return new Intl.NumberFormat('en-AE').format(Math.round(v));
+    }
+    function propFormatEUR(v) {
+      if (v == null) return '—';
+      return new Intl.NumberFormat('de-DE').format(Math.round(v));
+    }
+
+    function propPriorityStyle(priority) {
+      if (!priority) return '';
+      if (priority.includes('Distress')) return 'background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.3)';
+      if (priority.includes('Motivated')) return 'background:rgba(249,115,22,.15);color:#fb923c;border:1px solid rgba(249,115,22,.3)';
+      if (priority.includes('Close to OP')) return 'background:rgba(214,177,96,.15);color:var(--brand);border:1px solid rgba(214,177,96,.3)';
+      if (priority.includes('Genuine Resale')) return 'background:rgba(16,185,129,.15);color:#34d399;border:1px solid rgba(16,185,129,.3)';
+      if (priority.includes('Fully Paid')) return 'background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.3)';
+      return 'background:rgba(120,120,120,.15);color:var(--muted-ink)';
+    }
+
+    async function loadProperties() {
+      if (propLoaded) return;
+      try {
+        const res = await fetch('/properties.json');
+        propAllProperties = await res.json();
+        propLoaded = true;
+
+        const areas = [...new Set(propAllProperties.map(p => p.area).filter(Boolean))].sort();
+        const devs  = [...new Set(propAllProperties.map(p => p.developer).filter(Boolean))].sort();
+        const prios = [...new Set(propAllProperties.map(p => p.priority).filter(Boolean))].sort();
+
+        const areaEl  = document.getElementById('prop-areaSelect');
+        const devEl   = document.getElementById('prop-developerSelect');
+        const prioEl  = document.getElementById('prop-prioritySelect');
+        areas.forEach(a => areaEl.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`));
+        devs.forEach(d  => devEl.insertAdjacentHTML('beforeend',  `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`));
+        prios.forEach(p => prioEl.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`));
+
+        document.getElementById('prop-statTotal').textContent = propAllProperties.length;
+        document.getElementById('prop-statAreas').textContent = areas.length;
+        document.getElementById('prop-statDevelopers').textContent = devs.length;
+        const prices = propAllProperties.map(p => p.sellingPriceAed).filter(Boolean);
+        const avg = prices.length ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : null;
+        document.getElementById('prop-statAvgPrice').textContent = avg ? propFormatAED(avg) : '—';
+
+        propApplyFilters();
+      } catch (e) {
+        document.getElementById('prop-contentGrid').innerHTML =
+          '<div class="col-span-full text-center py-12 text-red-400">Failed to load properties. Please try again.</div>';
+      }
+    }
+
+    function propApplyFilters() {
+      const search    = document.getElementById('prop-searchInput').value.toLowerCase().trim();
+      const area      = document.getElementById('prop-areaSelect').value;
+      const developer = document.getElementById('prop-developerSelect').value;
+      const bedrooms  = document.getElementById('prop-bedroomsSelect').value;
+      const priority  = document.getElementById('prop-prioritySelect').value;
+
+      propFiltered = propAllProperties.filter(p => {
+        if (area      !== 'all' && p.area      !== area)      return false;
+        if (developer !== 'all' && p.developer !== developer) return false;
+        if (priority  !== 'all' && p.priority  !== priority)  return false;
+        if (bedrooms  !== 'all') {
+          const b = parseInt(bedrooms);
+          if (b === 4) { if (p.bedrooms == null || p.bedrooms < 4) return false; }
+          else         { if (p.bedrooms !== b) return false; }
+        }
+        if (search) {
+          const hay = [p.unit, p.project, p.area, p.developer, p.propertyType,
+                       p.view, p.pitchText, p.ownerName, p.paymentPlan, p.status]
+            .filter(Boolean).join(' ').toLowerCase();
+          if (!hay.includes(search)) return false;
+        }
+        return true;
+      });
+
+      propPage = 1;
+      propRender();
+    }
+
+    function propRender() {
+      const grid  = document.getElementById('prop-contentGrid');
+      const total = propFiltered.length;
+      const pages = Math.max(1, Math.ceil(total / PROP_PER_PAGE));
+      if (propPage > pages) propPage = pages;
+      const slice = propFiltered.slice((propPage - 1) * PROP_PER_PAGE, propPage * PROP_PER_PAGE);
+
+      document.getElementById('prop-pageNum').textContent    = propPage;
+      document.getElementById('prop-pageCount').textContent  = pages;
+      document.getElementById('prop-resultCount').textContent = total;
+      document.getElementById('prop-prevPage').disabled = propPage <= 1;
+      document.getElementById('prop-nextPage').disabled = propPage >= pages;
+
+      if (!slice.length) {
+        grid.innerHTML = '<div class="col-span-full text-center py-12 text-[var(--muted-ink)]">No properties match your filters.</div>';
+        return;
+      }
+
+      grid.innerHTML = slice.map(p => {
+        const pctColor = p.pctOverUnder == null ? '' :
+          p.pctOverUnder > 0 ? 'color:#34d399' : p.pctOverUnder < 0 ? 'color:#f87171' : '';
+        const pctText = p.pctOverUnder != null
+          ? `${p.pctOverUnder > 0 ? '+' : ''}${p.pctOverUnder.toFixed(1)}% vs OP` : '';
+        const prioStyle = propPriorityStyle(p.priority);
+        const dataAttr  = escapeHtml(JSON.stringify(p));
+
+        return `<div class="card rounded-xl p-4 shadow-soft cursor-pointer flex flex-col gap-3"
+                     onclick='openPropertyModal(${JSON.stringify(p).replace(/'/g, "&#39;")})'>
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <div class="font-semibold text-sm leading-tight truncate">
+                ${escapeHtml(p.project || 'Unknown')}
+                <span class="text-[var(--muted-ink)] font-normal">#${escapeHtml(p.unit)}</span>
+              </div>
+              <div class="text-xs text-[var(--muted-ink)] mt-0.5">${escapeHtml(p.area || '—')}</div>
+            </div>
+            ${p.priority ? `<span class="chip text-xs font-medium shrink-0" style="${prioStyle}">${escapeHtml(p.priority)}</span>` : ''}
+          </div>
+          <div>
+            <div class="font-bold" style="color:var(--brand)">AED ${propFormatAED(p.sellingPriceAed)}</div>
+            <div class="text-xs text-[var(--muted-ink)]">
+              EUR ${propFormatEUR(p.sellingPriceEur)}
+              ${pctText ? `&nbsp;·&nbsp;<span style="${pctColor}">${escapeHtml(pctText)}</span>` : ''}
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-1">
+            ${p.bedrooms != null ? `<span class="chip border border-[var(--border)] text-[var(--muted-ink)] text-xs">${p.bedrooms === 0 ? 'Studio' : p.bedrooms + ' Bed'}</span>` : ''}
+            ${p.sizeSqft  ? `<span class="chip border border-[var(--border)] text-[var(--muted-ink)] text-xs">${propFormatAED(p.sizeSqft)} sqft</span>` : ''}
+            ${p.propertyType ? `<span class="chip border border-[var(--border)] text-[var(--muted-ink)] text-xs">${escapeHtml(p.propertyType)}</span>` : ''}
+            ${p.handoverDate ? `<span class="chip border border-[var(--border)] text-[var(--muted-ink)] text-xs">Handover: ${escapeHtml(p.handoverDate)}</span>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function openPropertyModal(p) {
+      const modal  = document.getElementById('prop-modal');
+      const header = document.getElementById('prop-modal-header');
+      const body   = document.getElementById('prop-modal-body');
+
+      const pctColor = p.pctOverUnder == null ? '' :
+        p.pctOverUnder > 0 ? 'color:#34d399' : p.pctOverUnder < 0 ? 'color:#f87171' : '';
+      const pctText = p.pctOverUnder != null
+        ? `${p.pctOverUnder > 0 ? '+' : ''}${p.pctOverUnder.toFixed(1)}% vs OP` : '';
+      const prioStyle = propPriorityStyle(p.priority);
+
+      header.innerHTML = `
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-3 flex-wrap">
+              <h2 class="text-xl font-bold">${escapeHtml(p.project || 'Unknown')}
+                <span class="text-[var(--muted-ink)] font-normal text-base">#${escapeHtml(p.unit)}</span>
+              </h2>
+              ${p.priority ? `<span class="chip text-xs font-semibold" style="${prioStyle}">${escapeHtml(p.priority)}</span>` : ''}
+            </div>
+            <p class="text-sm text-[var(--muted-ink)] mt-1">${escapeHtml(p.area || '—')}${p.developer ? ' · ' + escapeHtml(p.developer) : ''}</p>
+          </div>
+          <button onclick="closePropModal()" class="btn shrink-0"><i data-lucide="x"></i></button>
+        </div>
+        <div class="flex items-baseline justify-between mt-4 pt-4 border-t border-[var(--border)]">
+          <div>
+            <span class="text-2xl font-bold" style="color:var(--brand)">AED ${propFormatAED(p.sellingPriceAed)}</span>
+            <span class="text-base text-[var(--muted-ink)] ml-3">EUR ${propFormatEUR(p.sellingPriceEur)}</span>
+          </div>
+          ${pctText ? `<span class="text-base font-bold" style="${pctColor}">${escapeHtml(pctText)}</span>` : ''}
+        </div>
+        <div class="flex flex-wrap gap-2 mt-3">
+          ${p.bedrooms    != null ? `<span class="chip border border-[var(--border)] text-[var(--muted-ink)] text-xs">${p.bedrooms === 0 ? 'Studio' : p.bedrooms + ' Bedroom' + (p.bedrooms > 1 ? 's' : '')}</span>` : ''}
+          ${p.sizeSqft            ? `<span class="chip border border-[var(--border)] text-[var(--muted-ink)] text-xs">${propFormatAED(p.sizeSqft)} sqft</span>` : ''}
+          ${p.propertyType        ? `<span class="chip border border-[var(--border)] text-[var(--muted-ink)] text-xs">${escapeHtml(p.propertyType)}</span>` : ''}
+          ${p.view                ? `<span class="chip border border-[var(--border)] text-[var(--muted-ink)] text-xs">${escapeHtml(p.view)}</span>` : ''}
+          ${p.furnished           ? `<span class="chip border border-[var(--border)] text-[var(--muted-ink)] text-xs">${escapeHtml(p.furnished)}</span>` : ''}
+          ${p.handoverDate        ? `<span class="chip border border-[var(--border)] text-[var(--muted-ink)] text-xs">Handover: ${escapeHtml(p.handoverDate)}</span>` : ''}
+          ${p.status              ? `<span class="chip border border-[var(--border)] text-[var(--muted-ink)] text-xs">${escapeHtml(p.status)}</span>` : ''}
+        </div>`;
+
+      function row(label, val) {
+        if (val == null || val === '—') return '';
+        return `<div class="text-[var(--muted-ink)] text-sm">${label}</div>
+                <div class="font-medium text-sm">${val}</div>`;
+      }
+      function section(title, rows) {
+        const content = rows.join('');
+        if (!content.trim()) return '';
+        return `<div>
+          <h4 class="text-xs font-semibold uppercase tracking-widest mb-3" style="color:var(--brand)">${title}</h4>
+          <div class="grid grid-cols-2 gap-x-6 gap-y-2">${content}</div>
+        </div>`;
+      }
+      function linkBtn(href, label, icon) {
+        if (!href) return '';
+        return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border border-[var(--border)]
+                 bg-[var(--muted)] text-[var(--muted-ink)] hover:border-[var(--brand)] hover:text-[var(--brand)] transition-all">
+          <i data-lucide="${icon}"></i>${label}
+        </a>`;
+      }
+
+      const paidBar = p.paidPct != null ? `
+        <div class="col-span-2 mt-1">
+          <div style="height:8px;background:var(--muted);border-radius:9999px;overflow:hidden">
+            <div style="width:${Math.min(p.paidPct,100)}%;height:100%;background:var(--brand);border-radius:9999px"></div>
+          </div>
+          <p class="text-xs text-[var(--muted-ink)] mt-1">${p.paidPct}% paid to developer</p>
+        </div>` : '';
+
+      const pitchSection = p.pitchText ? `<div>
+        <h4 class="text-xs font-semibold uppercase tracking-widest mb-3" style="color:var(--brand)">Pitch</h4>
+        <p class="text-sm leading-relaxed">${escapeHtml(p.pitchText)}</p>
+      </div>` : '';
+
+      const links = [
+        linkBtn(p.googleMapsLink, 'Google Maps', 'map-pin'),
+        linkBtn(p.driveLink,      'Drive Folder', 'folder'),
+        linkBtn(p.brochureLink,   'Brochure',     'file-text'),
+        linkBtn(p.layoutLink,     'Layout',       'layout'),
+        linkBtn(p.nextStepsPdf,   'Next Steps',   'clipboard-list'),
+        linkBtn(p.photoLink,      'Photos',       'image'),
+      ].filter(Boolean).join('');
+
+      body.innerHTML = [
+        section('Pricing', [
+          row('Original Price (AED)', `AED ${propFormatAED(p.originalPriceAed)}`),
+          row('Selling Price (AED)',  `AED ${propFormatAED(p.sellingPriceAed)}`),
+          row('Original Price (EUR)', `EUR ${propFormatEUR(p.originalPriceEur)}`),
+          row('Selling Price (EUR)',  `EUR ${propFormatEUR(p.sellingPriceEur)}`),
+          row('Price / sqft',         p.pricePerSqftAed  ? `AED ${propFormatAED(p.pricePerSqftAed)}` : null),
+          row('Price / sqm',          p.pricePerSqmEur   ? `EUR ${propFormatEUR(p.pricePerSqmEur)}`  : null),
+        ]),
+        section('Payment', [
+          row('Paid to Developer', p.paidToDeveloper != null
+            ? `AED ${propFormatAED(p.paidToDeveloper)}${p.paidPct != null ? ` (${p.paidPct}%)` : ''}` : null),
+          row('Outstanding',    p.outstandingToDeveloper != null ? `AED ${propFormatAED(p.outstandingToDeveloper)}` : null),
+          row('Payment Plan',   p.paymentPlan),
+          p.paidPct != null ? paidBar : '',
+        ]),
+        section('Property Details', [
+          row('Bathrooms',  p.bathrooms != null ? p.bathrooms : null),
+          row('Parking',    p.parking   != null ? `${p.parking} spaces` : null),
+          row('Size (sqm)', p.sizeSqm   ? propFormatAED(p.sizeSqm) : null),
+          row('Furnished',  p.furnished),
+          row('View',       p.view),
+          row('Status',     p.status),
+        ]),
+        section('Ownership & Market', [
+          row('Owner',          p.ownerName),
+          row('Leads Owner',    p.leadsOwner),
+          row('Days on Market', p.daysOnMarket != null ? p.daysOnMarket : null),
+          row('Buyer Notes',    p.buyerNotes),
+        ]),
+        pitchSection,
+        links ? `<div>
+          <h4 class="text-xs font-semibold uppercase tracking-widest mb-3" style="color:var(--brand)">Documents & Links</h4>
+          <div class="flex flex-wrap gap-2">${links}</div>
+        </div>` : '',
+      ].filter(Boolean).join('');
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      lucide.createIcons();
+
+      // Close on backdrop click
+      modal.onclick = (e) => { if (e.target === modal) closePropModal(); };
+    }
+
+    function closePropModal() {
+      const modal = document.getElementById('prop-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    // ESC key closes modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closePropModal();
+    });
+
+    // Event listeners for filters
+    document.getElementById('prop-searchInput').addEventListener('input', propApplyFilters);
+    document.getElementById('prop-searchClear').addEventListener('click', () => {
+      document.getElementById('prop-searchInput').value = '';
+      document.getElementById('prop-searchClear').classList.add('hidden');
+      propApplyFilters();
+    });
+    document.getElementById('prop-searchInput').addEventListener('input', function() {
+      document.getElementById('prop-searchClear').classList.toggle('hidden', !this.value);
+    });
+    document.getElementById('prop-areaSelect').addEventListener('change', propApplyFilters);
+    document.getElementById('prop-developerSelect').addEventListener('change', propApplyFilters);
+    document.getElementById('prop-bedroomsSelect').addEventListener('change', propApplyFilters);
+    document.getElementById('prop-prioritySelect').addEventListener('change', propApplyFilters);
+    document.getElementById('prop-prevPage').addEventListener('click', () => { propPage--; propRender(); });
+    document.getElementById('prop-nextPage').addEventListener('click', () => { propPage++; propRender(); });
+
+    // Load properties when tab is clicked
+    document.querySelector('.tab[data-tab="properties"]').addEventListener('click', () => {
+      loadProperties();
     });
   </script>
 </body>
