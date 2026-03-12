@@ -64,12 +64,14 @@
     .card {
       background: var(--card);
       border: 1px solid var(--border);
+      border-left: 3px solid var(--brand);
       transition: all .3s ease;
     }
 
     .card:hover {
       transform: translateY(-4px);
       box-shadow: 0 12px 40px rgba(0, 0, 0, .15);
+      border-left-color: var(--brand);
     }
 
     [data-theme="dark"] .card:hover {
