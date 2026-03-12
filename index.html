@@ -5904,6 +5904,23 @@
     });
   </script>
 
+  <!-- ==================== PROPERTY LINK MODAL ==================== -->
+  <div id="prop-link-modal" class="fixed inset-0 hidden items-center justify-center p-4 z-[60]" style="background:rgba(0,0,0,.8);backdrop-filter:blur(4px)">
+    <div class="card w-full rounded-xl shadow-soft flex flex-col" style="max-width:960px;height:88vh">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] shrink-0">
+        <span id="prop-link-title" class="font-semibold text-sm truncate mr-4"></span>
+        <div class="flex gap-2 shrink-0">
+          <a id="prop-link-open" href="#" target="_blank" rel="noopener noreferrer"
+            class="btn btn-sm text-xs" style="color:var(--brand)">
+            <i data-lucide="external-link"></i> Open in tab
+          </a>
+          <button onclick="closePropLinkModal()" class="btn"><i data-lucide="x"></i></button>
+        </div>
+      </div>
+      <iframe id="prop-link-iframe" src="" class="flex-1 w-full rounded-b-xl" style="border:0"></iframe>
+    </div>
+  </div>
+
   <!-- ==================== PROPERTY MODAL ==================== -->
   <div id="prop-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50" style="backdrop-filter:blur(4px)">
     <div class="card w-full max-w-2xl rounded-xl shadow-soft flex flex-col" style="max-height:90vh">
@@ -6196,11 +6213,13 @@
       }
       function linkBtn(href, label, icon) {
         if (!href) return '';
-        return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer"
+        const safe = escapeHtml(href);
+        const safeLabel = escapeHtml(label);
+        return `<button onclick="openPropLink('${safe}','${safeLabel}')"
           class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border border-[var(--border)]
                  bg-[var(--muted)] text-[var(--muted-ink)] hover:border-[var(--brand)] hover:text-[var(--brand)] transition-all">
           <i data-lucide="${icon}"></i>${label}
-        </a>`;
+        </button>`;
       }
 
       const paidBar = p.paidPct != null ? `
@@ -6276,6 +6295,23 @@
       modal.classList.remove('flex');
     }
 
+    function openPropLink(href, label) {
+      document.getElementById('prop-link-title').textContent = label;
+      document.getElementById('prop-link-iframe').src = href;
+      document.getElementById('prop-link-open').href = href;
+      const m = document.getElementById('prop-link-modal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+      lucide.createIcons();
+    }
+
+    function closePropLinkModal() {
+      const m = document.getElementById('prop-link-modal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+      document.getElementById('prop-link-iframe').src = '';
+    }
+
     function propToggleSection(uid) {
       const body = document.getElementById(uid);
       const chev = document.getElementById('chev-' + uid);
@@ -6284,9 +6320,13 @@
       chev.style.transform = collapsed ? 'rotate(0deg)' : 'rotate(-90deg)';
     }
 
-    // ESC key closes modal
+    // ESC key: close link modal first, then property modal
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closePropModal();
+      if (e.key === 'Escape') {
+        const lm = document.getElementById('prop-link-modal');
+        if (!lm.classList.contains('hidden')) { closePropLinkModal(); return; }
+        closePropModal();
+      }
     });
 
     // Event listeners for filters
