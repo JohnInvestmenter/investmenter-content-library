@@ -6295,10 +6295,43 @@
       modal.classList.remove('flex');
     }
 
+    function toEmbedUrl(href) {
+      try {
+        const url = new URL(href);
+
+        // Google Drive: /file/d/ID/view  or  /file/d/ID/edit  →  /file/d/ID/preview
+        if (url.hostname.includes('drive.google.com')) {
+          const m = url.pathname.match(/\/file\/d\/([^/]+)/);
+          if (m) return `https://drive.google.com/file/d/${m[1]}/preview`;
+          // /open?id=ID
+          const id = url.searchParams.get('id');
+          if (id) return `https://drive.google.com/file/d/${id}/preview`;
+        }
+
+        // Google Maps: maps.google.com or google.com/maps  →  embed format
+        if (url.hostname.includes('google.com') && url.pathname.includes('/maps')) {
+          // Already an embed URL
+          if (url.pathname.includes('/maps/embed')) return href;
+          // Try to extract a place or query
+          const q = url.searchParams.get('q') || url.searchParams.get('query') || '';
+          if (q) return `https://maps.google.com/maps?q=${encodeURIComponent(q)}&output=embed`;
+          // Fallback: use the whole URL as the q param
+          return `https://maps.google.com/maps?q=${encodeURIComponent(href)}&output=embed`;
+        }
+
+        // Google Docs / Sheets / Slides: /edit → /preview or /pub?embedded=true
+        if (url.hostname.includes('docs.google.com')) {
+          return href.replace(/\/(edit|view).*$/, '/preview');
+        }
+      } catch (e) { /* invalid URL, fall through */ }
+      return href; // return as-is for direct PDFs / other URLs
+    }
+
     function openPropLink(href, label) {
+      const embedUrl = toEmbedUrl(href);
       document.getElementById('prop-link-title').textContent = label;
-      document.getElementById('prop-link-iframe').src = href;
-      document.getElementById('prop-link-open').href = href;
+      document.getElementById('prop-link-iframe').src = embedUrl;
+      document.getElementById('prop-link-open').href = href; // always original URL for "Open in tab"
       const m = document.getElementById('prop-link-modal');
       m.classList.remove('hidden');
       m.classList.add('flex');
