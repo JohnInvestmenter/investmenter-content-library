@@ -5985,7 +5985,14 @@
       if (propLoaded) return;
       try {
         const res = await fetch('/api/properties');
-        propAllProperties = await res.json();
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || data.hint || `API error ${res.status}`);
+        }
+        if (!Array.isArray(data)) {
+          throw new Error('Unexpected response: ' + JSON.stringify(data).slice(0, 200));
+        }
+        propAllProperties = data;
         propLoaded = true;
 
         const uniq = (fn) => [...new Set(propAllProperties.map(fn).filter(Boolean))].sort();
@@ -6011,7 +6018,10 @@
         propApplyFilters();
       } catch (e) {
         document.getElementById('prop-contentGrid').innerHTML =
-          '<div class="col-span-full text-center py-12 text-red-400">Failed to load properties. Please try again.</div>';
+          `<div class="col-span-full text-center py-12 text-red-400">
+            <p class="font-semibold mb-2">Failed to load properties</p>
+            <p class="text-sm opacity-75">${e.message}</p>
+          </div>`;
       }
     }
 
