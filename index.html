@@ -5984,7 +5984,7 @@
     async function loadProperties() {
       if (propLoaded) return;
       try {
-        const res = await fetch('/properties.json');
+        const res = await fetch('/api/properties');
         propAllProperties = await res.json();
         propLoaded = true;
 
