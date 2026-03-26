@@ -1134,6 +1134,38 @@
       text-transform: uppercase;
     }
 
+    .loom-thumbnail-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .loom-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(98, 59, 232, 0.12);
+      color: #623be8;
+      border: 1px solid rgba(98, 59, 232, 0.25);
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease;
+    }
+
+    .loom-badge:hover {
+      background: rgba(98, 59, 232, 0.22);
+      border-color: rgba(98, 59, 232, 0.5);
+    }
+
+    [data-theme="dark"] .loom-badge {
+      color: #a98ff8;
+      background: rgba(98, 59, 232, 0.18);
+      border-color: rgba(98, 59, 232, 0.35);
+    }
+
     /* ---------- FADE IN ANIMATION ---------- */
     @keyframes fadeIn {
       from {
@@ -1872,6 +1904,15 @@
           <div id="wa-editFilePreview" class="mt-3 grid grid-cols-2 gap-2"></div>
           <div id="wa-editExistingFiles" class="mt-2 text-sm"></div>
         </div>
+        <div>
+          <label class="block text-sm mb-1">Loom Video URL <span class="text-[var(--muted-ink)] font-normal">(optional)</span></label>
+          <input id="wa-editLoomUrl" type="url"
+            placeholder="https://www.loom.com/share/..."
+            class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" />
+          <div id="wa-editLoomPreview" class="mt-2 hidden rounded-lg overflow-hidden border border-[var(--border)]" style="aspect-ratio:16/9;">
+            <iframe id="wa-editLoomIframe" src="" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen allow="autoplay; fullscreen" style="width:100%;height:100%;"></iframe>
+          </div>
+        </div>
         <div><label class="block text-sm mb-1">WhatsApp Preview</label>
           <div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-2">
             <div id="wa-editPreview"
@@ -1985,6 +2026,15 @@
             class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" />
           <div id="wa-uploadStatus" class="text-sm text-[var(--muted-ink)] mt-1"></div>
           <div id="wa-filePreview" class="mt-3 grid grid-cols-2 gap-2"></div>
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Loom Video URL <span class="text-[var(--muted-ink)] font-normal">(optional)</span></label>
+          <input id="wa-loomUrlInput" type="url"
+            placeholder="https://www.loom.com/share/..."
+            class="w-full p-2 rounded-lg border border-[var(--border)] bg-transparent" />
+          <div id="wa-loomPreview" class="mt-2 hidden rounded-lg overflow-hidden border border-[var(--border)]" style="aspect-ratio:16/9;">
+            <iframe id="wa-loomIframe" src="" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen allow="autoplay; fullscreen" style="width:100%;height:100%;"></iframe>
+          </div>
         </div>
         <div><label class="block text-sm mb-1">WhatsApp Preview</label>
           <div class="rounded-lg border border-[var(--border)] bg-[var(--muted)] p-2">
@@ -3074,6 +3124,15 @@
       }
     });
 
+    function isLoomUrl(url) {
+      return !!(url && /loom\.com\/(share|embed)\/[a-f0-9]+/i.test(url));
+    }
+
+    function getLoomVideoId(url) {
+      const match = (url || '').match(/loom\.com\/(?:share|embed)\/([a-f0-9]+)/i);
+      return match ? match[1] : null;
+    }
+
     function getFileType(filename) {
       const ext = (filename || '').split('.').pop().toLowerCase();
       if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext)) return 'image';
@@ -3217,6 +3276,31 @@
         <div class="attachment-info">
           <div class="attachment-name">${escapeHtml(attachment.name)}</div>
           <div class="attachment-type">PDF</div>
+        </div>
+      </div>
+    `;
+      }
+
+      // Loom video
+      if (isLoomUrl(attachment.url)) {
+        const loomId = getLoomVideoId(attachment.url);
+        const thumbUrl = loomId ? `https://cdn.loom.com/sessions/thumbnails/${loomId}-with-play.gif` : '';
+        const embedUrl = loomId ? `https://www.loom.com/embed/${loomId}` : attachment.url;
+        return `
+      <div class="attachment-card"
+           data-media-url="${escapeHtml(embedUrl)}"
+           data-media-backup=""
+           data-media-name="${escapeHtml(attachment.name)}"
+           data-media-type="loom">
+        <div class="attachment-thumbnail">
+          ${thumbUrl ? `<img src="${escapeHtml(thumbUrl)}" alt="${escapeHtml(attachment.name)}" class="loom-thumbnail-img">` : '<div class="attachment-icon"><i data-lucide="video"></i></div>'}
+          <div class="attachment-play-icon">
+            <i data-lucide="play-circle"></i>
+          </div>
+        </div>
+        <div class="attachment-info">
+          <div class="attachment-name">${escapeHtml(attachment.name)}</div>
+          <div class="attachment-type" style="color:#623be8;">LOOM</div>
         </div>
       </div>
     `;
@@ -4018,7 +4102,9 @@
         </div>
 
         ${(c.attachments && c.attachments.length) ? `<div class="mt-2 flex flex-wrap gap-2 text-xs">
-          ${c.attachments.map(a => `<a href="${a.url}" target="_blank" class="flex items-center gap-1 text-[var(--muted-ink)] hover:text-[var(--brand)] transition-colors"><i data-lucide="paperclip"></i>${escapeHtml(a.name)}</a>`).join('')}
+          ${c.attachments.map(a => isLoomUrl(a.url)
+            ? `<span class="loom-badge"><i data-lucide="video" style="width:11px;height:11px;"></i>${escapeHtml(a.name)}</span>`
+            : `<a href="${a.url}" target="_blank" class="flex items-center gap-1 text-[var(--muted-ink)] hover:text-[var(--brand)] transition-colors"><i data-lucide="paperclip"></i>${escapeHtml(a.name)}</a>`).join('')}
         </div>` : ''}
 
         <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
@@ -4279,15 +4365,33 @@
       document.getElementById('wa-editCharCount').textContent = (waEditItem.content || '').length;
       waEditTags.value = (waEditItem.tags || []).join(', ');
 
-      // Display existing attachments
+      // Display existing attachments (exclude Loom — shown separately)
       const existingFilesEl = document.getElementById('wa-editExistingFiles');
       const attachments = waEditItem.attachments || [];
-      if (attachments.length) {
+      const nonLoomAttachments = attachments.filter(a => !isLoomUrl(a.url));
+      if (nonLoomAttachments.length) {
         existingFilesEl.innerHTML = '<div class="font-semibold mb-1">Current Attachments:</div>' +
-          attachments.map(a => `<div class="flex items-center gap-2 text-[var(--muted-ink)]"><i data-lucide="paperclip"></i><a href="${a.url}" target="_blank" class="hover:text-[var(--brand)]">${a.name}</a></div>`).join('');
+          nonLoomAttachments.map(a => `<div class="flex items-center gap-2 text-[var(--muted-ink)]"><i data-lucide="paperclip"></i><a href="${a.url}" target="_blank" class="hover:text-[var(--brand)]">${a.name}</a></div>`).join('');
         lucide.createIcons();
       } else {
         existingFilesEl.innerHTML = '';
+      }
+
+      // Populate Loom URL field
+      const loomEditAttachment = attachments.find(a => isLoomUrl(a.url));
+      const loomEditInput = document.getElementById('wa-editLoomUrl');
+      const loomEditPreview = document.getElementById('wa-editLoomPreview');
+      const loomEditIframe = document.getElementById('wa-editLoomIframe');
+      loomEditInput.value = loomEditAttachment ? loomEditAttachment.url : '';
+      if (loomEditAttachment) {
+        const loomId = getLoomVideoId(loomEditAttachment.url);
+        if (loomId) {
+          loomEditIframe.src = `https://www.loom.com/embed/${loomId}`;
+          loomEditPreview.classList.remove('hidden');
+        }
+      } else {
+        loomEditIframe.src = '';
+        loomEditPreview.classList.add('hidden');
       }
 
       // Clear file input and status
@@ -4699,9 +4803,13 @@
         const saveBtn = document.getElementById('wa-editSave');
         saveBtn.disabled = true;
 
-        // Merge with existing attachments
-        const existingAttachments = waEditItem.attachments || [];
+        // Merge with existing attachments (strip old Loom entries; re-add from input)
+        const existingAttachments = (waEditItem.attachments || []).filter(a => !isLoomUrl(a.url));
         const allAttachments = [...existingAttachments, ...waEditNewAttachments];
+        const loomEditUrl = (document.getElementById('wa-editLoomUrl').value || '').trim();
+        if (loomEditUrl && isLoomUrl(loomEditUrl)) {
+          allAttachments.push({ name: 'Loom Video', url: loomEditUrl });
+        }
 
         const payload = {
           id: waEditItem.id,
@@ -4753,6 +4861,9 @@
       waTagsInput.value = '';
       document.getElementById('wa-fileUpload').value = '';
       document.getElementById('wa-uploadStatus').textContent = '';
+      document.getElementById('wa-loomUrlInput').value = '';
+      document.getElementById('wa-loomPreview').classList.add('hidden');
+      document.getElementById('wa-loomIframe').src = '';
       addAttachments = [];
       inflightUploads = 0;
       renderAddFilePreview(); // Clear preview
@@ -4772,6 +4883,40 @@
     // Enable formatted paste for add textarea
     handleFormattedPaste(waContentInput);
     waTitleInput.addEventListener('input', updateWASaveDisabled);
+
+    // Loom URL live preview — Add modal
+    document.getElementById('wa-loomUrlInput').addEventListener('input', function () {
+      const val = this.value.trim();
+      const preview = document.getElementById('wa-loomPreview');
+      const iframe = document.getElementById('wa-loomIframe');
+      if (isLoomUrl(val)) {
+        const loomId = getLoomVideoId(val);
+        if (loomId) {
+          iframe.src = `https://www.loom.com/embed/${loomId}`;
+          preview.classList.remove('hidden');
+        }
+      } else {
+        iframe.src = '';
+        preview.classList.add('hidden');
+      }
+    });
+
+    // Loom URL live preview — Edit modal
+    document.getElementById('wa-editLoomUrl').addEventListener('input', function () {
+      const val = this.value.trim();
+      const preview = document.getElementById('wa-editLoomPreview');
+      const iframe = document.getElementById('wa-editLoomIframe');
+      if (isLoomUrl(val)) {
+        const loomId = getLoomVideoId(val);
+        if (loomId) {
+          iframe.src = `https://www.loom.com/embed/${loomId}`;
+          preview.classList.remove('hidden');
+        }
+      } else {
+        iframe.src = '';
+        preview.classList.add('hidden');
+      }
+    });
 
     // File upload for Add modal
     document.getElementById('wa-fileUpload').addEventListener('change', async function (e) {
@@ -4833,7 +4978,14 @@
           tags: (waTagsInput.value || '').split(',').map(t => t.trim()).filter(Boolean),
           dateCreated: new Date().toISOString().slice(0, 10),
           useCount: 0,
-          attachments: addAttachments.slice()
+          attachments: (() => {
+            const atts = addAttachments.slice();
+            const loomUrl = (document.getElementById('wa-loomUrlInput').value || '').trim();
+            if (loomUrl && isLoomUrl(loomUrl)) {
+              atts.push({ name: 'Loom Video', url: loomUrl });
+            }
+            return atts;
+          })()
         };
         await createWAItem(payload); closeWAAdd(); await syncWAContents();
         showToast('Added!', 'Content created successfully', 'success');
@@ -5570,6 +5722,17 @@
               class="media-lightbox-pdf"
               data-backup-url="${escapeHtml(backupUrl)}"
               onerror="handleLightboxPdfError(this)"></iframe>
+    `;
+      } else if (type === 'loom') {
+        container.innerHTML = `
+      <iframe src="${url}?hide_owner=true&hide_share=true&hide_title=false&hideEmbedTopBar=false"
+              class="media-lightbox-pdf"
+              frameborder="0"
+              webkitallowfullscreen
+              mozallowfullscreen
+              allowfullscreen
+              allow="autoplay; fullscreen"
+              style="border-radius:8px;"></iframe>
     `;
       }
 
