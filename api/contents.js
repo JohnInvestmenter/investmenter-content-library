@@ -182,14 +182,17 @@ export default async function handler(req, res) {
         properties.UseCount = { number: Number(useCount || 0) };
       }
       if (has("Attachments") && Array.isArray(attachments) && attachments.length) {
-        properties.Attachments = {
-          files: attachments
-            .filter((a) => a?.url)
-            .map((a) => ({
+        const validAttachments = attachments.filter(
+          (a) => a?.url && a.url !== "#" && !a.url.startsWith("blob:")
+        );
+        if (validAttachments.length) {
+          properties.Attachments = {
+            files: validAttachments.map((a) => ({
               name: a.name || "attachment",
               external: { url: a.url }
             }))
-        };
+          };
+        }
       }
       // LastUsed is intentionally not set here; you can add an update endpoint later.
 
@@ -278,13 +281,14 @@ export default async function handler(req, res) {
         properties.Tags = { multi_select: tags.map((t) => ({ name: t })) };
       }
       if (has("Attachments") && Array.isArray(attachments)) {
+        const validAttachments = attachments.filter(
+          (a) => a?.url && a.url !== "#" && !a.url.startsWith("blob:")
+        );
         properties.Attachments = {
-          files: attachments
-            .filter((a) => a?.url)
-            .map((a) => ({
-              name: a.name || "attachment",
-              external: { url: a.url }
-            }))
+          files: validAttachments.map((a) => ({
+            name: a.name || "attachment",
+            external: { url: a.url }
+          }))
         };
       }
 

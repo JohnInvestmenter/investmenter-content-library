@@ -3552,9 +3552,31 @@
       });
     }
 
+    // Fetch with a timeout; rejects with an AbortError if exceeded
+    async function fetchWithTimeout(url, options, timeoutMs = 30000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(url, { ...options, signal: controller.signal });
+      } catch (err) {
+        if (err.name === 'AbortError') throw new Error('Upload timed out after 30s');
+        throw err;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    // Revoke any blob: object URLs in an attachments array to free memory
+    function revokeBlobUrls(attachments) {
+      (attachments || []).forEach(f => {
+        if (f.url && f.url.startsWith('blob:')) URL.revokeObjectURL(f.url);
+      });
+    }
+
     /**
      * Dual upload: Uploads to Vercel Blob (primary) + Google Drive (backup)
      * Returns: { name, url, backupUrl, id }
+     * Throws if both storage targets fail — never returns a placeholder URL.
      */
     async function uploadFileDual(file) {
       let blobUrl = null;
@@ -3565,7 +3587,7 @@
       if (USE_DUAL_STORAGE) {
         try {
           const dataURL = await fileToDataURL(file);
-          const blobRes = await fetch(BLOB_UPLOAD_API, {
+          const blobRes = await fetchWithTimeout(BLOB_UPLOAD_API, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -3580,7 +3602,7 @@
             blobUrl = blobData.url;
             console.log('✓ Uploaded to Vercel Blob:', blobUrl);
           } else {
-            const error = await blobRes.json();
+            const error = await blobRes.json().catch(() => ({}));
             console.warn('Blob upload failed, will use Drive only:', error.message);
           }
         } catch (err) {
@@ -3591,7 +3613,7 @@
       // Step 2: Upload to Google Drive (backup or primary if Blob failed)
       try {
         const base64 = await fileToBase64(file);
-        const driveRes = await fetch(DRIVE_APP_SCRIPT, {
+        const driveRes = await fetchWithTimeout(DRIVE_APP_SCRIPT, {
           method: 'POST',
           body: JSON.stringify({
             files: [{
@@ -3612,9 +3634,8 @@
         driveId = driveFile.id;
         console.log('✓ Uploaded to Google Drive:', driveUrl);
       } catch (err) {
-        // If both failed, throw error
         if (!blobUrl) {
-          throw new Error(`Both uploads failed: ${err.message}`);
+          throw new Error(`Upload failed: ${err.message}`);
         }
         console.warn('Drive upload failed, using Blob only:', err.message);
       }
@@ -3622,9 +3643,9 @@
       // Return with primary and backup URLs
       return {
         name: file.name,
-        url: blobUrl || driveUrl, // Primary URL (prefer Blob)
-        backupUrl: blobUrl ? driveUrl : null, // Backup URL (Drive if we have Blob)
-        id: driveId // Keep Drive ID for compatibility
+        url: blobUrl || driveUrl,
+        backupUrl: blobUrl ? driveUrl : null,
+        id: driveId
       };
     }
 
@@ -4365,17 +4386,9 @@
       document.getElementById('wa-editCharCount').textContent = (waEditItem.content || '').length;
       waEditTags.value = (waEditItem.tags || []).join(', ');
 
-      // Display existing attachments (exclude Loom — shown separately)
-      const existingFilesEl = document.getElementById('wa-editExistingFiles');
-      const attachments = waEditItem.attachments || [];
-      const nonLoomAttachments = attachments.filter(a => !isLoomUrl(a.url));
-      if (nonLoomAttachments.length) {
-        existingFilesEl.innerHTML = '<div class="font-semibold mb-1">Current Attachments:</div>' +
-          nonLoomAttachments.map(a => `<div class="flex items-center gap-2 text-[var(--muted-ink)]"><i data-lucide="paperclip"></i><a href="${a.url}" target="_blank" class="hover:text-[var(--brand)]">${a.name}</a></div>`).join('');
-        lucide.createIcons();
-      } else {
-        existingFilesEl.innerHTML = '';
-      }
+      // Reset removed-attachments tracker and render existing files with remove buttons
+      waEditRemovedUrls = new Set();
+      renderEditExistingFiles();
 
       // Populate Loom URL field
       const loomEditAttachment = attachments.find(a => isLoomUrl(a.url));
@@ -4405,7 +4418,14 @@
       waEditModal.classList.remove('hidden'); waEditModal.classList.add('flex');
       lucide.createIcons();
     }
-    function closeWAEditModal() { waEditModal.classList.add('hidden'); waEditModal.classList.remove('flex'); }
+    function closeWAEditModal() {
+      revokeBlobUrls(waEditNewAttachments);
+      waEditNewAttachments = [];
+      waEditInflightUploads = 0;
+      waEditRemovedUrls = new Set();
+      waEditModal.classList.add('hidden');
+      waEditModal.classList.remove('flex');
+    }
     document.getElementById('wa-editClose').addEventListener('click', closeWAEditModal);
     document.getElementById('wa-editCancel').addEventListener('click', closeWAEditModal);
     function updateWAEditPreview() {
@@ -4710,9 +4730,9 @@
     function removeEditFile(index) {
       if (index >= 0 && index < waEditNewAttachments.length) {
         const removedFile = waEditNewAttachments.splice(index, 1)[0];
+        if (removedFile.url && removedFile.url.startsWith('blob:')) URL.revokeObjectURL(removedFile.url);
         renderEditFilePreview();
 
-        // Update status text
         const statusEl = document.getElementById('wa-editUploadStatus');
         if (statusEl) {
           statusEl.textContent = waEditNewAttachments.length > 0
@@ -4728,6 +4748,7 @@
     function removeAddFile(index) {
       if (index >= 0 && index < addAttachments.length) {
         const removedFile = addAttachments.splice(index, 1)[0];
+        if (removedFile.url && removedFile.url.startsWith('blob:')) URL.revokeObjectURL(removedFile.url);
         renderAddFilePreview();
 
         // Update status text
@@ -4748,50 +4769,75 @@
     // File upload for Edit modal
     let waEditNewAttachments = [];
     let waEditInflightUploads = 0;
+    let waEditRemovedUrls = new Set(); // tracks existing attachment URLs removed by user
+
+    // Render existing (already-saved) attachments in the edit modal with remove buttons
+    function renderEditExistingFiles() {
+      const existingFilesEl = document.getElementById('wa-editExistingFiles');
+      const allAttachments = waEditItem ? (waEditItem.attachments || []) : [];
+      const visible = allAttachments.filter(a => !isLoomUrl(a.url) && !waEditRemovedUrls.has(a.url));
+      if (visible.length) {
+        existingFilesEl.innerHTML = '<div class="font-semibold mb-1 text-sm">Current Attachments:</div>' +
+          visible.map(a => `
+            <div class="flex items-center justify-between gap-2 text-[var(--muted-ink)] py-1">
+              <div class="flex items-center gap-2 min-w-0">
+                <i data-lucide="paperclip" class="flex-shrink-0" style="width:14px;height:14px;"></i>
+                <a href="${escapeHtml(a.url)}" target="_blank" class="hover:text-[var(--brand)] truncate text-sm">${escapeHtml(a.name)}</a>
+              </div>
+              <button type="button" onclick="removeExistingEditFile('${escapeHtml(a.url).replaceAll("'", "&#39;")}')"
+                class="flex-shrink-0 w-5 h-5 rounded-full bg-[var(--brand)] hover:brightness-90 text-[var(--brand-ink)] flex items-center justify-center" title="Remove">
+                <i data-lucide="x" style="width:12px;height:12px;"></i>
+              </button>
+            </div>
+          `).join('');
+        lucide.createIcons();
+      } else {
+        existingFilesEl.innerHTML = '';
+      }
+    }
+
+    function removeExistingEditFile(url) {
+      waEditRemovedUrls.add(url);
+      renderEditExistingFiles();
+      showToast('Removed', 'Attachment will be removed when you save', 'info');
+    }
 
     document.getElementById('wa-editFileUpload').addEventListener('change', async function (e) {
-      const files = Array.from(e.target.files || []);
-      if (!files.length) return;
+      const allFiles = Array.from(e.target.files || []);
+      if (!allFiles.length) return;
+
+      const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+      const oversized = allFiles.filter(f => f.size > MAX_FILE_SIZE);
+      oversized.forEach(f => showToast('File Too Large', `${f.name} exceeds the 10 MB limit`, 'error'));
+      const files = allFiles.filter(f => f.size <= MAX_FILE_SIZE);
+      if (!files.length) { this.value = ''; return; }
 
       const statusEl = document.getElementById('wa-editUploadStatus');
       const saveBtn = document.getElementById('wa-editSave');
 
       waEditInflightUploads += files.length;
       saveBtn.disabled = true;
-      statusEl.textContent = `Uploading ${waEditInflightUploads} file(s) to ${USE_DUAL_STORAGE ? 'Blob + Drive' : 'Drive'}…`;
+      statusEl.textContent = `Uploading ${files.length} file(s)…`;
 
-      for (const file of files) {
+      await Promise.allSettled(files.map(async (file) => {
         try {
-          // Try real upload first, fallback to mock for testing
-          let uploadedFile;
-          try {
-            uploadedFile = await uploadFileDual(file);
-          } catch (uploadErr) {
-            console.warn('Real upload failed, using mock URL for preview:', uploadErr.message);
-            // Mock upload for testing preview without backend
-            uploadedFile = {
-              name: file.name,
-              url: isImageFile(file) ? URL.createObjectURL(file) : '#',
-              backupUrl: null,
-              id: 'mock-' + Date.now()
-            };
-          }
-          // Store file metadata for preview
+          const uploadedFile = await uploadFileDual(file);
           uploadedFile.size = file.size;
           uploadedFile.type = file.type;
           waEditNewAttachments.push(uploadedFile);
-          statusEl.textContent = `${waEditNewAttachments.length} file(s) uploaded${USE_DUAL_STORAGE ? ' (with backup)' : ''}`;
-          // Update preview after each successful upload
           renderEditFilePreview();
         } catch (err) {
           console.error(err);
-          showToast('Upload Error', `Failed to upload ${file.name}: ${err.message}`, 'error');
+          showToast('Upload Failed', `${file.name}: ${err.message}`, 'error');
         } finally {
           waEditInflightUploads--;
-          statusEl.textContent = waEditInflightUploads ? `Uploading ${waEditInflightUploads}…` : `${waEditNewAttachments.length} file(s) ready`;
+          statusEl.textContent = waEditInflightUploads > 0
+            ? `Uploading ${waEditInflightUploads}…`
+            : waEditNewAttachments.length > 0 ? `${waEditNewAttachments.length} file(s) ready` : '';
           if (waEditInflightUploads === 0) saveBtn.disabled = false;
         }
-      }
+      }));
+
       this.value = '';
     });
 
@@ -4803,9 +4849,14 @@
         const saveBtn = document.getElementById('wa-editSave');
         saveBtn.disabled = true;
 
-        // Merge with existing attachments (strip old Loom entries; re-add from input)
-        const existingAttachments = (waEditItem.attachments || []).filter(a => !isLoomUrl(a.url));
-        const allAttachments = [...existingAttachments, ...waEditNewAttachments];
+        // Build final attachment list:
+        // 1. Keep existing attachments minus Loom entries and user-removed ones
+        // 2. Add newly uploaded files (real URLs only — no placeholders)
+        // 3. Re-add Loom from input if present
+        const existingAttachments = (waEditItem.attachments || [])
+          .filter(a => !isLoomUrl(a.url) && !waEditRemovedUrls.has(a.url));
+        const validNewAttachments = waEditNewAttachments.filter(a => a.url && a.url !== '#' && !a.url.startsWith('blob:'));
+        const allAttachments = [...existingAttachments, ...validNewAttachments];
         const loomEditUrl = (document.getElementById('wa-editLoomUrl').value || '').trim();
         if (loomEditUrl && isLoomUrl(loomEditUrl)) {
           allAttachments.push({ name: 'Loom Video', url: loomEditUrl });
@@ -4823,10 +4874,15 @@
         };
         await updateWAItem(payload);
         Object.assign(waEditItem, payload);
-        waEditNewAttachments = []; // Reset after successful save
+        revokeBlobUrls(waEditNewAttachments);
+        waEditNewAttachments = [];
         waEditInflightUploads = 0;
+        waEditRemovedUrls = new Set();
         renderWAFolderTabs();
-        closeWAEditModal(); renderWA();
+        // Close without the cleanup in closeWAEditModal (already done above)
+        waEditModal.classList.add('hidden');
+        waEditModal.classList.remove('flex');
+        renderWA();
         showToast('Saved!', 'Content updated successfully', 'success');
       } catch (e) {
         console.error(e);
@@ -4864,6 +4920,7 @@
       document.getElementById('wa-loomUrlInput').value = '';
       document.getElementById('wa-loomPreview').classList.add('hidden');
       document.getElementById('wa-loomIframe').src = '';
+      revokeBlobUrls(addAttachments);
       addAttachments = [];
       inflightUploads = 0;
       renderAddFilePreview(); // Clear preview
@@ -4920,46 +4977,39 @@
 
     // File upload for Add modal
     document.getElementById('wa-fileUpload').addEventListener('change', async function (e) {
-      const files = Array.from(e.target.files || []);
-      if (!files.length) return;
+      const allFiles = Array.from(e.target.files || []);
+      if (!allFiles.length) return;
+
+      const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+      const oversized = allFiles.filter(f => f.size > MAX_FILE_SIZE);
+      oversized.forEach(f => showToast('File Too Large', `${f.name} exceeds the 10 MB limit`, 'error'));
+      const files = allFiles.filter(f => f.size <= MAX_FILE_SIZE);
+      if (!files.length) { this.value = ''; return; }
 
       const statusEl = document.getElementById('wa-uploadStatus');
       inflightUploads += files.length;
       updateWASaveDisabled();
-      statusEl.textContent = `Uploading ${inflightUploads} file(s) to ${USE_DUAL_STORAGE ? 'Blob + Drive' : 'Drive'}…`;
+      statusEl.textContent = `Uploading ${files.length} file(s)…`;
 
-      for (const file of files) {
+      await Promise.allSettled(files.map(async (file) => {
         try {
-          // Try real upload first, fallback to mock for testing
-          let uploadedFile;
-          try {
-            uploadedFile = await uploadFileDual(file);
-          } catch (uploadErr) {
-            console.warn('Real upload failed, using mock URL for preview:', uploadErr.message);
-            // Mock upload for testing preview without backend
-            uploadedFile = {
-              name: file.name,
-              url: isImageFile(file) ? URL.createObjectURL(file) : '#',
-              backupUrl: null,
-              id: 'mock-' + Date.now()
-            };
-          }
-          // Store file metadata for preview
+          const uploadedFile = await uploadFileDual(file);
           uploadedFile.size = file.size;
           uploadedFile.type = file.type;
           addAttachments.push(uploadedFile);
-          statusEl.textContent = `${addAttachments.length} file(s) uploaded${USE_DUAL_STORAGE ? ' (with backup)' : ''}`;
-          // Update preview after each successful upload
           renderAddFilePreview();
         } catch (err) {
           console.error(err);
-          showToast('Upload Error', `Failed to upload ${file.name}: ${err.message}`, 'error');
+          showToast('Upload Failed', `${file.name}: ${err.message}`, 'error');
         } finally {
           inflightUploads--;
-          statusEl.textContent = inflightUploads ? `Uploading ${inflightUploads}…` : `${addAttachments.length} file(s) ready`;
+          statusEl.textContent = inflightUploads > 0
+            ? `Uploading ${inflightUploads}…`
+            : addAttachments.length > 0 ? `${addAttachments.length} file(s) ready` : '';
           updateWASaveDisabled();
         }
-      }
+      }));
+
       this.value = '';
     });
 
@@ -4979,7 +5029,8 @@
           dateCreated: new Date().toISOString().slice(0, 10),
           useCount: 0,
           attachments: (() => {
-            const atts = addAttachments.slice();
+            // Only include successfully uploaded files (no placeholders or blob: preview URLs)
+            const atts = addAttachments.filter(a => a.url && a.url !== '#' && !a.url.startsWith('blob:'));
             const loomUrl = (document.getElementById('wa-loomUrlInput').value || '').trim();
             if (loomUrl && isLoomUrl(loomUrl)) {
               atts.push({ name: 'Loom Video', url: loomUrl });
@@ -5067,7 +5118,9 @@
         sendBtn.innerHTML = '<i data-lucide="loader" class="spin"></i> Sending...';
         lucide.createIcons();
 
-        const attachments = currentSendItem?.attachments || [];
+        // Only send real, accessible URLs — filter out any placeholders
+        const attachments = (currentSendItem?.attachments || [])
+          .filter(a => a.url && a.url !== '#' && !a.url.startsWith('blob:'));
 
         // Send attachments first (if any)
         if (attachments.length > 0) {
