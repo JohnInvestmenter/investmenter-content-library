@@ -4391,6 +4391,7 @@
       renderEditExistingFiles();
 
       // Populate Loom URL field
+      const attachments = waEditItem.attachments || [];
       const loomEditAttachment = attachments.find(a => isLoomUrl(a.url));
       const loomEditInput = document.getElementById('wa-editLoomUrl');
       const loomEditPreview = document.getElementById('wa-editLoomPreview');
@@ -4778,28 +4779,33 @@
       const visible = allAttachments.filter(a => !isLoomUrl(a.url) && !waEditRemovedUrls.has(a.url));
       if (visible.length) {
         existingFilesEl.innerHTML = '<div class="font-semibold mb-1 text-sm">Current Attachments:</div>' +
-          visible.map(a => `
+          visible.map((a, i) => `
             <div class="flex items-center justify-between gap-2 text-[var(--muted-ink)] py-1">
               <div class="flex items-center gap-2 min-w-0">
                 <i data-lucide="paperclip" class="flex-shrink-0" style="width:14px;height:14px;"></i>
                 <a href="${escapeHtml(a.url)}" target="_blank" class="hover:text-[var(--brand)] truncate text-sm">${escapeHtml(a.name)}</a>
               </div>
-              <button type="button" onclick="removeExistingEditFile('${escapeHtml(a.url).replaceAll("'", "&#39;")}')"
+              <button type="button" data-remove-idx="${i}"
                 class="flex-shrink-0 w-5 h-5 rounded-full bg-[var(--brand)] hover:brightness-90 text-[var(--brand-ink)] flex items-center justify-center" title="Remove">
                 <i data-lucide="x" style="width:12px;height:12px;"></i>
               </button>
             </div>
           `).join('');
+        // Attach handlers via data index — avoids putting URLs inside onclick strings
+        existingFilesEl.querySelectorAll('[data-remove-idx]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const url = visible[parseInt(btn.getAttribute('data-remove-idx'), 10)]?.url;
+            if (url) {
+              waEditRemovedUrls.add(url);
+              renderEditExistingFiles();
+              showToast('Removed', 'Attachment will be removed when you save', 'info');
+            }
+          });
+        });
         lucide.createIcons();
       } else {
         existingFilesEl.innerHTML = '';
       }
-    }
-
-    function removeExistingEditFile(url) {
-      waEditRemovedUrls.add(url);
-      renderEditExistingFiles();
-      showToast('Removed', 'Attachment will be removed when you save', 'info');
     }
 
     document.getElementById('wa-editFileUpload').addEventListener('change', async function (e) {
