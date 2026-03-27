@@ -1,20 +1,36 @@
 // /api/upload-blob.js
-import { put } from '@vercel/blob';
+// Handles Vercel Blob client upload token requests and upload-completed callbacks.
+// The actual file bytes go directly from the browser to Vercel Blob storage —
+// they never pass through this function, so there is no body size limit issue.
 
-/**
- * Upload file to Vercel Blob Storage
- *
- * This endpoint accepts file uploads and stores them in Vercel Blob.
- * Returns the blob URL for use in the application.
- */
+import { handleUpload } from '@vercel/blob/client';
 
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: '10mb' // Adjust based on your needs
+      sizeLimit: '1mb' // Only token metadata passes through here, not the file
     }
   }
 };
+
+const ALLOWED_CONTENT_TYPES = [
+  // Images
+  'image/jpeg', 'image/jpg', 'image/png', 'image/gif',
+  'image/webp', 'image/svg+xml', 'image/bmp',
+  // Video
+  'video/mp4', 'video/webm', 'video/quicktime', 'video/avi', 'video/x-matroska',
+  // Documents
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'text/plain', 'text/csv',
+  // Archives
+  'application/zip', 'application/x-zip-compressed',
+];
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -22,41 +38,20 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { file, filename, contentType } = req.body;
-
-    if (!file || !filename) {
-      return res.status(400).json({
-        error: 'Missing required fields',
-        hint: 'Please provide both file (base64) and filename'
-      });
-    }
-
-    // Decode base64 file data
-    const base64Data = file.replace(/^data:.+;base64,/, '');
-    const buffer = Buffer.from(base64Data, 'base64');
-
-    // Upload to Vercel Blob
-    const blob = await put(filename, buffer, {
-      access: 'public',
-      contentType: contentType || 'application/octet-stream',
-      token: process.env.BLOB_READ_WRITE_TOKEN,
-      addRandomSuffix: true
+    const response = await handleUpload({
+      body: req.body,
+      request: req,
+      onBeforeGenerateToken: async (pathname) => ({
+        addRandomSuffix: true,
+        allowedContentTypes: ALLOWED_CONTENT_TYPES,
+      }),
+      onUploadCompleted: async ({ blob }) => {
+        console.log('Blob upload completed:', blob.url);
+      },
     });
-
-    return res.status(200).json({
-      success: true,
-      url: blob.url,
-      downloadUrl: blob.downloadUrl,
-      pathname: blob.pathname,
-      size: buffer.length
-    });
-
-  } catch (error) {
-    console.error('Blob upload error:', error);
-    return res.status(500).json({
-      error: 'Upload failed',
-      message: error.message,
-      hint: 'Check that BLOB_READ_WRITE_TOKEN is set in environment variables'
-    });
+    return res.json(response);
+  } catch (err) {
+    console.error('Blob upload error:', err);
+    return res.status(400).json({ error: err.message });
   }
 }

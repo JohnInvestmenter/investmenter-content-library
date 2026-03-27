@@ -3583,30 +3583,53 @@
       let driveUrl = null;
       let driveId = null;
 
-      // Step 1: Upload to Vercel Blob (primary)
+      // Step 1: Upload to Vercel Blob via client upload (binary — no base64, no body size limit)
       let blobError = null;
       if (USE_DUAL_STORAGE) {
         try {
-          const dataURL = await fileToDataURL(file);
-          const blobRes = await fetchWithTimeout(BLOB_UPLOAD_API, {
+          // 1a. Get a short-lived client token from our server (tiny request, just metadata)
+          const tokenRes = await fetchWithTimeout(BLOB_UPLOAD_API, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              file: dataURL,
-              filename: file.name,
-              contentType: file.type || 'application/octet-stream'
+              type: 'blob.generate-client-token',
+              payload: {
+                pathname: file.name,
+                callbackUrl: window.location.origin + BLOB_UPLOAD_API,
+                clientPayload: null,
+                multipart: false,
+              }
             })
           });
-
-          if (blobRes.ok) {
-            const blobData = await blobRes.json();
-            blobUrl = blobData.url;
-            console.log('✓ Uploaded to Vercel Blob:', blobUrl);
-          } else {
-            const error = await blobRes.json().catch(() => ({}));
-            blobError = error.message || `HTTP ${blobRes.status}`;
-            console.warn('Blob upload failed, will use Drive only:', blobError);
+          if (!tokenRes.ok) {
+            const err = await tokenRes.json().catch(() => ({}));
+            throw new Error(err.error || `Token request failed: HTTP ${tokenRes.status}`);
           }
+          const tokenData = await tokenRes.json();
+          const clientToken = tokenData.response?.clientToken || tokenData.clientToken;
+          if (!clientToken) throw new Error('No client token received from server');
+
+          // 1b. PUT the raw file directly to Vercel Blob — bypasses all function size limits
+          const uploadRes = await fetchWithTimeout(
+            `https://blob.vercel-storage.com/${encodeURIComponent(file.name)}`,
+            {
+              method: 'PUT',
+              headers: {
+                'Authorization': `Bearer ${clientToken}`,
+                'content-type': file.type || 'application/octet-stream',
+                'x-add-random-suffix': '1',
+              },
+              body: file,
+            },
+            120000 // 2 min timeout for large files
+          );
+          if (!uploadRes.ok) {
+            const err = await uploadRes.json().catch(() => ({}));
+            throw new Error(err.error || `Blob upload failed: HTTP ${uploadRes.status}`);
+          }
+          const blobData = await uploadRes.json();
+          blobUrl = blobData.url;
+          console.log('✓ Uploaded to Vercel Blob:', blobUrl);
         } catch (err) {
           blobError = err.message;
           console.warn('Blob upload error, falling back to Drive only:', blobError);
